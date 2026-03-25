@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Icon } from './Icon';
 
 interface GatePageProps {
   onEnter: () => void;
@@ -28,49 +27,65 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      background: 'var(--color-bg)',
+      background: '#f9fafb',
       padding: 'var(--space-xl)',
     }}>
       <div style={{
-        maxWidth: 420,
+        maxWidth: 400,
         width: '100%',
         textAlign: 'center',
       }}>
+        {/* Logo lockup - matches app header */}
         <div style={{
-          width: 56,
-          height: 56,
-          borderRadius: 'var(--radius-lg)',
-          background: 'var(--color-primary-muted)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto var(--space-lg)',
+          gap: 12,
+          marginBottom: 32,
         }}>
-          <Icon name="shield" size={28} color="var(--color-primary)" />
+          <img 
+            src="/logo.png" 
+            alt="RegAssess" 
+            style={{
+              width: 40,
+              height: 40,
+              objectFit: 'contain',
+            }}
+          />
+          <span style={{
+            fontSize: 20,
+            fontWeight: 600,
+            color: '#111827',
+            letterSpacing: '-0.01em',
+          }}>
+            RegAssess
+          </span>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '3px 8px',
+            borderRadius: 4,
+            background: '#f0fdf4',
+            color: '#15803d',
+            letterSpacing: '0.02em',
+          }}>
+            AI/ML
+          </span>
         </div>
-
-        <h1 style={{
-          fontSize: 24,
-          fontWeight: 700,
-          color: 'var(--color-text)',
-          margin: '0 0 var(--space-sm)',
-        }}>
-          RegAssess AI/ML
-        </h1>
         <p style={{
           fontSize: 14,
-          color: 'var(--color-text-secondary)',
+          color: '#6b7280',
           lineHeight: 1.6,
-          margin: '0 0 var(--space-xl)',
+          margin: '0 0 32px',
         }}>
-          Regulatory change assessment prototype for AI/ML medical devices.
-          You've been invited to review RegAssess and share your expert perspective.
+          Regulatory change assessment for AI/ML medical devices.
+          Enter your invite code to continue.
         </p>
 
         <div style={{
           display: 'flex',
-          gap: 'var(--space-sm)',
-          marginBottom: 'var(--space-sm)',
+          gap: 10,
+          marginBottom: 12,
         }}>
           <input
             type="text"
@@ -80,36 +95,44 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
             placeholder="e.g. RA-7K2M"
             style={{
               flex: 1,
-              padding: 'var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              border: `1px solid ${error ? 'var(--color-danger)' : 'var(--color-border)'}`,
+              padding: '12px 16px',
+              borderRadius: 6,
+              border: `1px solid ${error ? '#ef4444' : '#e5e7eb'}`,
               fontSize: 14,
               outline: 'none',
-              background: 'var(--color-bg-card)',
+              background: '#ffffff',
+              transition: 'border-color 0.15s ease',
             }}
           />
           <button
             onClick={handleSubmit}
             style={{
-              padding: 'var(--space-md) var(--space-lg)',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-primary)',
+              padding: '12px 24px',
+              borderRadius: 6,
+              background: '#111827',
               border: 'none',
               color: '#fff',
               fontSize: 14,
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#1f2937';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#111827';
             }}
           >
-            Enter
+            Continue
           </button>
         </div>
 
         {error && (
           <p style={{
             fontSize: 13,
-            color: 'var(--color-danger)',
-            margin: '0 0 var(--space-sm)',
+            color: '#ef4444',
+            margin: '0 0 12px',
           }}>
             {error}
           </p>
@@ -117,7 +140,7 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
 
         <p style={{
           fontSize: 12,
-          color: 'var(--color-text-muted)',
+          color: '#9ca3af',
           margin: 0,
         }}>
           Check your invitation email for this code.
