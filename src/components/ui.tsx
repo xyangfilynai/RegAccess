@@ -474,6 +474,12 @@ interface ConfBadgeProps {
   size?: 'md' | 'lg';
 }
 
+const confBadgeLabels: Record<string, string> = {
+  HIGH: 'CONSISTENT',
+  MODERATE: 'REVIEW NEEDED',
+  LOW: 'INCOMPLETE',
+};
+
 export const ConfBadge: React.FC<ConfBadgeProps> = ({
   level,
   size = 'md',
@@ -515,7 +521,7 @@ export const ConfBadge: React.FC<ConfBadgeProps> = ({
           flexShrink: 0,
         }}
       />{' '}
-      {level}
+      {confBadgeLabels[level] || level}
     </span>
   );
 };

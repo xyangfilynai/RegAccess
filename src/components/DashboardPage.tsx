@@ -133,7 +133,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   fontWeight: 600,
                   color: '#111827',
                 }}>
-                  Quick Expert Review
+                  Guided Example
                 </span>
                 <span style={{
                   fontSize: 10,
@@ -145,7 +145,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   textTransform: 'uppercase',
                   letterSpacing: '0.04em',
                 }}>
-                  Recommended
+                  Sample Case
                 </span>
               </div>
               <p style={{
@@ -154,7 +154,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 margin: 0,
                 lineHeight: 1.55,
               }}>
-                Walk through a pre-filled example case. Adjust responses as needed, then view the determination.
+                Walk through a pre-filled sample case to see how the assessment works. Review and adjust responses, then view the determination.
               </p>
               <p style={{
                 fontSize: 12,
@@ -375,9 +375,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             margin: 0,
             lineHeight: 1.6,
           }}>
-            <strong style={{ color: '#374151', fontWeight: 600 }}>Advisory use only.</strong>{' '}
+            <strong style={{ color: '#374151', fontWeight: 600 }}>Decision support only — not a regulatory determination.</strong>{' '}
             This tool supports internal change-control planning and regulatory strategy discussions.
-            Not intended for formal submissions or legal advice.
+            It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
+            All outputs require review by qualified regulatory and clinical professionals before action.
           </p>
         </div>
       </main>

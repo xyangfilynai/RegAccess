@@ -473,8 +473,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 alignItems: 'center',
                 gap: 4,
               }}>
-                <Icon name="zap" size={10} />
-                Dynamic
+                <Icon name="layers" size={10} />
+                Conditional
               </span>
             )}
             {question.disabled && (
@@ -698,9 +698,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             gap: 'var(--space-sm)',
             marginBottom: 'var(--space-xs)',
           }}>
-            <Icon name="zap" size={14} color="var(--color-info)" />
+            <Icon name="arrow" size={14} color="var(--color-info)" />
             <strong style={{ color: 'var(--color-info)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-              Consequence Preview
+              Pathway Impact
             </strong>
           </div>
           {typeof question.consequencePreview === 'string' ? (
@@ -709,19 +709,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             <div>
               {question.consequencePreview.yes && (
                 <div style={{ marginBottom: 'var(--space-xs)' }}>
-                  <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>Yes:</span>{' '}
+                  <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If Yes →</span>{' '}
                   <HelpTextWithLinks text={question.consequencePreview.yes} />
                 </div>
               )}
               {question.consequencePreview.no && (
                 <div style={{ marginBottom: 'var(--space-xs)' }}>
-                  <span style={{ color: 'var(--color-danger)', fontWeight: 600 }}>No:</span>{' '}
+                  <span style={{ color: 'var(--color-text)', fontWeight: 600 }}>If No →</span>{' '}
                   <HelpTextWithLinks text={question.consequencePreview.no} />
                 </div>
               )}
               {question.consequencePreview.uncertain && (
                 <div>
-                  <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>Uncertain:</span>{' '}
+                  <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>If Uncertain →</span>{' '}
                   <HelpTextWithLinks text={question.consequencePreview.uncertain} />
                 </div>
               )}

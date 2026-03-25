@@ -270,9 +270,9 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </span>
           <span title={
             config.confidence === 'HIGH'
-              ? 'No consistency issues detected. All pathway-critical questions answered without contradictions.'
+              ? 'No internal consistency issues detected. All pathway-critical questions answered without contradictions. This reflects internal consistency only — expert review is still required.'
               : config.confidence === 'MODERATE'
-                ? 'Consistency issues detected — review the flagged items below before relying on this determination.'
+                ? 'Internal consistency issues detected — review the flagged items below before relying on this determination.'
                 : 'Assessment is incomplete — one or more critical questions remain unresolved.'
           }>
             <ConfBadge level={config.confidence} />
@@ -685,7 +685,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         )}
 
         {/* Determination Flags */}
-        <CollapsibleSection id="flags" title="Assessment Flags">
+        <CollapsibleSection id="flags" title="Determination Factors">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {determination.isIntendedUseChange && (
               <span style={{
@@ -762,7 +762,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 background: '#f9fafb',
                 color: '#6b7280',
               }}>
-                No special flags
+                No additional determination factors identified
               </span>
             )}
           </div>
@@ -897,15 +897,24 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           lineHeight: 1.6,
           margin: 0,
         }}>
-          <strong style={{ color: '#374151' }}>Advisory use only.</strong>{' '}
-          For internal change-control and submission planning. Not for formal regulatory judgment or legal advice.
-          U.S.-primary assessment. Non-U.S. markets covered by escalation cues only.
+          <strong style={{ color: '#374151' }}>Decision support only — not a regulatory determination.</strong>{' '}
+          This tool supports internal change-control planning and submission strategy discussions.
+          It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
+          All outputs require review by qualified regulatory and clinical professionals before action.
+        </p>
+        <p style={{
+          fontSize: 11,
+          color: '#9ca3af',
+          lineHeight: 1.5,
+          margin: '8px 0 0',
+        }}>
+          This tool is not itself a validated or cleared medical device. U.S.-primary assessment; non-U.S. markets covered by escalation cues only.
         </p>
         <p style={{
           fontSize: 11,
           fontFamily: 'monospace',
           color: '#9ca3af',
-          margin: '8px 0 0',
+          margin: '6px 0 0',
         }}>
           v1 | Sources reviewed Mar 2026 | Primary: US (FDA) | Follow-up: EU, UK, CA, JP, CN
         </p>

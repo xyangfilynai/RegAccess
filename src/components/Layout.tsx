@@ -288,7 +288,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         fontSize: 11,
                         color: 'var(--color-text-muted)',
                       }}>
-                        Generate report
+                        Review assessment
                       </div>
                     )}
                   </div>

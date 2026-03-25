@@ -64,7 +64,7 @@ export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   const b: Block[] = [
     { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield" },
     { id: "B", label: "What changed?", shortLabel: "Change Classification", icon: "layers" },
-    { id: "C", label: "Does this need a new submission?", shortLabel: "Regulatory Significance", icon: "alert" },
+    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory Significance", icon: "alert" },
   ];
   if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP Scope", icon: "checkCircle" });
   if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu" });
