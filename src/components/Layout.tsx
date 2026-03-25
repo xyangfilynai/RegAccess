@@ -11,6 +11,10 @@ interface LayoutProps {
   answeredCounts: Record<string, number>;
   totalCounts: Record<string, number>;
   onReset?: () => void;
+  onHome?: () => void;
+  onSave?: () => void;
+  onSaveAndNew?: () => void;
+  saveNotice?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({
@@ -22,6 +26,10 @@ export const Layout: React.FC<LayoutProps> = ({
   answeredCounts,
   totalCounts,
   onReset,
+  onHome,
+  onSave,
+  onSaveAndNew,
+  saveNotice,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -102,7 +110,81 @@ export const Layout: React.FC<LayoutProps> = ({
         </div>
 
         {/* Header right */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+          {onHome && (
+            <button
+              onClick={onHome}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-xs)',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Return to dashboard"
+            >
+              <Icon name="home" size={14} />
+              <span className="hide-mobile">Home</span>
+            </button>
+          )}
+          {onSave && (
+            <button
+              onClick={onSave}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-xs)',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Save assessment"
+            >
+              <Icon name="check" size={14} />
+              <span className="hide-mobile">Save</span>
+            </button>
+          )}
+          {onSaveAndNew && (
+            <button
+              onClick={onSaveAndNew}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-xs)',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                border: '1px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+              }}
+              title="Save current assessment and start a new one"
+            >
+              <Icon name="fileText" size={14} />
+              <span className="hide-mobile">Save &amp; New</span>
+            </button>
+          )}
+          {saveNotice && (
+            <span style={{ fontSize: 11, color: 'var(--color-success)', fontWeight: 500 }}>
+              {saveNotice}
+            </span>
+          )}
           <div style={{
             display: 'flex',
             alignItems: 'center',

@@ -347,6 +347,40 @@ export const App: React.FC = () => {
     return assessment?.reviewerNotes || [];
   }, [currentAssessmentId, savedAssessments]); // savedAssessments as dependency to refresh
 
+  // Navigate to dashboard without destroying current answers
+  const handleHome = useCallback(() => {
+    setScreen('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Save current assessment, then start a fresh one
+  const handleSaveAndNew = useCallback(() => {
+    // Save current work
+    const name = currentAssessmentName || `Assessment — ${answers.A1 || 'New'} — ${new Date().toLocaleDateString()}`;
+    const saved = assessmentStore.save({
+      id: currentAssessmentId || undefined,
+      name,
+      status: currentAssessmentStatus,
+      answers,
+      blockIndex: currentBlockIndex,
+      lastPathway: determination.pathway,
+    });
+    setCurrentAssessmentId(null);
+    setCurrentAssessmentName('');
+    setCurrentAssessmentStatus('Draft');
+    setAnswers({});
+    setCurrentBlockIndex(0);
+    setValidationErrors({});
+    refreshSavedAssessments();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(BLOCK_STORAGE_KEY);
+    } catch { /* ignore */ }
+    setSaveNotice(`Saved "${saved.name}" — starting new assessment`);
+    setTimeout(() => setSaveNotice(''), 4000);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentAssessmentId, currentAssessmentName, currentAssessmentStatus, answers, currentBlockIndex, determination.pathway, refreshSavedAssessments]);
+
   // --- Dashboard actions ---
 
   const handleQuickReview = useCallback(() => {
@@ -641,6 +675,10 @@ export const App: React.FC = () => {
       answeredCounts={answeredCounts}
       totalCounts={totalCounts}
       onReset={handleReset}
+      onHome={handleHome}
+      onSave={handleSaveAssessment}
+      onSaveAndNew={handleSaveAndNew}
+      saveNotice={saveNotice}
     >
       {/* Assessment name input (when on review block and assessment is being managed) */}
       {currentBlock?.id === 'review' && (
