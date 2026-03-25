@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Icon } from './Icon';
-import { 
-  GuidanceRef, 
-  HelpTextWithLinks, 
-  ConfBadge, 
+import {
+  GuidanceRef,
+  HelpTextWithLinks,
+  ConfBadge,
   AuthorityTag,
   GlossaryPanel,
 } from './ui';
@@ -15,6 +15,9 @@ import {
   questionReasoningLibrary,
 } from '../lib/content';
 import { changeTaxonomy } from '../lib/assessment-engine';
+import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
+import { generateAssessmentArtifact, formatArtifactAsText } from '../lib/report-generator';
+import type { AssessmentStatus, ReviewerNote } from '../lib/assessment-store';
 
 interface ReviewPanelProps {
   pathway: string;
@@ -25,6 +28,13 @@ interface ReviewPanelProps {
   onEditBlock: (blockIndex: number) => void;
   onFeedback?: () => void;
   onHandoff?: () => void;
+  onSave?: () => void;
+  assessmentName?: string;
+  assessmentStatus?: AssessmentStatus;
+  onStatusChange?: (status: AssessmentStatus) => void;
+  reviewerNotes?: ReviewerNote[];
+  onAddNote?: (author: string, text: string) => void;
+  onRemoveNote?: (noteId: string) => void;
 }
 
 // Map pathway names to docRequirements keys
@@ -53,6 +63,15 @@ const getRuleKey = (determination: any): string | null => {
   return null;
 };
 
+// Source class to AuthorityTag level mapping
+const sourceClassToLevel: Record<string, string> = {
+  'Regulation': 'regulation',
+  'Final guidance': 'final_guidance',
+  'Draft guidance': 'draft_guidance',
+  'Internal conservative policy': 'internal_policy',
+  'Best practice': 'best_practice',
+};
+
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   pathway,
   determination,
@@ -62,10 +81,20 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onEditBlock,
   onFeedback,
   onHandoff,
+  onSave,
+  assessmentName,
+  assessmentStatus,
+  onStatusChange,
+  reviewerNotes,
+  onAddNote,
+  onRemoveNote,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['reasoning'])
   );
+  const [noteAuthor, setNoteAuthor] = useState('');
+  const [noteText, setNoteText] = useState('');
+  const [exportNotice, setExportNotice] = useState('');
 
   const toggleSection = (id: string) => {
     const newSet = new Set(expandedSections);
@@ -76,6 +105,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     }
     setExpandedSections(newSet);
   };
+
+  // Evidence gaps
+  const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
+  const criticalGaps = evidenceGaps.filter(g => g.severity === 'critical');
+  const importantGaps = evidenceGaps.filter(g => g.severity === 'important');
 
   // Get documentation requirements for this pathway
   const docKey = pathwayToDocKey[pathway];
@@ -140,6 +174,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   const config = getPathwayConfig();
   const { consistencyIssues = [], pccpRecommendation } = determination;
+  const isIncomplete = determination.isIncomplete;
 
   // PCCP recommendation logic
   const hasPCCP = answers.A2 === 'Yes';
@@ -151,16 +186,55 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const showPCCPRecommendation = pccpRecommendation?.shouldRecommend && !hasPCCP && isNewSub
     && pccpEligibility && ['YES', 'CONDITIONAL'].includes(pccpEligibility);
 
+  // Hard gating: determine if assessment has critical unknowns that should block doc-only conclusion
+  const hasCriticalGaps = criticalGaps.length > 0;
+  const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
+
+  // Export handler
+  const handleExportText = () => {
+    const artifact = generateAssessmentArtifact(answers, determination, blocks, getQuestionsForBlock);
+    const text = formatArtifactAsText(artifact, assessmentName);
+    navigator.clipboard.writeText(text).then(() => {
+      setExportNotice('Report copied to clipboard');
+      setTimeout(() => setExportNotice(''), 3000);
+    }).catch(() => {
+      // Fallback: download as file
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `assessment-report-${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportNotice('Report downloaded');
+      setTimeout(() => setExportNotice(''), 3000);
+    });
+  };
+
+  const handleExportJSON = () => {
+    const artifact = generateAssessmentArtifact(answers, determination, blocks, getQuestionsForBlock);
+    const json = JSON.stringify(artifact, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `assessment-artifact-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExportNotice('JSON artifact downloaded');
+    setTimeout(() => setExportNotice(''), 3000);
+  };
+
   // Collapsible section component
-  const CollapsibleSection = ({ 
-    id, 
-    title, 
+  const CollapsibleSection = ({
+    id,
+    title,
     children,
     badge,
     defaultOpen = false,
-  }: { 
-    id: string; 
-    title: string; 
+  }: {
+    id: string;
+    title: string;
     children: React.ReactNode;
     badge?: React.ReactNode;
     defaultOpen?: boolean;
@@ -194,10 +268,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             {title}
           </span>
           {badge}
-          <Icon 
-            name={isExpanded ? 'arrowUp' : 'arrowDown'} 
-            size={14} 
-            color="#9ca3af" 
+          <Icon
+            name={isExpanded ? 'arrowUp' : 'arrowDown'}
+            size={14}
+            color="#9ca3af"
           />
         </button>
         {isExpanded && (
@@ -245,6 +319,81 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   return (
     <div className="animate-fade-in-up">
       {/* ============================================
+          HARD GATE: INCOMPLETE ASSESSMENT BANNER
+          ============================================ */}
+      {isIncomplete && (
+        <div style={{
+          padding: '20px 24px',
+          borderRadius: 8,
+          background: '#7c2d12',
+          color: '#fff',
+          marginBottom: 24,
+          border: '2px solid #9a3412',
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 10,
+          }}>
+            <Icon name="alertCircle" size={20} color="#fbbf24" />
+            <span style={{
+              fontSize: 15,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}>
+              Assessment Incomplete — Expert Review Required
+            </span>
+          </div>
+          <p style={{
+            fontSize: 13,
+            lineHeight: 1.7,
+            margin: 0,
+            opacity: 0.95,
+          }}>
+            This assessment cannot produce a reliable regulatory pathway recommendation.
+            One or more critical questions remain unresolved. <strong>Do not treat this output as a
+            final regulatory conclusion.</strong> Resolve the unresolved questions below, then
+            re-run the assessment before relying on the result for any regulatory decision.
+          </p>
+        </div>
+      )}
+
+      {/* Hard gate: doc-only pathway with critical evidence gaps */}
+      {isDocOnlyWithCriticalGaps && !isIncomplete && (
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: 8,
+          background: '#fffbeb',
+          border: '2px solid #f59e0b',
+          marginBottom: 24,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 8,
+          }}>
+            <Icon name="alert" size={16} color="#d97706" />
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#92400e' }}>
+              Preliminary Assessment — Critical Evidence Gaps Remain
+            </span>
+          </div>
+          <p style={{
+            fontSize: 13,
+            color: '#78350f',
+            lineHeight: 1.6,
+            margin: 0,
+          }}>
+            This assessment routes to documentation-only, but {criticalGaps.length} critical evidence
+            gap{criticalGaps.length > 1 ? 's' : ''} must be resolved before this conclusion can be
+            relied upon. Review the Evidence Gaps section below.
+          </p>
+        </div>
+      )}
+
+      {/* ============================================
           SECTION 1: HERO / TOP SUMMARY BAND
           ============================================ */}
       <div style={{
@@ -279,6 +428,40 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }>
             <ConfBadge level={config.confidence} />
           </span>
+          {/* Assessment status tag */}
+          {assessmentStatus && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 600,
+              padding: '3px 8px',
+              borderRadius: 4,
+              background: assessmentStatus === 'Draft' ? '#f3f4f6'
+                : assessmentStatus === 'In Review' ? '#dbeafe'
+                : '#d1fae5',
+              color: assessmentStatus === 'Draft' ? '#6b7280'
+                : assessmentStatus === 'In Review' ? '#1d4ed8'
+                : '#15803d',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              {assessmentStatus}
+            </span>
+          )}
+          {/* Preliminary label when there are evidence gaps on non-incomplete */}
+          {!isIncomplete && hasCriticalGaps && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '3px 8px',
+              borderRadius: 4,
+              background: '#fef3c7',
+              color: '#92400e',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              PRELIMINARY
+            </span>
+          )}
         </div>
 
         {/* Primary determination */}
@@ -289,7 +472,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           margin: '0 0 12px',
           lineHeight: 1.2,
         }}>
-          {pathway}
+          {isIncomplete ? 'Assessment Incomplete — Expert Review Required' : pathway}
         </h1>
 
         {/* Regulatory basis */}
@@ -326,7 +509,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <button
             onClick={() => window.print()}
             style={{
@@ -346,6 +529,75 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             <Icon name="printer" size={14} color="#fff" />
             Print Report
           </button>
+          <button
+            onClick={handleExportText}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 6,
+              background: '#fff',
+              border: '1px solid #d1d5db',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="fileText" size={14} color="#374151" />
+            Export Report
+          </button>
+          <button
+            onClick={handleExportJSON}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 6,
+              background: '#fff',
+              border: '1px solid #d1d5db',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="settings" size={14} color="#374151" />
+            Export JSON
+          </button>
+          {onSave && (
+            <button
+              onClick={onSave}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 18px',
+                borderRadius: 6,
+                background: '#fff',
+                border: '1px solid #d1d5db',
+                color: '#374151',
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              <Icon name="check" size={14} color="#374151" />
+              Save Assessment
+            </button>
+          )}
+          {exportNotice && (
+            <span style={{
+              fontSize: 12,
+              color: '#16a34a',
+              fontWeight: 500,
+              animation: 'fadeIn .15s ease',
+            }}>
+              {exportNotice}
+            </span>
+          )}
         </div>
       </div>
 
@@ -392,6 +644,104 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       )}
 
       {/* ============================================
+          EVIDENCE GAPS CHECKLIST
+          ============================================ */}
+      {evidenceGaps.length > 0 && (
+        <div style={{
+          padding: '16px 20px',
+          borderRadius: 6,
+          background: criticalGaps.length > 0 ? '#fef2f2' : '#fffbeb',
+          border: `1px solid ${criticalGaps.length > 0 ? '#fecaca' : '#fde68a'}`,
+          marginBottom: 24,
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            marginBottom: 12,
+          }}>
+            <Icon name="alertCircle" size={16} color={criticalGaps.length > 0 ? '#dc2626' : '#d97706'} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: criticalGaps.length > 0 ? '#991b1b' : '#92400e' }}>
+              Evidence Gaps ({evidenceGaps.length})
+              {criticalGaps.length > 0 && (
+                <span style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  background: '#fecaca',
+                  color: '#dc2626',
+                  marginLeft: 8,
+                }}>
+                  {criticalGaps.length} CRITICAL
+                </span>
+              )}
+            </span>
+          </div>
+          <p style={{
+            fontSize: 12,
+            color: '#6b7280',
+            margin: '0 0 12px',
+            lineHeight: 1.5,
+          }}>
+            The following gaps must be resolved before the assessment result can be relied upon for regulatory decisions.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {evidenceGaps.map((gap) => (
+              <div key={gap.id} style={{
+                padding: '10px 12px',
+                background: gap.severity === 'critical' ? '#fff5f5' : '#fffdf5',
+                borderRadius: 4,
+                border: `1px solid ${gap.severity === 'critical' ? '#fed7d7' : '#fef3c7'}`,
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 4,
+                }}>
+                  <span style={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    padding: '1px 5px',
+                    borderRadius: 3,
+                    background: gap.severity === 'critical' ? '#fecaca' : gap.severity === 'important' ? '#fde68a' : '#e5e7eb',
+                    color: gap.severity === 'critical' ? '#dc2626' : gap.severity === 'important' ? '#92400e' : '#6b7280',
+                    textTransform: 'uppercase',
+                  }}>
+                    {gap.severity}
+                  </span>
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#374151',
+                  }}>
+                    {gap.category}
+                  </span>
+                  <AuthorityTag level={sourceClassToLevel[gap.sourceClass] || 'best_practice'} compact />
+                </div>
+                <div style={{
+                  fontSize: 13,
+                  color: '#111827',
+                  lineHeight: 1.5,
+                  marginBottom: 4,
+                }}>
+                  {gap.description}
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  color: '#6b7280',
+                  lineHeight: 1.5,
+                }}>
+                  <strong>Action:</strong> {gap.remediation}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================
           SECTION 2: KEY FACTS STRIP
           ============================================ */}
       <div style={{
@@ -433,7 +783,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         padding: '0 28px',
         marginBottom: 24,
       }}>
-        
+
         {/* Regulatory Reasoning */}
         {ruleReasoning && (
           <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
@@ -445,7 +795,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}>
               <HelpTextWithLinks text={ruleReasoning.text} />
             </div>
-            
+
             {(ruleReasoning.verify || ruleReasoning.counter) && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
                 {ruleReasoning.verify && (
@@ -512,7 +862,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 )}
               </div>
             )}
-            
+
             {ruleReasoning.source && (
               <div style={{
                 marginTop: 16,
@@ -531,8 +881,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
         {/* Documentation Requirements */}
         {docs && (
-          <CollapsibleSection 
-            id="documentation" 
+          <CollapsibleSection
+            id="documentation"
             title="Documentation Requirements"
             badge={
               docs.required?.length ? (
@@ -575,10 +925,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                         flexShrink: 0,
                         marginTop: 1,
                       }} />
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                           <GuidanceRef code={item.source} showSection={false} />
+                          <AuthorityTag level={sourceClassToLevel[classifySourceInline(item.source)] || 'final_guidance'} compact />
                         </div>
                       </div>
                     </div>
@@ -586,7 +937,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 </div>
               </div>
             )}
-            
+
             {docs.recommended && docs.recommended.length > 0 && (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 10 }}>
@@ -603,13 +954,18 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       borderRadius: 4,
                     }}>
                       <Icon name="check" size={14} color="#3b82f6" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <AuthorityTag level={sourceClassToLevel[classifySourceInline(item.source)] || 'draft_guidance'} compact />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-            
+
             {docs.orgSpecific && docs.orgSpecific.length > 0 && (
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 10 }}>
@@ -626,7 +982,12 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       borderRadius: 4,
                     }}>
                       <Icon name="info" size={14} color="#9ca3af" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.doc}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.doc}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
+                          <AuthorityTag level="internal_policy" compact />
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -755,7 +1116,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 GenAI High Impact
               </span>
             )}
-            {!determination.isIntendedUseChange && !determination.isSignificant && !determination.pccpScopeVerified && 
+            {!determination.isIntendedUseChange && !determination.isSignificant && !determination.pccpScopeVerified &&
              !determination.isCyberOnly && !determination.isBugFix && !determination.genAIHighImpactChange && (
               <span style={{
                 fontSize: 12,
@@ -803,16 +1164,16 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
         {blocks.filter(b => b.id !== 'review').map((block, blockIndex) => {
           const questions = getQuestionsForBlock(block.id);
-          const answeredQuestions = questions.filter(q => 
+          const answeredQuestions = questions.filter(q =>
             !q.sectionDivider && !q.skip && answers[q.id] !== undefined && answers[q.id] !== ''
           );
 
           if (answeredQuestions.length === 0) return null;
 
           return (
-            <CollapsibleSection 
-              key={block.id} 
-              id={`block-${block.id}`} 
+            <CollapsibleSection
+              key={block.id}
+              id={`block-${block.id}`}
               title={block.shortLabel}
               badge={
                 <button
@@ -870,8 +1231,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                           fontWeight: 600,
                           color: '#111827',
                         }}>
-                          {Array.isArray(answers[q.id]) 
-                            ? answers[q.id].join(', ') 
+                          {Array.isArray(answers[q.id])
+                            ? answers[q.id].join(', ')
                             : String(answers[q.id])}
                         </div>
                       </div>
@@ -883,6 +1244,192 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           );
         })}
       </div>
+
+      {/* ============================================
+          REVIEW/SHARE WORKFLOW
+          ============================================ */}
+      {(onStatusChange || onAddNote) && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: 8,
+          padding: '20px 28px',
+          marginBottom: 24,
+        }}>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+            marginBottom: 16,
+          }}>
+            Review Workflow
+          </div>
+
+          {/* Status selector */}
+          {onStatusChange && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
+                Assessment Status
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['Draft', 'In Review', 'Final Internal Memo'] as AssessmentStatus[]).map(status => (
+                  <button
+                    key={status}
+                    onClick={() => onStatusChange(status)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      border: assessmentStatus === status ? '2px solid' : '1px solid #d1d5db',
+                      borderColor: assessmentStatus === status
+                        ? (status === 'Draft' ? '#9ca3af' : status === 'In Review' ? '#3b82f6' : '#16a34a')
+                        : '#d1d5db',
+                      background: assessmentStatus === status
+                        ? (status === 'Draft' ? '#f3f4f6' : status === 'In Review' ? '#dbeafe' : '#d1fae5')
+                        : '#fff',
+                      color: assessmentStatus === status
+                        ? (status === 'Draft' ? '#374151' : status === 'In Review' ? '#1d4ed8' : '#15803d')
+                        : '#6b7280',
+                    }}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+              {/* Hard gate warning for Final status with critical gaps */}
+              {assessmentStatus === 'Final Internal Memo' && (isIncomplete || hasCriticalGaps) && (
+                <div style={{
+                  marginTop: 8,
+                  padding: '8px 12px',
+                  borderRadius: 4,
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  fontSize: 12,
+                  color: '#991b1b',
+                  lineHeight: 1.5,
+                }}>
+                  <strong>Warning:</strong> This assessment has {isIncomplete ? 'unresolved critical questions' : 'critical evidence gaps'}.
+                  Marking as "Final Internal Memo" does not resolve these issues. All gaps and unresolved questions
+                  should be addressed before this assessment is relied upon for regulatory decisions.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reviewer notes */}
+          {onAddNote && (
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 8 }}>
+                Reviewer Notes
+              </div>
+              {reviewerNotes && reviewerNotes.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {reviewerNotes.map(note => (
+                    <div key={note.id} style={{
+                      padding: '10px 12px',
+                      background: '#f9fafb',
+                      borderRadius: 6,
+                      border: '1px solid #e5e7eb',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>
+                          {note.author}
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>
+                            {new Date(note.timestamp).toLocaleString()}
+                          </span>
+                          {onRemoveNote && (
+                            <button
+                              onClick={() => onRemoveNote(note.id)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 2,
+                                color: '#9ca3af',
+                                fontSize: 14,
+                                lineHeight: 1,
+                              }}
+                              title="Remove note"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5 }}>
+                        {note.text}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={noteAuthor}
+                  onChange={e => setNoteAuthor(e.target.value)}
+                  placeholder="Your name"
+                  style={{
+                    width: 140,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid #d1d5db',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={noteText}
+                  onChange={e => setNoteText(e.target.value)}
+                  placeholder="Add a review note..."
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && noteAuthor.trim() && noteText.trim()) {
+                      onAddNote(noteAuthor.trim(), noteText.trim());
+                      setNoteText('');
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid #d1d5db',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    if (noteAuthor.trim() && noteText.trim()) {
+                      onAddNote(noteAuthor.trim(), noteText.trim());
+                      setNoteText('');
+                    }
+                  }}
+                  disabled={!noteAuthor.trim() || !noteText.trim()}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    background: noteAuthor.trim() && noteText.trim() ? '#111827' : '#e5e7eb',
+                    border: 'none',
+                    color: noteAuthor.trim() && noteText.trim() ? '#fff' : '#9ca3af',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: noteAuthor.trim() && noteText.trim() ? 'pointer' : 'default',
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ============================================
           FOOTER DISCLAIMER
@@ -904,6 +1451,28 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
           All outputs require review by qualified regulatory and clinical professionals before action.
         </p>
+        {isIncomplete && (
+          <p style={{
+            fontSize: 12,
+            color: '#991b1b',
+            lineHeight: 1.6,
+            margin: '8px 0 0',
+            fontWeight: 600,
+          }}>
+            This assessment is INCOMPLETE. Do not cite this output as a final regulatory conclusion.
+          </p>
+        )}
+        {!isIncomplete && hasCriticalGaps && (
+          <p style={{
+            fontSize: 12,
+            color: '#92400e',
+            lineHeight: 1.6,
+            margin: '8px 0 0',
+            fontWeight: 500,
+          }}>
+            This assessment has unresolved evidence gaps. Treat as preliminary until gaps are addressed.
+          </p>
+        )}
         <p style={{
           fontSize: 11,
           color: '#9ca3af',
@@ -921,6 +1490,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           v1 | Sources reviewed Mar 2026 | Primary: US (FDA) | Follow-up: EU, UK, CA, JP, CN
         </p>
       </div>
+
       {/* Preparation Checklist CTA */}
       {onHandoff && !determination.isIncomplete && (
         <div
@@ -983,6 +1553,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </button>
         </div>
       )}
+
       {/* Feedback CTA */}
       {onFeedback && (
         <div
@@ -1044,3 +1615,12 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     </div>
   );
 };
+
+/** Inline source classification for documentation items */
+function classifySourceInline(source: string): string {
+  if (/21 CFR|§\d|FD&C|Part \d{3}/.test(source)) return 'Regulation';
+  if (/draft/i.test(source)) return 'Draft guidance';
+  if (/Organization|Internal/i.test(source)) return 'Internal conservative policy';
+  if (/FDA-|Guidance|guidance|QMSR|MDCG|IEC|ISO/.test(source)) return 'Final guidance';
+  return 'Best practice';
+}

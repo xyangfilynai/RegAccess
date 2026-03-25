@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Icon } from './Icon';
+import type { SavedAssessment } from '../lib/assessment-store';
 
 /** Creates onMouseEnter/onMouseLeave handlers for border-color + boxShadow hover effects. */
 const hoverHandlers = (hoverBorder: string, restBorder: string) => ({
@@ -13,11 +14,21 @@ const hoverHandlers = (hoverBorder: string, restBorder: string) => ({
   },
 });
 
+const statusColors: Record<string, { bg: string; color: string; border: string }> = {
+  'Draft': { bg: '#f3f4f6', color: '#6b7280', border: '#d1d5db' },
+  'In Review': { bg: '#dbeafe', color: '#1d4ed8', border: '#93c5fd' },
+  'Final Internal Memo': { bg: '#d1fae5', color: '#15803d', border: '#86efac' },
+};
+
 interface DashboardPageProps {
   onQuickReview: () => void;
   onFullAssessment: () => void;
   onResume: () => void;
   hasSavedSession: boolean;
+  savedAssessments?: SavedAssessment[];
+  onLoadAssessment?: (id: string) => void;
+  onDuplicateAssessment?: (id: string) => void;
+  onDeleteAssessment?: (id: string) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
@@ -25,7 +36,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onFullAssessment,
   onResume,
   hasSavedSession,
+  savedAssessments = [],
+  onLoadAssessment,
+  onDuplicateAssessment,
+  onDeleteAssessment,
 }) => {
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -94,7 +111,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         {/* Action Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 56 }}>
-          
+
           {/* Quick Expert Review - Recommended */}
           <button
             onClick={onQuickReview}
@@ -255,6 +272,190 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </button>
           )}
         </div>
+
+        {/* Saved Assessments */}
+        {savedAssessments.length > 0 && (
+          <section style={{ marginBottom: 56 }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 24,
+            }}>
+              <h2 style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#9ca3af',
+                margin: 0,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}>
+                Saved Assessments ({savedAssessments.length})
+              </h2>
+              <div style={{
+                height: 1,
+                flex: 1,
+                background: '#e5e7eb',
+                marginLeft: 20,
+              }} />
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {savedAssessments.map(assessment => {
+                const sc = statusColors[assessment.status] || statusColors['Draft'];
+                const isConfirmingDelete = confirmDeleteId === assessment.id;
+
+                return (
+                  <div
+                    key={assessment.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 16,
+                      padding: '16px 20px',
+                      borderRadius: 8,
+                      background: '#ffffff',
+                      border: '1px solid #e5e7eb',
+                      transition: 'border-color 0.15s ease',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        <span style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: '#111827',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {assessment.name}
+                        </span>
+                        <span style={{
+                          fontSize: 9,
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          background: sc.bg,
+                          color: sc.color,
+                          border: `1px solid ${sc.border}`,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                          flexShrink: 0,
+                        }}>
+                          {assessment.status}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: '#9ca3af' }}>
+                        {assessment.lastPathway && (
+                          <span>{assessment.lastPathway}</span>
+                        )}
+                        <span>Updated {new Date(assessment.updatedAt).toLocaleDateString()}</span>
+                        {assessment.versions.length > 0 && (
+                          <span>v{assessment.versions.length + 1}</span>
+                        )}
+                        {assessment.reviewerNotes.length > 0 && (
+                          <span>{assessment.reviewerNotes.length} note{assessment.reviewerNotes.length !== 1 ? 's' : ''}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {onLoadAssessment && (
+                        <button
+                          onClick={() => onLoadAssessment(assessment.id)}
+                          style={{
+                            padding: '6px 14px',
+                            borderRadius: 6,
+                            background: '#111827',
+                            border: 'none',
+                            color: '#fff',
+                            fontSize: 12,
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Open
+                        </button>
+                      )}
+                      {onDuplicateAssessment && (
+                        <button
+                          onClick={() => onDuplicateAssessment(assessment.id)}
+                          title="Duplicate"
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 6,
+                            background: '#f3f4f6',
+                            border: '1px solid #e5e7eb',
+                            color: '#6b7280',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          Duplicate
+                        </button>
+                      )}
+                      {onDeleteAssessment && (
+                        isConfirmingDelete ? (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button
+                              onClick={() => {
+                                onDeleteAssessment(assessment.id);
+                                setConfirmDeleteId(null);
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                color: '#dc2626',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Confirm
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              style={{
+                                padding: '6px 10px',
+                                borderRadius: 6,
+                                background: '#f3f4f6',
+                                border: '1px solid #e5e7eb',
+                                color: '#6b7280',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(assessment.id)}
+                            title="Delete"
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: 6,
+                              background: '#f3f4f6',
+                              border: '1px solid #e5e7eb',
+                              color: '#9ca3af',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Delete
+                          </button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* How It Works */}
         <section>

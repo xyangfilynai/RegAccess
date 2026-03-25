@@ -20,6 +20,11 @@ import {
   type Block,
   type Question,
 } from './lib/assessment-engine';
+import {
+  assessmentStore,
+  type SavedAssessment,
+  type AssessmentStatus,
+} from './lib/assessment-store';
 
 const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
@@ -69,6 +74,18 @@ export const App: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('gate');
   const [answers, setAnswers] = useState<Answers>(loadSavedAnswers);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(loadSavedBlockIndex);
+
+  // Assessment management state
+  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
+  const [currentAssessmentName, setCurrentAssessmentName] = useState<string>('');
+  const [currentAssessmentStatus, setCurrentAssessmentStatus] = useState<AssessmentStatus>('Draft');
+  const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
+  const [saveNotice, setSaveNotice] = useState('');
+
+  // Refresh saved assessments list
+  const refreshSavedAssessments = useCallback(() => {
+    setSavedAssessments(assessmentStore.list());
+  }, []);
 
   // Persist answers to localStorage
   useEffect(() => {
@@ -205,6 +222,9 @@ export const App: React.FC = () => {
   const handleReset = useCallback(() => {
     setAnswers({});
     setCurrentBlockIndex(0);
+    setCurrentAssessmentId(null);
+    setCurrentAssessmentName('');
+    setCurrentAssessmentStatus('Draft');
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(BLOCK_STORAGE_KEY);
@@ -256,6 +276,77 @@ export const App: React.FC = () => {
     }
   }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentQuestions, answers]);
 
+  // --- Save / Load Assessment ---
+
+  const handleSaveAssessment = useCallback(() => {
+    const name = currentAssessmentName || `Assessment — ${answers.A1 || 'New'} — ${new Date().toLocaleDateString()}`;
+    const saved = assessmentStore.save({
+      id: currentAssessmentId || undefined,
+      name,
+      status: currentAssessmentStatus,
+      answers,
+      blockIndex: currentBlockIndex,
+      lastPathway: determination.pathway,
+    });
+    setCurrentAssessmentId(saved.id);
+    setCurrentAssessmentName(saved.name);
+    refreshSavedAssessments();
+    setSaveNotice('Assessment saved');
+    setTimeout(() => setSaveNotice(''), 3000);
+  }, [currentAssessmentId, currentAssessmentName, currentAssessmentStatus, answers, currentBlockIndex, determination.pathway, refreshSavedAssessments]);
+
+  const handleLoadAssessment = useCallback((id: string) => {
+    const assessment = assessmentStore.get(id);
+    if (!assessment) return;
+    setAnswers(assessment.answers);
+    setCurrentBlockIndex(assessment.blockIndex);
+    setCurrentAssessmentId(assessment.id);
+    setCurrentAssessmentName(assessment.name);
+    setCurrentAssessmentStatus(assessment.status);
+    setValidationErrors({});
+    setScreen('assess');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleDuplicateAssessment = useCallback((id: string) => {
+    assessmentStore.duplicate(id);
+    refreshSavedAssessments();
+  }, [refreshSavedAssessments]);
+
+  const handleDeleteAssessment = useCallback((id: string) => {
+    assessmentStore.delete(id);
+    refreshSavedAssessments();
+  }, [refreshSavedAssessments]);
+
+  const handleStatusChange = useCallback((status: AssessmentStatus) => {
+    setCurrentAssessmentStatus(status);
+    if (currentAssessmentId) {
+      assessmentStore.updateStatus(currentAssessmentId, status);
+      refreshSavedAssessments();
+    }
+  }, [currentAssessmentId, refreshSavedAssessments]);
+
+  const handleAddNote = useCallback((author: string, text: string) => {
+    if (currentAssessmentId) {
+      assessmentStore.addNote(currentAssessmentId, author, text);
+      refreshSavedAssessments();
+    }
+  }, [currentAssessmentId, refreshSavedAssessments]);
+
+  const handleRemoveNote = useCallback((noteId: string) => {
+    if (currentAssessmentId) {
+      assessmentStore.removeNote(currentAssessmentId, noteId);
+      refreshSavedAssessments();
+    }
+  }, [currentAssessmentId, refreshSavedAssessments]);
+
+  // Get current reviewer notes from store
+  const currentReviewerNotes = useMemo(() => {
+    if (!currentAssessmentId) return [];
+    const assessment = assessmentStore.get(currentAssessmentId);
+    return assessment?.reviewerNotes || [];
+  }, [currentAssessmentId, savedAssessments]); // savedAssessments as dependency to refresh
+
   // --- Dashboard actions ---
 
   const handleQuickReview = useCallback(() => {
@@ -263,6 +354,9 @@ export const App: React.FC = () => {
     setAnswers({ ...SAMPLE_CASE });
     setCurrentBlockIndex(0);
     setValidationErrors({});
+    setCurrentAssessmentId(null);
+    setCurrentAssessmentName('Sample Case — Quick Review');
+    setCurrentAssessmentStatus('Draft');
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -271,6 +365,9 @@ export const App: React.FC = () => {
     setAnswers({});
     setCurrentBlockIndex(0);
     setValidationErrors({});
+    setCurrentAssessmentId(null);
+    setCurrentAssessmentName('');
+    setCurrentAssessmentStatus('Draft');
     try {
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(BLOCK_STORAGE_KEY);
@@ -298,6 +395,10 @@ export const App: React.FC = () => {
         onFullAssessment={handleFullAssessment}
         onResume={handleResume}
         hasSavedSession={hasSavedAnswers()}
+        savedAssessments={savedAssessments}
+        onLoadAssessment={handleLoadAssessment}
+        onDuplicateAssessment={handleDuplicateAssessment}
+        onDeleteAssessment={handleDeleteAssessment}
       />
     );
   }
@@ -347,6 +448,13 @@ export const App: React.FC = () => {
           onEditBlock={handleBlockSelect}
           onFeedback={() => setScreen('feedback')}
           onHandoff={() => setScreen('handoff')}
+          onSave={handleSaveAssessment}
+          assessmentName={currentAssessmentName}
+          assessmentStatus={currentAssessmentStatus}
+          onStatusChange={handleStatusChange}
+          reviewerNotes={currentReviewerNotes}
+          onAddNote={currentAssessmentId ? handleAddNote : undefined}
+          onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
         />
       );
     }
@@ -534,6 +642,43 @@ export const App: React.FC = () => {
       totalCounts={totalCounts}
       onReset={handleReset}
     >
+      {/* Assessment name input (when on review block and assessment is being managed) */}
+      {currentBlock?.id === 'review' && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 20,
+          padding: '12px 16px',
+          background: '#f9fafb',
+          borderRadius: 8,
+          border: '1px solid #e5e7eb',
+        }}>
+          <Icon name="fileText" size={16} color="#6b7280" />
+          <input
+            type="text"
+            value={currentAssessmentName}
+            onChange={e => setCurrentAssessmentName(e.target.value)}
+            placeholder="Assessment name (e.g., 'CT-AI v4.1 retraining change')"
+            style={{
+              flex: 1,
+              padding: '6px 0',
+              border: 'none',
+              background: 'transparent',
+              fontSize: 14,
+              fontWeight: 500,
+              color: '#111827',
+              outline: 'none',
+            }}
+          />
+          {saveNotice && (
+            <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 500 }}>
+              {saveNotice}
+            </span>
+          )}
+        </div>
+      )}
+
       {renderBlockContent()}
 
       {/* Navigation buttons */}
