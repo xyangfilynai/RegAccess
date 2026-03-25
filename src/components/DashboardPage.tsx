@@ -17,93 +17,152 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--color-bg)',
+      background: '#f9fafb',
     }}>
-      {/* Header bar */}
+      {/* Header */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
-        padding: '0 var(--space-lg)',
-        height: 64,
-        borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-bg-elevated)',
+        justifyContent: 'space-between',
+        padding: '0 40px',
+        height: 72,
+        borderBottom: '1px solid #e5e7eb',
+        background: '#ffffff',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-          <img src="/logo.png" alt="RegAssess Logo" style={{ width: 36, height: 36, objectFit: 'contain' }} />
-          <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--color-text)' }}>RegAssess</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <img src="/logo.png" alt="RegAssess" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <span style={{ fontSize: 17, fontWeight: 600, color: '#111827', letterSpacing: '-0.01em' }}>
+            RegAssess
+          </span>
           <span style={{
-            fontSize: 11, fontWeight: 500, padding: '2px 6px',
-            borderRadius: 'var(--radius-sm)', background: 'var(--color-primary-muted)',
-            color: 'var(--color-primary)', marginLeft: 4,
-          }}>AI/ML</span>
+            fontSize: 10,
+            fontWeight: 600,
+            padding: '3px 8px',
+            borderRadius: 4,
+            background: '#f0fdf4',
+            color: '#15803d',
+            letterSpacing: '0.02em',
+          }}>
+            AI/ML
+          </span>
+        </div>
+        <div style={{ fontSize: 13, color: '#6b7280' }}>
+          Change Assessment Tool
         </div>
       </header>
 
-      <div style={{
-        maxWidth: 800,
+      {/* Main Content */}
+      <main style={{
+        maxWidth: 880,
         margin: '0 auto',
-        padding: 'var(--space-xl)',
+        padding: '56px 40px 80px',
       }}>
-        {/* Hero */}
-        <div style={{ marginBottom: 'var(--space-xl)' }}>
-          <span style={{
-            fontSize: 12, fontWeight: 600, color: 'var(--color-success)',
-            textTransform: 'uppercase', letterSpacing: '0.05em',
-          }}>
-            Regulatory Assessment Tool
-          </span>
+        {/* Page Header */}
+        <div style={{ marginBottom: 48 }}>
           <h1 style={{
-            fontSize: 28, fontWeight: 700, color: 'var(--color-text)',
-            margin: 'var(--space-sm) 0',
+            fontSize: 28,
+            fontWeight: 600,
+            color: '#111827',
+            margin: '0 0 12px',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.2,
           }}>
             AI/ML Device Change Assessment
           </h1>
           <p style={{
-            fontSize: 15, color: 'var(--color-text-secondary)', lineHeight: 1.6, margin: 0,
+            fontSize: 15,
+            color: '#6b7280',
+            margin: 0,
+            lineHeight: 1.6,
+            maxWidth: 560,
           }}>
-            U.S.-primary regulatory pathway determination for AI/ML device changes,
-            with escalation cues for EU, UK, Canada, Japan, and China.
+            U.S.-primary regulatory pathway analysis with escalation cues for EU, UK, Canada, Japan, and China.
           </p>
         </div>
 
-        {/* Action cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-          {/* Quick Expert Review */}
+        {/* Action Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 56 }}>
+          
+          {/* Quick Expert Review - Recommended */}
           <button
             onClick={onQuickReview}
             data-testid="quick-review-btn"
             style={{
-              display: 'flex', alignItems: 'flex-start', gap: 'var(--space-lg)',
-              padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)',
-              background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
-              textAlign: 'left', cursor: 'pointer', transition: 'all var(--transition-fast)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 20,
+              padding: '24px 28px',
+              borderRadius: 8,
+              background: '#ffffff',
+              border: '1px solid #d1fae5',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
               position: 'relative',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#86efac';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#d1fae5';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <div style={{
-              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 44,
+              height: 44,
+              borderRadius: 8,
+              background: '#f0fdf4',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              <Icon name="check" size={20} color="var(--color-success)" />
+              <Icon name="zap" size={20} color="#16a34a" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 4 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <span style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: '#111827',
+                }}>
                   Quick Expert Review
                 </span>
                 <span style={{
-                  fontSize: 10, fontWeight: 600, padding: '2px 8px',
-                  borderRadius: 'var(--radius-sm)', background: 'var(--color-success)',
-                  color: '#fff', textTransform: 'uppercase',
-                }}>Recommended</span>
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  background: '#dcfce7',
+                  color: '#15803d',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                }}>
+                  Recommended
+                </span>
               </div>
-              <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: '0 0 var(--space-sm)', lineHeight: 1.5 }}>
-                Pre-loaded synthetic case &mdash; review pre-filled answers, adjust what you'd answer differently, then see the determination.
+              <p style={{
+                fontSize: 14,
+                color: '#6b7280',
+                margin: 0,
+                lineHeight: 1.55,
+              }}>
+                Walk through a pre-filled example case. Adjust responses as needed, then view the determination.
               </p>
-              <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>
-                Case: New clinical sites with different scanners and demographics &mdash; no PCCP yet. Does the assessment recommend establishing one?
+              <p style={{
+                fontSize: 12,
+                color: '#9ca3af',
+                margin: '10px 0 0',
+                lineHeight: 1.5,
+                paddingTop: 10,
+                borderTop: '1px solid #f3f4f6',
+              }}>
+                Example: New clinical sites with different scanners and demographics, no PCCP established.
               </p>
             </div>
+            <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
           </button>
 
           {/* Full Assessment */}
@@ -111,103 +170,244 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             onClick={onFullAssessment}
             data-testid="full-assessment-btn"
             style={{
-              display: 'flex', alignItems: 'flex-start', gap: 'var(--space-lg)',
-              padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)',
-              background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
-              textAlign: 'left', cursor: 'pointer', transition: 'all var(--transition-fast)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 20,
+              padding: '24px 28px',
+              borderRadius: 8,
+              background: '#ffffff',
+              border: '1px solid #e5e7eb',
+              textAlign: 'left',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#d1d5db';
+              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#e5e7eb';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             <div style={{
-              width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-              background: 'var(--color-primary-muted)', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
+              width: 44,
+              height: 44,
+              borderRadius: 8,
+              background: '#f3f4f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
             }}>
-              <Icon name="plus" size={20} color="var(--color-primary)" />
+              <Icon name="fileText" size={20} color="#4b5563" />
             </div>
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 4 }}>
-                Full Assessment &mdash; Your Own Scenario
+              <span style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: '#111827',
+                display: 'block',
+                marginBottom: 6,
+              }}>
+                Full Assessment
               </span>
-              <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                Run the complete assessment workflow with your own device and change details.
-                U.S.-primary regulatory change assessment with non-U.S. escalation cues. Typically 10&ndash;25 minutes.
+              <p style={{
+                fontSize: 14,
+                color: '#6b7280',
+                margin: 0,
+                lineHeight: 1.55,
+              }}>
+                Complete the full regulatory workflow for your device. Includes U.S. pathway determination and non-U.S. escalation cues.
               </p>
             </div>
+            <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
           </button>
 
-          {/* Resume (conditional) */}
+          {/* Resume Session */}
           {hasSavedSession && (
             <button
               onClick={onResume}
               data-testid="resume-btn"
               style={{
-                display: 'flex', alignItems: 'flex-start', gap: 'var(--space-lg)',
-                padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)',
-                background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
-                textAlign: 'left', cursor: 'pointer', transition: 'all var(--transition-fast)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '16px 28px',
+                borderRadius: 8,
+                background: '#fefce8',
+                border: '1px solid #fef08a',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#fde047';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#fef08a';
               }}
             >
-              <div style={{
-                width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
-                background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Icon name="clock" size={20} color="var(--color-success)" />
-              </div>
+              <Icon name="clock" size={18} color="#ca8a04" />
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', display: 'block', marginBottom: 4 }}>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#854d0e',
+                }}>
                   Resume In-Progress Assessment
                 </span>
-                <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                  Continue where you left off.
-                </p>
               </div>
+              <Icon name="arrow" size={16} color="#ca8a04" />
             </button>
           )}
         </div>
 
         {/* How It Works */}
-        <div style={{ marginTop: 'var(--space-xl)' }}>
-          <h2 style={{
-            fontSize: 16, fontWeight: 600, color: 'var(--color-text)',
-            marginBottom: 'var(--space-md)',
-          }}>
-            How It Works
-          </h2>
+        <section>
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-            gap: 'var(--space-md)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+          }}>
+            <h2 style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#9ca3af',
+              margin: 0,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>
+              Assessment Workflow
+            </h2>
+            <div style={{
+              height: 1,
+              flex: 1,
+              background: '#e5e7eb',
+              marginLeft: 20,
+            }} />
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 1,
+            background: '#e5e7eb',
+            borderRadius: 8,
+            overflow: 'hidden',
           }}>
             {[
-              { step: '1', title: 'Device Profile', desc: 'Authorization pathway, PCCP status, markets, safety class, and AI/ML technology type.' },
-              { step: '2', title: 'Classify & Assess', desc: 'Change classification, intended use impact, regulatory significance, PCCP scope, GenAI checks, and equity.' },
-              { step: '3', title: 'Non-U.S. Follow-Up', desc: 'Escalation cues for EU, UK, Canada, Japan, and China. Not a full multi-market determination.' },
-              { step: '4', title: 'Determination', desc: 'Regulatory pathway, confidence level, decision trace, and documentation checklist.' },
-            ].map(s => (
-              <div key={s.step} style={{
-                padding: 'var(--space-md)', borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg-card)', border: '1px solid var(--color-border)',
-              }}>
+              {
+                step: '1',
+                title: 'Device Profile',
+                desc: 'Authorization pathway, PCCP status, target markets, safety classification',
+              },
+              {
+                step: '2',
+                title: 'Change Classification',
+                desc: 'Change type, intended use impact, regulatory significance assessment',
+              },
+              {
+                step: '3',
+                title: 'Non-U.S. Review',
+                desc: 'Escalation signals for EU, UK, Canada, Japan, and China',
+              },
+              {
+                step: '4',
+                title: 'Determination',
+                desc: 'Pathway recommendation, confidence level, documentation requirements',
+              },
+            ].map((s, i) => (
+              <div
+                key={s.step}
+                style={{
+                  padding: '24px 20px',
+                  background: '#ffffff',
+                }}
+              >
                 <div style={{
-                  width: 24, height: 24, borderRadius: '50%', fontSize: 12, fontWeight: 700,
-                  background: 'var(--color-primary-muted)', color: 'var(--color-primary)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 'var(--space-sm)',
-                }}>{s.step}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>{s.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.5 }}>{s.desc}</div>
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  marginBottom: 12,
+                }}>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: '#9ca3af',
+                    letterSpacing: '0.02em',
+                  }}>
+                    STEP {s.step}
+                  </span>
+                  {i < 3 && (
+                    <div style={{
+                      flex: 1,
+                      height: 1,
+                      background: '#e5e7eb',
+                    }} />
+                  )}
+                </div>
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: '#111827',
+                  marginBottom: 6,
+                }}>
+                  {s.title}
+                </div>
+                <div style={{
+                  fontSize: 13,
+                  color: '#6b7280',
+                  lineHeight: 1.5,
+                }}>
+                  {s.desc}
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Note */}
-        <p style={{
-          fontSize: 11, color: 'var(--color-text-muted)', marginTop: 'var(--space-lg)',
-          textAlign: 'center',
+        {/* Footer Note */}
+        <div style={{
+          marginTop: 48,
+          padding: '16px 20px',
+          background: '#f9fafb',
+          border: '1px solid #e5e7eb',
+          borderRadius: 6,
         }}>
-          Synthetic example for review only &mdash; not based on a specific marketed device.
-        </p>
-      </div>
+          <p style={{
+            fontSize: 12,
+            color: '#6b7280',
+            margin: 0,
+            lineHeight: 1.6,
+          }}>
+            <strong style={{ color: '#374151', fontWeight: 600 }}>Advisory use only.</strong>{' '}
+            This tool supports internal change-control planning and regulatory strategy discussions.
+            Not intended for formal submissions or legal advice.
+          </p>
+        </div>
+      </main>
+
+      {/* Responsive styles */}
+      <style>{`
+        @media (max-width: 768px) {
+          main {
+            padding: 32px 20px 60px !important;
+          }
+          header {
+            padding: 0 20px !important;
+          }
+          [style*="grid-template-columns: repeat(4, 1fr)"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 480px) {
+          [style*="grid-template-columns: repeat(4, 1fr)"] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
