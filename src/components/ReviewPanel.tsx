@@ -5,7 +5,6 @@ import {
   HelpTextWithLinks, 
   ConfBadge, 
   AuthorityTag,
-  Collapsible,
   GlossaryPanel,
 } from './ui';
 import { Pathway } from '../lib/assessment-engine';
@@ -61,7 +60,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onFeedback,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['pathway', 'summary', 'documentation', 'reasoning', 'A', 'B', 'C', 'D', 'E', 'F'])
+    new Set(['reasoning'])
   );
 
   const toggleSection = (id: string) => {
@@ -83,62 +82,62 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const ruleReasoning = ruleKey ? ruleReasoningLibrary[ruleKey] : null;
 
   // Pathway styling
-  const getPathwayStyle = () => {
+  const getPathwayConfig = () => {
     switch (pathway) {
       case Pathway.LetterToFile:
       case Pathway.PMAAnnualReport:
         return {
-          bg: 'var(--color-success-bg)',
-          border: 'var(--color-success-border)',
-          color: 'var(--color-success)',
+          bg: '#f0fdf4',
+          border: '#bbf7d0',
+          accent: '#16a34a',
           icon: 'checkCircle',
-          label: 'Documentation Only',
+          statusLabel: 'Documentation Only',
           confidence: 'HIGH' as const,
         };
       case Pathway.ImplementPCCP:
         return {
-          bg: 'var(--color-info-bg)',
-          border: 'var(--color-info-border)',
-          color: 'var(--color-info)',
+          bg: '#eff6ff',
+          border: '#bfdbfe',
+          accent: '#2563eb',
           icon: 'checkCircle',
-          label: 'PCCP Implementation',
+          statusLabel: 'PCCP Implementation',
           confidence: 'HIGH' as const,
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
         return {
-          bg: 'var(--color-danger-bg)',
-          border: 'var(--color-danger-border)',
-          color: 'var(--color-danger)',
+          bg: '#fef2f2',
+          border: '#fecaca',
+          accent: '#dc2626',
           icon: 'alert',
-          label: 'Submission Required',
+          statusLabel: 'Submission Required',
           confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
         };
       case Pathway.AssessmentIncomplete:
         return {
-          bg: 'var(--color-warning-bg)',
-          border: 'var(--color-warning-border)',
-          color: 'var(--color-warning)',
+          bg: '#fffbeb',
+          border: '#fde68a',
+          accent: '#d97706',
           icon: 'alertCircle',
-          label: 'Incomplete',
+          statusLabel: 'Incomplete',
           confidence: 'LOW' as const,
         };
       default:
         return {
-          bg: 'var(--color-bg-hover)',
-          border: 'var(--color-border)',
-          color: 'var(--color-text-muted)',
+          bg: '#f9fafb',
+          border: '#e5e7eb',
+          accent: '#6b7280',
           icon: 'info',
-          label: 'Unknown',
+          statusLabel: 'Unknown',
           confidence: 'LOW' as const,
         };
     }
   };
 
-  const pathwayStyle = getPathwayStyle();
+  const config = getPathwayConfig();
   const { consistencyIssues = [], pccpRecommendation } = determination;
 
-  // PCCP recommendation logic (matches original showPCCPRecommendation)
+  // PCCP recommendation logic
   const hasPCCP = answers.A2 === 'Yes';
   const isNewSub = determination.isNewSub;
   const selectedChangeType = (answers.B1 && answers.B2)
@@ -148,65 +147,57 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const showPCCPRecommendation = pccpRecommendation?.shouldRecommend && !hasPCCP && isNewSub
     && pccpEligibility && ['YES', 'CONDITIONAL'].includes(pccpEligibility);
 
-  // Section component
-  const Section = ({ 
+  // Collapsible section component
+  const CollapsibleSection = ({ 
     id, 
     title, 
-    icon, 
-    children, 
+    children,
     badge,
-    defaultOpen = true,
+    defaultOpen = false,
   }: { 
     id: string; 
     title: string; 
-    icon: string; 
-    children: React.ReactNode; 
+    children: React.ReactNode;
     badge?: React.ReactNode;
     defaultOpen?: boolean;
   }) => {
     const isExpanded = expandedSections.has(id);
     return (
       <div style={{
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--color-border)',
-        background: '#ffffff',
-        overflow: 'hidden',
-        marginBottom: 'var(--space-md)',
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
+        borderBottom: '1px solid #e5e7eb',
       }}>
         <button
           onClick={() => toggleSection(id)}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--space-md)',
+            gap: 12,
             width: '100%',
-            padding: 'var(--space-md) var(--space-lg)',
-            background: isExpanded ? '#f8fafc' : 'transparent',
-            borderBottom: isExpanded ? '1px solid var(--color-border)' : 'none',
+            padding: '16px 0',
+            background: 'transparent',
             textAlign: 'left',
             cursor: 'pointer',
-            transition: 'background var(--transition-fast)',
           }}
         >
-          <Icon name={icon} size={18} color="var(--color-text-secondary)" />
           <span style={{
             flex: 1,
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: 600,
-            color: 'var(--color-text)',
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
           }}>
             {title}
           </span>
           {badge}
           <Icon 
             name={isExpanded ? 'arrowUp' : 'arrowDown'} 
-            size={16} 
-            color="var(--color-text-muted)" 
+            size={14} 
+            color="#9ca3af" 
           />
         </button>
         {isExpanded && (
-          <div style={{ padding: 'var(--space-lg)' }} className="animate-fade-in">
+          <div style={{ paddingBottom: 24 }} className="animate-fade-in">
             {children}
           </div>
         )}
@@ -214,166 +205,173 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     );
   };
 
-  // Document list renderer
-  const DocList = ({ items, type }: { items: Array<{ doc: string; source: string }>; type: 'required' | 'recommended' | 'orgSpecific' }) => {
-    const colors = {
-      required: { bg: 'var(--color-danger-bg)', border: 'var(--color-danger-border)', dot: 'var(--color-danger)' },
-      recommended: { bg: 'var(--color-info-bg)', border: 'var(--color-info-border)', dot: 'var(--color-info)' },
-      orgSpecific: { bg: 'var(--color-bg-hover)', border: 'var(--color-border)', dot: 'var(--color-text-muted)' },
-    };
-    const style = colors[type];
-
-    return (
-      <ul style={{ 
-        margin: 0, 
-        padding: 0, 
-        listStyle: 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 'var(--space-sm)',
-      }}>
-        {items.map((item, i) => (
-          <li key={i} style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 'var(--space-sm)',
-            padding: 'var(--space-sm) var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: style.bg,
-            border: `1px solid ${style.border}`,
-          }}>
-            <span style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: style.dot,
-              flexShrink: 0,
-              marginTop: 6,
-            }} />
-            <div>
-              <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.5 }}>
-                {item.doc}
-              </div>
-              <div style={{ 
-                fontSize: 11, 
-                color: 'var(--color-text-muted)', 
-                marginTop: 2,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                flexWrap: 'wrap',
-              }}>
-                <GuidanceRef code={item.source} showSection={false} />
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    );
+  // Get primary next action
+  const getPrimaryAction = () => {
+    if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
+      return "Document rationale and file in device history record";
+    }
+    if (pathway === Pathway.ImplementPCCP) {
+      return "Execute PCCP validation protocol before implementation";
+    }
+    if (pathway === Pathway.NewSubmission) {
+      return "Prepare 510(k) or De Novo submission with updated device description";
+    }
+    if (pathway === Pathway.PMASupplementRequired) {
+      return "Determine supplement type and prepare submission package";
+    }
+    return "Complete remaining assessment questions to finalize determination";
   };
 
   return (
     <div className="animate-fade-in-up">
-      {/* Pathway Result Card */}
+      {/* ============================================
+          SECTION 1: HERO / TOP SUMMARY BAND
+          ============================================ */}
       <div style={{
-        padding: 'var(--space-xl)',
-        borderRadius: 'var(--radius-xl)',
-        background: pathwayStyle.bg,
-        border: `2px solid ${pathwayStyle.border}`,
-        marginBottom: 'var(--space-xl)',
-        textAlign: 'center',
+        background: config.bg,
+        border: `1px solid ${config.border}`,
+        borderRadius: 8,
+        padding: '28px 32px',
+        marginBottom: 24,
       }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: 56,
-          height: 56,
-          borderRadius: '50%',
-          background: pathwayStyle.color,
-          marginBottom: 'var(--space-md)',
-        }}>
-          <Icon name={pathwayStyle.icon} size={28} color="#fff" />
-        </div>
+        {/* Status row */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'var(--space-sm)',
-          marginBottom: 'var(--space-xs)',
+          gap: 10,
+          marginBottom: 8,
         }}>
           <span style={{
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 600,
-            color: pathwayStyle.color,
+            color: config.accent,
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
           }}>
-            {pathwayStyle.label}
+            {config.statusLabel}
           </span>
-          <ConfBadge level={pathwayStyle.confidence} />
+          <ConfBadge level={config.confidence} />
         </div>
-        <h2 style={{
+
+        {/* Primary determination */}
+        <h1 style={{
           fontSize: 24,
-          fontWeight: 700,
-          color: 'var(--color-text)',
-          margin: 0,
-          lineHeight: 1.3,
+          fontWeight: 600,
+          color: '#111827',
+          margin: '0 0 12px',
+          lineHeight: 1.2,
         }}>
           {pathway}
-        </h2>
+        </h1>
+
+        {/* Regulatory basis */}
         {docs?.basis && (
-          <div style={{
-            marginTop: 'var(--space-md)',
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.5,
+          <p style={{
+            fontSize: 13,
+            color: '#6b7280',
+            margin: '0 0 16px',
+            lineHeight: 1.6,
           }}>
-            <AuthorityTag level="final_guidance" />
-            <span style={{ marginLeft: 'var(--space-sm)' }}>
-              <HelpTextWithLinks text={docs.basis} />
-            </span>
-          </div>
+            <HelpTextWithLinks text={docs.basis} />
+          </p>
         )}
+
+        {/* Primary next action */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 10,
+          padding: '12px 16px',
+          background: 'rgba(255,255,255,0.7)',
+          borderRadius: 6,
+          marginBottom: 20,
+        }}>
+          <Icon name="arrow" size={14} color={config.accent} style={{ marginTop: 2 }} />
+          <div>
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              Next Step
+            </span>
+            <p style={{ fontSize: 13, color: '#111827', margin: '4px 0 0', fontWeight: 500 }}>
+              {getPrimaryAction()}
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 6,
+              background: '#111827',
+              border: 'none',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="fileText" size={14} color="#fff" />
+            Generate Report
+          </button>
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 18px',
+              borderRadius: 6,
+              background: '#ffffff',
+              border: '1px solid #e5e7eb',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <Icon name="download" size={14} color="#6b7280" />
+            Export
+          </button>
+        </div>
       </div>
 
-      {/* Consistency Issues */}
+      {/* ============================================
+          CONSISTENCY ISSUES (if any)
+          ============================================ */}
       {consistencyIssues.length > 0 && (
         <div style={{
-          padding: 'var(--space-lg)',
-          borderRadius: 'var(--radius-lg)',
-          background: 'var(--color-warning-bg)',
-          border: '1px solid var(--color-warning-border)',
-          marginBottom: 'var(--space-xl)',
+          padding: '16px 20px',
+          borderRadius: 6,
+          background: '#fffbeb',
+          border: '1px solid #fde68a',
+          marginBottom: 24,
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 'var(--space-sm)',
-            marginBottom: 'var(--space-md)',
+            gap: 8,
+            marginBottom: 10,
           }}>
-            <Icon name="alert" size={18} color="var(--color-warning)" />
-            <h3 style={{
-              fontSize: 14,
-              fontWeight: 600,
-              color: 'var(--color-warning)',
-              margin: 0,
-            }}>
-              Consistency Review Required ({consistencyIssues.length})
-            </h3>
+            <Icon name="alert" size={16} color="#d97706" />
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
+              Review Required ({consistencyIssues.length})
+            </span>
           </div>
           <ul style={{
             margin: 0,
-            paddingLeft: 'var(--space-lg)',
+            paddingLeft: 20,
             display: 'flex',
             flexDirection: 'column',
-            gap: 'var(--space-sm)',
+            gap: 6,
           }}>
             {consistencyIssues.map((issue: string, i: number) => (
               <li key={i} style={{
                 fontSize: 13,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.6,
+                color: '#78350f',
+                lineHeight: 1.5,
               }}>
                 <HelpTextWithLinks text={issue} />
               </li>
@@ -382,367 +380,354 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       )}
 
-      {/* PCCP Recommendation */}
-      {showPCCPRecommendation && (
-        <div data-testid="pccp-recommendation" style={{
-          padding: 'var(--space-lg)',
-          borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(135deg, #F0FAF5 0%, #FFFDF8 100%)',
-          border: '1px solid #C6E7D4',
-          marginBottom: 'var(--space-xl)',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            marginBottom: 'var(--space-sm)',
+      {/* ============================================
+          SECTION 2: KEY FACTS STRIP
+          ============================================ */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 1,
+        background: '#e5e7eb',
+        borderRadius: 6,
+        overflow: 'hidden',
+        marginBottom: 32,
+      }}>
+        {[
+          { label: 'Authorization', value: answers.A1 || 'Not specified' },
+          { label: 'PCCP Status', value: answers.A2 === 'Yes' ? 'Authorized' : 'None' },
+          { label: 'Intended Use Impact', value: answers.B3 || 'Not assessed' },
+          { label: 'Change Category', value: answers.B1 || 'Not specified' },
+        ].map((item, i) => (
+          <div key={i} style={{
+            padding: '14px 16px',
+            background: '#ffffff',
           }}>
-            <Icon name="info" size={14} color="var(--color-success)" />
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text)' }}>
-              PCCP Opportunity
-            </span>
+            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, letterSpacing: '0.02em' }}>
+              {item.label}
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+              {item.value}
+            </div>
           </div>
-          <p style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-            margin: '0 0 var(--space-sm)',
-          }}>
-            <strong style={{ color: 'var(--color-text)' }}>
-              {(answers.B2 as string) || 'This change type'}
-            </strong>{' '}
-            is {pccpEligibility === 'YES' ? 'eligible' : 'conditionally eligible'} for
-            future PCCP coverage. This does not change today's route, but it could
-            streamline future review cycles.
-          </p>
-          <p style={{
-            fontSize: 11,
-            color: 'var(--color-text-muted)',
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
-            Consider establishing a PCCP in the next submission.
-            See the Marketing Submission Recommendations for a PCCP for AI-Enabled
-            Device Software Functions Guidance (Dec 2024, reissued Aug 2025), Sections V–VIII.
-          </p>
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* Regulatory Reasoning */}
-      {ruleReasoning && (
-        <Section id="reasoning" title="Regulatory Reasoning" icon="book" defaultOpen={true}>
-          <div style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-hover)',
-            border: '1px solid var(--color-border)',
-            marginBottom: 'var(--space-md)',
-          }}>
-            <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.7 }}>
+      {/* ============================================
+          SECTION 3: MAIN CONTENT AREA
+          ============================================ */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '0 28px',
+        marginBottom: 24,
+      }}>
+        
+        {/* Regulatory Reasoning */}
+        {ruleReasoning && (
+          <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
+            <div style={{
+              fontSize: 14,
+              color: '#374151',
+              lineHeight: 1.7,
+              marginBottom: 16,
+            }}>
               <HelpTextWithLinks text={ruleReasoning.text} />
             </div>
-          </div>
-          
-          {ruleReasoning.verify && (
-            <Collapsible 
-              label="Verification Steps" 
-              icon="checkCircle" 
-              color="var(--color-success)"
-              defaultOpen={false}
-            >
-              <div style={{
-                padding: 'var(--space-md)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-success-bg)',
-                border: '1px solid var(--color-success-border)',
-                fontSize: 12,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.6,
-              }}>
-                <HelpTextWithLinks text={ruleReasoning.verify} />
+            
+            {(ruleReasoning.verify || ruleReasoning.counter) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16 }}>
+                {ruleReasoning.verify && (
+                  <details style={{
+                    background: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                  }}>
+                    <summary style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}>
+                      <Icon name="checkCircle" size={14} color="#16a34a" />
+                      Verification Steps
+                    </summary>
+                    <div style={{
+                      padding: '12px 14px',
+                      borderTop: '1px solid #e5e7eb',
+                      fontSize: 13,
+                      color: '#6b7280',
+                      lineHeight: 1.6,
+                    }}>
+                      <HelpTextWithLinks text={ruleReasoning.verify} />
+                    </div>
+                  </details>
+                )}
+                {ruleReasoning.counter && (
+                  <details style={{
+                    background: '#f9fafb',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 6,
+                    overflow: 'hidden',
+                  }}>
+                    <summary style={{
+                      padding: '10px 14px',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#374151',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}>
+                      <Icon name="alert" size={14} color="#d97706" />
+                      Counter-Considerations
+                    </summary>
+                    <div style={{
+                      padding: '12px 14px',
+                      borderTop: '1px solid #e5e7eb',
+                      fontSize: 13,
+                      color: '#6b7280',
+                      lineHeight: 1.6,
+                    }}>
+                      <HelpTextWithLinks text={ruleReasoning.counter} />
+                    </div>
+                  </details>
+                )}
               </div>
-            </Collapsible>
-          )}
-          
-          {ruleReasoning.counter && (
-            <Collapsible 
-              label="Counter-Considerations" 
-              icon="alert" 
-              color="var(--color-warning)"
-              defaultOpen={false}
-            >
+            )}
+            
+            {ruleReasoning.source && (
               <div style={{
-                padding: 'var(--space-md)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-warning-bg)',
-                border: '1px solid var(--color-warning-border)',
-                fontSize: 12,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.6,
-              }}>
-                <HelpTextWithLinks text={ruleReasoning.counter} />
-              </div>
-            </Collapsible>
-          )}
-          
-          {ruleReasoning.source && (
-            <div style={{
-              marginTop: 'var(--space-md)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              flexWrap: 'wrap',
-            }}>
-              <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Sources:</span>
-              <GuidanceRef code={ruleReasoning.source} />
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* Documentation Requirements */}
-      {docs && (
-        <Section id="documentation" title="Documentation Requirements" icon="fileText" defaultOpen={true}>
-          {docs.required && docs.required.length > 0 && (
-            <div style={{ marginBottom: 'var(--space-lg)' }}>
-              <div style={{
+                marginTop: 16,
+                paddingTop: 12,
+                borderTop: '1px solid #f3f4f6',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 'var(--space-sm)',
-                marginBottom: 'var(--space-sm)',
+                gap: 8,
               }}>
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--color-danger)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.03em',
-                }}>
-                  Required
-                </span>
+                <span style={{ fontSize: 11, color: '#9ca3af' }}>Source:</span>
+                <GuidanceRef code={ruleReasoning.source} />
+              </div>
+            )}
+          </CollapsibleSection>
+        )}
+
+        {/* Documentation Requirements */}
+        {docs && (
+          <CollapsibleSection 
+            id="documentation" 
+            title="Documentation Requirements"
+            badge={
+              docs.required?.length ? (
                 <span style={{
                   fontSize: 10,
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-danger-bg)',
-                  color: 'var(--color-danger)',
-                  border: '1px solid var(--color-danger-border)',
-                }}>
-                  {docs.required.length}
-                </span>
-              </div>
-              <DocList items={docs.required} type="required" />
-            </div>
-          )}
-          
-          {docs.recommended && docs.recommended.length > 0 && (
-            <div style={{ marginBottom: 'var(--space-lg)' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                marginBottom: 'var(--space-sm)',
-              }}>
-                <span style={{
-                  fontSize: 12,
                   fontWeight: 600,
-                  color: 'var(--color-info)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.03em',
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  background: '#fef2f2',
+                  color: '#dc2626',
                 }}>
+                  {docs.required.length} Required
+                </span>
+              ) : undefined
+            }
+          >
+            {docs.required && docs.required.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#dc2626', marginBottom: 10 }}>
+                  Required Documentation
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {docs.required.map((item: { doc: string; source: string }, i: number) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '10px 12px',
+                      background: '#fef2f2',
+                      borderRadius: 4,
+                    }}>
+                      <div style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 4,
+                        border: '1.5px solid #fca5a5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: 1,
+                      }} />
+                      <div>
+                        <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>
+                          <GuidanceRef code={item.source} showSection={false} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {docs.recommended && docs.recommended.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 10 }}>
                   Recommended
-                </span>
-                <span style={{
-                  fontSize: 10,
-                  padding: '2px 6px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-info-bg)',
-                  color: 'var(--color-info)',
-                  border: '1px solid var(--color-info-border)',
-                }}>
-                  {docs.recommended.length}
-                </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {docs.recommended.map((item: { doc: string; source: string }, i: number) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '8px 12px',
+                      background: '#eff6ff',
+                      borderRadius: 4,
+                    }}>
+                      <Icon name="check" size={14} color="#3b82f6" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <DocList items={docs.recommended} type="recommended" />
-            </div>
-          )}
-          
-          {docs.orgSpecific && docs.orgSpecific.length > 0 && (
-            <div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                marginBottom: 'var(--space-sm)',
-              }}>
-                <span style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: 'var(--color-text-muted)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.03em',
-                }}>
+            )}
+            
+            {docs.orgSpecific && docs.orgSpecific.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 10 }}>
                   Organization-Specific
-                </span>
-                <AuthorityTag level="internal_policy" compact />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {docs.orgSpecific.map((item: { doc: string; source: string }, i: number) => (
+                    <div key={i} style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      padding: '8px 12px',
+                      background: '#f9fafb',
+                      borderRadius: 4,
+                    }}>
+                      <Icon name="info" size={14} color="#9ca3af" style={{ marginTop: 2, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.doc}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <DocList items={docs.orgSpecific} type="orgSpecific" />
-            </div>
-          )}
-          {docs.scopeNote && (
-            <div style={{
-              marginTop: 'var(--space-md)',
-              padding: 'var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-bg)',
-              border: '1px solid var(--color-warning-border)',
-              fontSize: 12,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.6,
+            )}
+
+            {docs.scopeNote && (
+              <div style={{
+                marginTop: 16,
+                padding: '10px 12px',
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderRadius: 4,
+                fontSize: 12,
+                color: '#92400e',
+                lineHeight: 1.5,
+              }}>
+                <strong>Note: </strong>
+                <HelpTextWithLinks text={docs.scopeNote} />
+              </div>
+            )}
+          </CollapsibleSection>
+        )}
+
+        {/* PCCP Recommendation */}
+        {showPCCPRecommendation && (
+          <CollapsibleSection id="pccp-rec" title="PCCP Opportunity">
+            <div data-testid="pccp-recommendation" style={{
+              padding: '14px 16px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              borderRadius: 6,
             }}>
-              <strong style={{ color: 'var(--color-warning)' }}>Scope limitation: </strong>
-              <HelpTextWithLinks text={docs.scopeNote} />
+              <p style={{
+                fontSize: 13,
+                color: '#166534',
+                lineHeight: 1.6,
+                margin: 0,
+              }}>
+                <strong>{(answers.B2 as string) || 'This change type'}</strong>{' '}
+                is {pccpEligibility === 'YES' ? 'eligible' : 'conditionally eligible'} for
+                future PCCP coverage. Consider establishing a PCCP in the next submission to streamline future review cycles.
+              </p>
             </div>
-          )}
-        </Section>
-      )}
+          </CollapsibleSection>
+        )}
 
-      {/* Glossary */}
-      <Section id="glossary" title="Regulatory Glossary" icon="book" defaultOpen={false}>
-        <GlossaryPanel />
-      </Section>
-
-      {/* Quick Summary */}
-      <Section id="summary" title="Assessment Summary" icon="layers">
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'var(--space-md)',
-        }}>
-          <div style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-hover)',
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-              Authorization
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-              {answers.A1 || 'Not specified'}
-            </div>
-          </div>
-          <div style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-hover)',
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-              PCCP Status
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-              {answers.A2 === 'Yes' ? 'Has PCCP' : 'No PCCP'}
-            </div>
-          </div>
-          <div style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-hover)',
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-              Intended Use Impact
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-              {answers.B3 || 'Not assessed'}
-            </div>
-          </div>
-          <div style={{
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-bg-hover)',
-          }}>
-            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
-              Change Category
-            </div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)' }}>
-              {answers.B1 || 'Not specified'}
-            </div>
-          </div>
-        </div>
-
-        {/* Key flags */}
-        <div style={{ marginTop: 'var(--space-lg)' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 'var(--space-sm)' }}>
-            Determination Flags
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
+        {/* Determination Flags */}
+        <CollapsibleSection id="flags" title="Assessment Flags">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {determination.isIntendedUseChange && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-danger-bg)',
-                color: 'var(--color-danger)',
-                border: '1px solid var(--color-danger-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#fef2f2',
+                color: '#991b1b',
               }}>
                 Intended Use Change
               </span>
             )}
             {determination.isSignificant && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-warning-bg)',
-                color: 'var(--color-warning)',
-                border: '1px solid var(--color-warning-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#fffbeb',
+                color: '#92400e',
               }}>
                 Significant Change
               </span>
             )}
             {determination.pccpScopeVerified && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-success-bg)',
-                color: 'var(--color-success)',
-                border: '1px solid var(--color-success-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#f0fdf4',
+                color: '#166534',
               }}>
-                PCCP Scope Verified
+                PCCP Verified
               </span>
             )}
             {determination.isCyberOnly && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#eff6ff',
+                color: '#1e40af',
               }}>
                 Cybersecurity Only
               </span>
             )}
             {determination.isBugFix && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#eff6ff',
+                color: '#1e40af',
               }}>
-                Bug Fix Only
+                Bug Fix
               </span>
             )}
             {determination.genAIHighImpactChange && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-warning-bg)',
-                color: 'var(--color-warning)',
-                border: '1px solid var(--color-warning-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#fffbeb',
+                color: '#92400e',
               }}>
                 GenAI High Impact
               </span>
@@ -750,156 +735,159 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             {!determination.isIntendedUseChange && !determination.isSignificant && !determination.pccpScopeVerified && 
              !determination.isCyberOnly && !determination.isBugFix && !determination.genAIHighImpactChange && (
               <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-bg-hover)',
-                color: 'var(--color-text-muted)',
-                border: '1px solid var(--color-border)',
+                fontSize: 12,
+                padding: '6px 12px',
+                borderRadius: 4,
+                background: '#f9fafb',
+                color: '#6b7280',
               }}>
                 No special flags
               </span>
             )}
           </div>
+        </CollapsibleSection>
+
+        {/* Glossary */}
+        <CollapsibleSection id="glossary" title="Regulatory Glossary">
+          <GlossaryPanel />
+        </CollapsibleSection>
+      </div>
+
+      {/* ============================================
+          SECTION 4: DETAILED RESPONSES (COLLAPSED)
+          ============================================ */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '0 28px',
+        marginBottom: 24,
+      }}>
+        <div style={{
+          padding: '16px 0',
+          borderBottom: '1px solid #e5e7eb',
+        }}>
+          <span style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}>
+            Response Details
+          </span>
         </div>
-      </Section>
 
-      {/* Answers by Block */}
-      {blocks.filter(b => b.id !== 'review').map((block, blockIndex) => {
-        const questions = getQuestionsForBlock(block.id);
-        const answeredQuestions = questions.filter(q => 
-          !q.sectionDivider && !q.skip && answers[q.id] !== undefined && answers[q.id] !== ''
-        );
+        {blocks.filter(b => b.id !== 'review').map((block, blockIndex) => {
+          const questions = getQuestionsForBlock(block.id);
+          const answeredQuestions = questions.filter(q => 
+            !q.sectionDivider && !q.skip && answers[q.id] !== undefined && answers[q.id] !== ''
+          );
 
-        if (answeredQuestions.length === 0) return null;
+          if (answeredQuestions.length === 0) return null;
 
-        return (
-          <Section 
-            key={block.id} 
-            id={block.id} 
-            title={block.shortLabel} 
-            icon={block.icon}
-            badge={
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEditBlock(blockIndex);
-                }}
-                style={{
-                  fontSize: 11,
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-primary-muted)',
-                  color: 'var(--color-primary)',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                Edit
-              </button>
-            }
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              {answeredQuestions.map((q) => {
-                const qReasoning = questionReasoningLibrary[q.id];
-                return (
-                  <div key={q.id} style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                    paddingBottom: 'var(--space-md)',
-                    borderBottom: '1px solid var(--color-border-subtle)',
-                  }}>
-                    <div style={{
+          return (
+            <CollapsibleSection 
+              key={block.id} 
+              id={`block-${block.id}`} 
+              title={block.shortLabel}
+              badge={
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditBlock(blockIndex);
+                  }}
+                  style={{
+                    fontSize: 11,
+                    padding: '4px 10px',
+                    borderRadius: 4,
+                    background: '#f3f4f6',
+                    color: '#4b5563',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Edit
+                </button>
+              }
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {answeredQuestions.map((q) => {
+                  const qReasoning = questionReasoningLibrary[q.id];
+                  return (
+                    <div key={q.id} style={{
                       display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 'var(--space-sm)',
+                      gap: 12,
+                      padding: '10px 0',
+                      borderBottom: '1px solid #f3f4f6',
                     }}>
                       <span style={{
                         fontSize: 10,
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-mono)',
-                        color: 'var(--color-text-muted)',
+                        fontWeight: 600,
+                        fontFamily: 'monospace',
+                        color: '#9ca3af',
                         padding: '2px 6px',
-                        background: 'var(--color-bg-hover)',
-                        borderRadius: 'var(--radius-sm)',
+                        background: '#f9fafb',
+                        borderRadius: 4,
+                        height: 'fit-content',
                       }}>
                         {q.id}
                       </span>
-                      {qReasoning?.status && (
-                        <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />
-                      )}
-                      <span style={{
-                        fontSize: 13,
-                        color: 'var(--color-text-secondary)',
-                        lineHeight: 1.5,
-                        flex: 1,
-                      }}>
-                        {q.q}
-                      </span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          fontSize: 13,
+                          color: '#6b7280',
+                          lineHeight: 1.5,
+                          marginBottom: 4,
+                        }}>
+                          {q.q}
+                        </div>
+                        <div style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: '#111827',
+                        }}>
+                          {Array.isArray(answers[q.id]) 
+                            ? answers[q.id].join(', ') 
+                            : String(answers[q.id])}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: 'var(--color-text)',
-                      marginLeft: 40,
-                    }}>
-                      {Array.isArray(answers[q.id]) 
-                        ? answers[q.id].join(', ') 
-                        : String(answers[q.id])}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Section>
-        );
-      })}
+                  );
+                })}
+              </div>
+            </CollapsibleSection>
+          );
+        })}
+      </div>
 
-      {/* Disclaimer */}
+      {/* ============================================
+          FOOTER DISCLAIMER
+          ============================================ */}
       <div style={{
-        padding: 'var(--space-lg)',
-        borderRadius: 'var(--radius-lg)',
-        background: 'var(--color-warning-bg)',
-        border: '1px solid var(--color-warning-border)',
-        marginTop: 'var(--space-xl)',
+        padding: '14px 18px',
+        background: '#f9fafb',
+        border: '1px solid #e5e7eb',
+        borderRadius: 6,
       }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 'var(--space-md)',
+        <p style={{
+          fontSize: 12,
+          color: '#6b7280',
+          lineHeight: 1.6,
+          margin: 0,
         }}>
-          <Icon name="alert" size={20} color="var(--color-warning)" className="flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--color-warning)',
-              margin: '0 0 var(--space-sm) 0',
-            }}>
-              Disclaimer
-            </h4>
-            <p style={{
-              fontSize: 12,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.6,
-              margin: 0,
-            }}>
-              <strong>Intended for:</strong> Internal change-control, RA review initiation, and submission planning.{' '}
-              <strong>Not intended for:</strong> Formal regulatory judgment, legal advice, or citation in submissions.{' '}
-              U.S.-primary assessment using FDA software change framework and PCCP scope verification. 
-              Non-U.S. jurisdictions are covered by escalation cues only, not full determinations.
-            </p>
-            <p style={{
-              fontSize: 11,
-              fontFamily: 'var(--font-mono)',
-              color: 'var(--color-text-muted)',
-              margin: 'var(--space-sm) 0 0 0',
-            }}>
-              v1 | Sources last reviewed Mar 2026 — verify current status at fda.gov before relying on this assessment | Primary: US (FDA) | Follow-up cues: EU, UK, CA, JP, CN
-            </p>
-          </div>
-        </div>
+          <strong style={{ color: '#374151' }}>Advisory use only.</strong>{' '}
+          For internal change-control and submission planning. Not for formal regulatory judgment or legal advice.
+          U.S.-primary assessment. Non-U.S. markets covered by escalation cues only.
+        </p>
+        <p style={{
+          fontSize: 11,
+          fontFamily: 'monospace',
+          color: '#9ca3af',
+          margin: '8px 0 0',
+        }}>
+          v1 | Sources reviewed Mar 2026 | Primary: US (FDA) | Follow-up: EU, UK, CA, JP, CN
+        </p>
       </div>
       {/* Feedback CTA */}
       {onFeedback && (
