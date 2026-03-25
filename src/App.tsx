@@ -468,7 +468,7 @@ export const App: React.FC = () => {
           const pccpStatus = selType?.pccp;
           const pccpNote = selType?.pccpNote;
           if (!selType || !pccpStatus) return null;
-          const isEligible = pccpStatus === 'YES' || pccpStatus === 'EXEMPT';
+          const isEligible = pccpStatus === 'TYPICAL' || pccpStatus === 'EXEMPT';
           const isConditional = pccpStatus === 'CONDITIONAL';
           return (
             <div style={{
@@ -494,11 +494,11 @@ export const App: React.FC = () => {
                   color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
                 }}>
                   Change-type fit for {`"${answers.B2 as string}"`}:{' '}
-                  {pccpStatus === 'YES' ? 'Generally eligible for PCCP'
+                  {pccpStatus === 'TYPICAL' ? 'Generally suitable change type for PCCP — verify against authorized scope'
                     : pccpStatus === 'EXEMPT' ? 'Exempt — no submission needed'
-                    : pccpStatus === 'CONDITIONAL' ? 'Conditionally eligible — verify boundaries'
-                    : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit within PCCP scope'
-                    : 'Outside PCCP scope'}
+                    : pccpStatus === 'CONDITIONAL' ? 'May be suitable for PCCP — depends on scope and boundaries'
+                    : pccpStatus === 'UNLIKELY' ? 'Rarely suitable for PCCP coverage'
+                    : 'Outside PCCP scope per guidance'}
                 </span>
                 {pccpNote && (
                   <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>

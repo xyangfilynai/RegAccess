@@ -484,6 +484,40 @@ describe('Cumulative escalation + SE supportable', () => {
   });
 });
 
+describe('Cumulative drift uncertainty routing (Issue #1 fix)', () => {
+  it('C10=Uncertain must NOT route to Letter to File — routes to Assessment Incomplete', () => {
+    const det = computeDetermination(base510k({
+      A8: '3',
+      C10: Answer.Uncertain,
+    }));
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+    expect(det.cumulativeEscalation).toBe(true);
+    expect(det.cumulativeDriftUnresolved).toBe(true);
+    expect(det.isDocOnly).toBe(false);
+  });
+
+  it('De Novo C10=Yes (C11 never shown) must NOT route to Letter to File', () => {
+    const det = computeDetermination(baseDeNovo({
+      A8: '3',
+      C10: Answer.Yes,
+    }));
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+    expect(det.cumulativeEscalation).toBe(true);
+    expect(det.cumulativeDriftUnresolved).toBe(true);
+    expect(det.isDocOnly).toBe(false);
+  });
+
+  it('De Novo C10=Uncertain also routes to Assessment Incomplete', () => {
+    const det = computeDetermination(baseDeNovo({
+      A8: '3',
+      C10: Answer.Uncertain,
+    }));
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+    expect(det.cumulativeEscalation).toBe(true);
+    expect(det.cumulativeDriftUnresolved).toBe(true);
+  });
+});
+
 describe('GenAI consistency cross-checks', () => {
   it('D1=Yes (base model swap) + all significance=No produces consistency warnings', () => {
     const det = computeDetermination(base510k({ D1: Answer.Yes }));

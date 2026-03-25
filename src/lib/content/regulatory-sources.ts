@@ -89,7 +89,8 @@ export const getSourceBadge = (code: string | null | undefined) => {
   if (/^FDA/.test(c)) return { full: c, status: "Final Guidance", jurisdiction: "US" };
   if (/^Best practice$/i.test(c)) return { full: c, status: "Best Practice", jurisdiction: "" };
   if (/^QMSR/.test(c)) return { full: c, status: "Regulation", jurisdiction: "US" };
-  if (/Internal|internal|reassessment|Organization/i.test(c)) return { full: c, status: "Best Practice", jurisdiction: "" };
+  if (/Organization policy/i.test(c)) return { full: c, status: "Internal Policy", jurisdiction: "" };
+  if (/Internal|internal|reassessment/i.test(c)) return { full: c, status: "Internal Policy", jurisdiction: "" };
   if (/Deciding When to Submit/i.test(c) || /Applied by analogy/i.test(c)) return { full: c, status: "Final Guidance", jurisdiction: "US" };
   if (/Marketing Submission|PCCP for AI/i.test(c)) return { full: c, status: "Final Guidance", jurisdiction: "US" };
   if (/Cybersecurity in Medical/i.test(c)) return { full: c, status: "Final Guidance", jurisdiction: "US" };
@@ -106,6 +107,7 @@ export const statusBadgeStyle = (status: string | null | undefined) => {
   if (s === "standard") return { bg: "#F0F0FF", color: "#6B5CE7", border: "#D8D5F0" };
   if (s === "draft guidance") return { bg: "#FEF7E0", color: "#B8860B", border: "#F5E6B8" };
   if (s === "best practice") return { bg: "#F8F6F1", color: "#64748B", border: "#E2DED5" };
+  if (s === "internal policy") return { bg: "#F1F0F8", color: "#7C6FA0", border: "#DDD8EE" };
   return { bg: "#E7F5EE", color: "#1B7D56", border: "#C6E7D4" }; // Final Guidance (default)
 };
 
@@ -115,5 +117,6 @@ export const statusBadgeLabel = (status: string | null | undefined) => {
   if (s === "standard") return "STANDARD";
   if (s === "draft guidance") return "DRAFT GUIDANCE";
   if (s === "best practice") return "BEST PRACTICE";
+  if (s === "internal policy") return "INTERNAL POLICY";
   return "FINAL GUIDANCE";
 };

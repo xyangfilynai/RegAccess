@@ -87,16 +87,20 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
   // Pathway styling
   const getPathwayConfig = () => {
+    const hasIssues = determination.consistencyIssues?.length > 0;
+    const hasUncertainty = determination.hasUncertainSignificance || determination.seUncertain || determination.cumulativeDriftUnresolved;
+    // Confidence drops for consistency issues OR unresolved uncertainty driving the determination
+    const baseConfidence = (hasIssues || hasUncertainty) ? 'MODERATE' as const : 'HIGH' as const;
     switch (pathway) {
       case Pathway.LetterToFile:
       case Pathway.PMAAnnualReport:
         return {
-          bg: '#f0fdf4',
-          border: '#bbf7d0',
-          accent: '#16a34a',
-          icon: 'checkCircle',
-          statusLabel: 'Documentation Only',
-          confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
+          bg: hasIssues ? '#fffbeb' : '#f0fdf4',
+          border: hasIssues ? '#fde68a' : '#bbf7d0',
+          accent: hasIssues ? '#d97706' : '#16a34a',
+          icon: hasIssues ? 'alertCircle' : 'checkCircle',
+          statusLabel: hasIssues ? 'Documentation Only — Preliminary (Review Required)' : 'Documentation Only',
+          confidence: baseConfidence,
         };
       case Pathway.ImplementPCCP:
         return {
@@ -105,7 +109,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           accent: '#2563eb',
           icon: 'checkCircle',
           statusLabel: 'PCCP Implementation',
-          confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
+          confidence: baseConfidence,
         };
       case Pathway.NewSubmission:
       case Pathway.PMASupplementRequired:
@@ -114,8 +118,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           border: '#fecaca',
           accent: '#dc2626',
           icon: 'alert',
-          statusLabel: 'Submission Required',
-          confidence: determination.consistencyIssues?.length > 0 ? 'MODERATE' as const : 'HIGH' as const,
+          statusLabel: hasUncertainty ? 'Submission Required (Uncertainty-Driven — Internal Conservative Policy)' : 'Submission Required',
+          confidence: baseConfidence,
         };
       case Pathway.AssessmentIncomplete:
         return {
@@ -123,7 +127,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           border: '#fde68a',
           accent: '#d97706',
           icon: 'alertCircle',
-          statusLabel: 'Incomplete',
+          statusLabel: 'Assessment Incomplete — Not Reliance-Ready',
           confidence: 'LOW' as const,
         };
       default:
@@ -149,7 +153,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     : null;
   const pccpEligibility = selectedChangeType?.pccp;
   const showPCCPRecommendation = pccpRecommendation?.shouldRecommend && !hasPCCP && isNewSub
-    && pccpEligibility && ['YES', 'CONDITIONAL'].includes(pccpEligibility);
+    && pccpEligibility && ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility);
 
   // Collapsible section component
   const CollapsibleSection = ({ 
@@ -272,10 +276,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </span>
           <span title={
             config.confidence === 'HIGH'
-              ? 'No internal consistency issues detected. All pathway-critical questions answered without contradictions. This reflects internal consistency only — expert review is still required.'
+              ? 'No internal consistency issues detected. All pathway-critical questions answered without contradictions. This reflects internal consistency only — expert review is still required before treating as a regulatory conclusion.'
               : config.confidence === 'MODERATE'
-                ? 'Internal consistency issues detected — review the flagged items below before relying on this determination.'
-                : 'Assessment is incomplete — one or more critical questions remain unresolved.'
+                ? 'PRELIMINARY — consistency issues or unresolved uncertainty detected. Do not treat this as a final regulatory determination. Review the flagged items below and resolve before relying on this assessment.'
+                : 'ASSESSMENT INCOMPLETE — one or more critical questions remain unresolved. This output is not reliance-ready and does not constitute a regulatory conclusion. Expert review required.'
           }>
             <ConfBadge level={config.confidence} />
           </span>
@@ -667,7 +671,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 margin: 0,
               }}>
                 <strong>{(answers.B2 as string) || 'This change type'}</strong>{' '}
-                is {pccpEligibility === 'YES' ? 'eligible' : 'conditionally eligible'} for
+                is {pccpEligibility === 'TYPICAL' ? 'generally a suitable change type' : 'conditionally suitable'} for
                 future PCCP coverage. Including a PCCP in the upcoming submission could enable future similar changes without additional submissions.
               </p>
               {pccpEligibility === 'CONDITIONAL' && selectedChangeType?.pccpNote && (
@@ -928,8 +932,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           style={{
             padding: 'var(--space-lg)',
             borderRadius: 'var(--radius-lg)',
-            background: 'var(--color-success-bg)',
-            border: '1px solid var(--color-success-border)',
+            background: consistencyIssues.length > 0 ? 'var(--color-warning-bg)' : 'var(--color-success-bg)',
+            border: `1px solid ${consistencyIssues.length > 0 ? 'var(--color-warning-border)' : 'var(--color-success-border)'}`,
             marginTop: 'var(--space-lg)',
             display: 'flex',
             alignItems: 'center',
@@ -945,7 +949,9 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               color: 'var(--color-text)',
               margin: '0 0 var(--space-xs)',
             }}>
-              Ready to prepare documentation?
+              {consistencyIssues.length > 0
+                ? 'Preliminary — resolve flagged issues before relying on this determination'
+                : 'Ready to prepare documentation?'}
             </h4>
             <p style={{
               fontSize: 13,
@@ -953,7 +959,9 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               lineHeight: 1.5,
               margin: 0,
             }}>
-              Open a step-by-step preparation workflow for the determined pathway.
+              {consistencyIssues.length > 0
+                ? 'This assessment has unresolved items that require expert review. The preparation checklist is available but should not be treated as a final regulatory conclusion.'
+                : 'Open a step-by-step preparation workflow for the determined pathway.'}
             </p>
           </div>
           <button

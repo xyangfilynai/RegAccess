@@ -34,12 +34,24 @@ export const computeDetermination = (ans: Answers) => {
     ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No &&
     ans.C10 === Answer.Yes && ![Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C11);
 
+  // Cumulative drift with unresolved uncertainty must not fall through to doc-only.
+  // C10=Uncertain: drift question itself is unresolved → incomplete.
+  // C10=Yes, De Novo (C11 never shown): drift confirmed but no SE resolution mechanism → incomplete.
+  // C10=Yes, 510k, C11 pending: already handled by _needsCumulativeSEQuestion.
+  // C10=Yes, C11=No: _seNotSupportable makes _isSignificant=true → New Submission (not affected here).
+  // C10=Yes, C11=Yes: SE supportable → Letter to File with consistency warning is acceptable.
+  const _cumulativeDriftUnresolved = _cumulativeEscalation && _allSignificanceNo && !_seNotSupportable && (
+    ans.C10 === Answer.Uncertain ||
+    ![Answer.Yes, Answer.No].includes(ans.C11)
+  );
+
   const _significanceIncomplete = !_isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain &&
     !_isCyberOnly && !_isBugFix && (
       (!_baseSignificant && !_allSignificanceNo) ||
       _deNovoDeviceTypeFitUncertain ||
       _seUncertain ||
-      _needsCumulativeSEQuestion
+      _needsCumulativeSEQuestion ||
+      _cumulativeDriftUnresolved
     );
 
   const _genAIHighImpactChange = !_isPMA && (ans.D1 === Answer.Yes || ans.D4 === Answer.Yes);
@@ -80,6 +92,12 @@ export const computeDetermination = (ans: Answers) => {
   }
   if (_baselineIncomplete && !_isCyberOnly && !_isBugFix) {
     _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
+  }
+  if (_hasUncertainSignificance && _baseSignificant && !_isIntendedUseChange && !_isIntendedUseUncertain) {
+    _consistencyIssues.push("One or more significance questions were answered 'Uncertain.' This tool's internal conservative policy treats unresolved significance uncertainty as requiring a submission — this is NOT a direct regulatory requirement but a risk-based escalation rule. Resolve the uncertainty through additional evidence, expert review, or FDA Pre-Submission before treating the pathway as final.");
+  }
+  if (_isPMA && ans.C_PMA1 === Answer.Uncertain) {
+    _consistencyIssues.push("The PMA safety/effectiveness question was answered 'Uncertain.' This tool's internal conservative policy treats unresolved PMA uncertainty as requiring a supplement — this is NOT a direct regulatory mandate but a risk-based escalation. Resolve the uncertainty before treating the pathway as final.");
   }
   const _isSignificant = _baseSignificant || _seNotSupportable;
 
@@ -155,6 +173,7 @@ export const computeDetermination = (ans: Answers) => {
     deNovoDeviceTypeFitFailed: _deNovoDeviceTypeFitFailed,
     baselineIncomplete: _baselineIncomplete,
     pmaRequiresSupplement: _pmaRequiresSupplement, pmaIncomplete: _pmaIncomplete,
+    cumulativeDriftUnresolved: _cumulativeDriftUnresolved,
     pccpScopeVerified: _pccpScopeVerified, pccpScopeFailed: _pccpScopeFailed, pccpIncomplete: _pccpIncomplete,
     pccpRecommendation: _pccpRecommendation,
   };

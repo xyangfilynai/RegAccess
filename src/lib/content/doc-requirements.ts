@@ -16,7 +16,7 @@ export const Binding = Object.freeze({
 });
 
 export const PCCPElig = Object.freeze({
-  Yes: "YES", No: "NO", Conditional: "CONDITIONAL", Unlikely: "UNLIKELY", Exempt: "EXEMPT",
+  Typical: "TYPICAL", No: "NO", Conditional: "CONDITIONAL", Unlikely: "UNLIKELY", Exempt: "EXEMPT",
 });
 
 const _docModules: Record<string, any> = {
