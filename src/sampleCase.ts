@@ -39,5 +39,3 @@ export const SAMPLE_CASE: Answers = {
   E4: "No",
   E5: "No",
 };
-
-export const SAMPLE_CASE_NOTE = "Synthetic example for review only \u2014 not based on a specific marketed device.";
