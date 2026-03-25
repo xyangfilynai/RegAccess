@@ -102,35 +102,23 @@ export const App: React.FC = () => {
   // Compute determination
   const determination = useMemo(() => computeDetermination(answers), [answers]);
 
-  // Calculate answered counts per block
-  const answeredCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  // Calculate answered and total question counts per block in a single pass
+  const { answeredCounts, totalCounts } = useMemo(() => {
+    const answered: Record<string, number> = {};
+    const total: Record<string, number> = {};
     blocks.forEach(block => {
       if (block.id === 'review') {
-        counts[block.id] = 0;
+        answered[block.id] = 0;
+        total[block.id] = 0;
         return;
       }
       const questions = getQuestionsForBlock(block.id);
-      counts[block.id] = questions.filter(q =>
-        !q.sectionDivider && !q.skip && isAnsweredValue(answers[q.id])
-      ).length;
+      const visible = questions.filter(q => !q.sectionDivider && !q.skip);
+      total[block.id] = visible.length;
+      answered[block.id] = visible.filter(q => isAnsweredValue(answers[q.id])).length;
     });
-    return counts;
+    return { answeredCounts: answered, totalCounts: total };
   }, [blocks, answers, getQuestionsForBlock]);
-
-  // Calculate total questions per block
-  const totalCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    blocks.forEach(block => {
-      if (block.id === 'review') {
-        counts[block.id] = 0;
-        return;
-      }
-      const questions = getQuestionsForBlock(block.id);
-      counts[block.id] = questions.filter(q => !q.sectionDivider && !q.skip).length;
-    });
-    return counts;
-  }, [blocks, getQuestionsForBlock]);
 
   // Track completed blocks
   const completedBlocks = useMemo(() => {

@@ -5,6 +5,42 @@ import type { Question } from '../lib/assessment-engine';
 import { Answer } from '../lib/assessment-engine';
 import { questionReasoningLibrary } from '../lib/content';
 
+/** Reusable note box for contextual information (guidance, warnings, info notes). */
+const NoteBox: React.FC<{
+  variant: 'info' | 'warning' | 'success' | 'neutral';
+  icon?: string;
+  label?: string;
+  children: React.ReactNode;
+}> = ({ variant, icon, label, children }) => {
+  const variantMap = {
+    info:    { bg: 'var(--color-info-bg)',    border: 'var(--color-info-border)',    color: 'var(--color-info)' },
+    warning: { bg: 'var(--color-warning-bg)', border: 'var(--color-warning-border)', color: 'var(--color-warning)' },
+    success: { bg: 'var(--color-success-bg)', border: 'var(--color-success-border)', color: 'var(--color-success)' },
+    neutral: { bg: 'var(--color-bg-hover)',   border: 'var(--color-border)',          color: 'var(--color-text-secondary)' },
+  };
+  const v = variantMap[variant];
+  return (
+    <div style={{
+      padding: 'var(--space-md)',
+      borderRadius: 'var(--radius-md)',
+      background: v.bg,
+      border: `1px solid ${v.border}`,
+      marginBottom: 'var(--space-md)',
+      display: icon ? 'flex' : 'block',
+      gap: 'var(--space-sm)',
+      fontSize: 12,
+      color: 'var(--color-text-secondary)',
+      lineHeight: 1.6,
+    }}>
+      {icon && <Icon name={icon} size={16} color={v.color} style={{ flexShrink: 0, marginTop: 2 }} />}
+      <div>
+        {label && <><strong style={{ color: v.color }}>{label}:</strong>{' '}</>}
+        {children}
+      </div>
+    </div>
+  );
+};
+
 interface QuestionCardProps {
   question: Question;
   value: any;
@@ -95,41 +131,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const renderInput = () => {
     switch (question.type) {
       case 'yesno':
+      case 'yesnouncertain': {
+        const options = question.type === 'yesno'
+          ? [Answer.Yes, Answer.No]
+          : [Answer.Yes, Answer.No, Answer.Uncertain];
         return (
           <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-            {[Answer.Yes, Answer.No].map((opt) => (
-              <button
-                key={opt}
-                onClick={() => onChange(opt)}
-                style={{
-                  flex: 1,
-                  padding: 'var(--space-md)',
-                  borderRadius: 'var(--radius-md)',
-                  border: value === opt 
-                    ? '2px solid var(--color-primary)' 
-                    : '1px solid var(--color-border)',
-                  background: value === opt 
-                    ? 'var(--color-primary-muted)' 
-                    : 'var(--color-bg-card)',
-                  color: value === opt 
-                    ? 'var(--color-primary)' 
-                    : 'var(--color-text)',
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)',
-                }}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
-        );
-
-      case 'yesnouncertain':
-        return (
-          <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-            {[Answer.Yes, Answer.No, Answer.Uncertain].map((opt) => (
+            {options.map((opt) => (
               <button
                 key={opt}
                 onClick={() => onChange(opt)}
@@ -138,14 +146,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   flex: 1,
                   padding: 'var(--space-md)',
                   borderRadius: 'var(--radius-md)',
-                  border: value === opt 
-                    ? '2px solid var(--color-primary)' 
+                  border: value === opt
+                    ? '2px solid var(--color-primary)'
                     : '1px solid var(--color-border)',
-                  background: value === opt 
-                    ? 'var(--color-primary-muted)' 
+                  background: value === opt
+                    ? 'var(--color-primary-muted)'
                     : 'var(--color-bg-card)',
-                  color: value === opt 
-                    ? 'var(--color-primary)' 
+                  color: value === opt
+                    ? 'var(--color-primary)'
                     : 'var(--color-text)',
                   fontWeight: 600,
                   fontSize: 14,
@@ -159,6 +167,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             ))}
           </div>
         );
+      }
 
       case 'single':
         return (
@@ -638,101 +647,37 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {/* ML Guidance */}
       {question.mlguidance && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-info-bg)',
-          border: '1px solid var(--color-info-border)',
-          marginBottom: 'var(--space-md)',
-          display: 'flex',
-          gap: 'var(--space-sm)',
-        }}>
-          <Icon name="cpu" size={16} color="var(--color-info)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-          }}>
-            <strong style={{ color: 'var(--color-info)' }}>AI/ML Guidance:</strong>{' '}
-            <HelpTextWithLinks text={question.mlguidance} />
-          </div>
-        </div>
+        <NoteBox variant="info" icon="cpu" label="AI/ML Guidance">
+          <HelpTextWithLinks text={question.mlguidance} />
+        </NoteBox>
       )}
 
       {/* Auto warning */}
       {question.autoWarn && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-warning-bg)',
-          border: '1px solid var(--color-warning-border)',
-          marginBottom: 'var(--space-md)',
-          display: 'flex',
-          gap: 'var(--space-sm)',
-        }}>
-          <Icon name="alert" size={16} color="var(--color-warning)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-          }}>
-            <HelpTextWithLinks text={question.autoWarn} />
-          </div>
-        </div>
+        <NoteBox variant="warning" icon="alert">
+          <HelpTextWithLinks text={question.autoWarn} />
+        </NoteBox>
       )}
 
       {/* Info note */}
       {question.infoNote && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-success-bg)',
-          border: '1px solid var(--color-success-border)',
-          marginBottom: 'var(--space-md)',
-          display: 'flex',
-          gap: 'var(--space-sm)',
-        }}>
-          <Icon name="info" size={16} color="var(--color-success)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-          }}>
-            <HelpTextWithLinks text={question.infoNote} />
-          </div>
-        </div>
+        <NoteBox variant="success" icon="info">
+          <HelpTextWithLinks text={question.infoNote} />
+        </NoteBox>
       )}
 
       {/* Classification guidance */}
       {question.classificationGuidance && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border)',
-          marginBottom: 'var(--space-md)',
-          fontSize: 12,
-          color: 'var(--color-text-secondary)',
-          lineHeight: 1.6,
-        }}>
-          <strong>Classification Guidance:</strong> <HelpTextWithLinks text={question.classificationGuidance} />
-        </div>
+        <NoteBox variant="neutral" label="Classification Guidance">
+          <HelpTextWithLinks text={question.classificationGuidance} />
+        </NoteBox>
       )}
 
       {/* Boundary note */}
       {question.boundaryNote && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-warning-bg)',
-          border: '1px solid var(--color-warning-border)',
-          marginBottom: 'var(--space-md)',
-          fontSize: 12,
-          color: 'var(--color-text-secondary)',
-          lineHeight: 1.6,
-        }}>
-          <strong style={{ color: 'var(--color-warning)' }}>Boundary Note:</strong> <HelpTextWithLinks text={question.boundaryNote} />
-        </div>
+        <NoteBox variant="warning" label="Boundary Note">
+          <HelpTextWithLinks text={question.boundaryNote} />
+        </NoteBox>
       )}
 
       {/* Consequence preview */}

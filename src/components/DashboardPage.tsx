@@ -1,6 +1,18 @@
 import React from 'react';
 import { Icon } from './Icon';
 
+/** Creates onMouseEnter/onMouseLeave handlers for border-color + boxShadow hover effects. */
+const hoverHandlers = (hoverBorder: string, restBorder: string) => ({
+  onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = hoverBorder;
+    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+  },
+  onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = restBorder;
+    e.currentTarget.style.boxShadow = 'none';
+  },
+});
+
 interface DashboardPageProps {
   onQuickReview: () => void;
   onFullAssessment: () => void;
@@ -100,14 +112,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
               position: 'relative',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#86efac';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#d1fae5';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            {...hoverHandlers('#86efac', '#d1fae5')}
           >
             <div style={{
               width: 44,
@@ -181,14 +186,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               cursor: 'pointer',
               transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#d1d5db';
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#e5e7eb';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
+            {...hoverHandlers('#d1d5db', '#e5e7eb')}
           >
             <div style={{
               width: 44,
@@ -241,12 +239,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 cursor: 'pointer',
                 transition: 'border-color 0.15s ease',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#fde047';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#fef08a';
-              }}
+              {...hoverHandlers('#fde047', '#fef08a')}
             >
               <Icon name="clock" size={18} color="#ca8a04" />
               <div style={{ flex: 1 }}>

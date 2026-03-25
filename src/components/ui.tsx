@@ -1,18 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { T, font, fontMono } from '../theme';
 import { Icon } from './Icon';
 import {
+  glossary,
   guidanceLinks,
   findGuidanceLink,
-  sourceCitations,
-  REG_SOURCES,
-  getSourceBadge,
-  statusBadgeStyle,
-  statusBadgeLabel,
 } from '../lib/content';
-
-/* ── Re-export content helpers so consumers can import from ui if needed ── */
-export { getSourceBadge, statusBadgeStyle, statusBadgeLabel };
 
 /* ── Collapsible ── */
 
@@ -47,15 +39,15 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
           border: 'none',
           cursor: 'pointer',
           fontSize: 12,
-          color: color || T.slateMid,
+          color: color || 'var(--color-text-tertiary)',
           fontWeight: 600,
-          fontFamily: font,
+          fontFamily: 'var(--font-sans)',
           padding: '4px 0',
           width: '100%',
           textAlign: 'left',
         }}
       >
-        {icon && <Icon name={icon} size={12} color={color || T.slateMid} />}
+        {icon && <Icon name={icon} size={12} color={color || 'var(--color-text-tertiary)'} />}
         <span style={{ flex: 1 }}>{label}</span>
         {badge && (
           <span
@@ -64,8 +56,8 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
               fontWeight: 700,
               padding: '1px 6px',
               borderRadius: 4,
-              background: T.sandMid,
-              color: T.slateMid,
+              background: 'var(--color-bg-hover)',
+              color: 'var(--color-text-tertiary)',
               marginRight: 4,
             }}
           >
@@ -80,7 +72,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
             flexShrink: 0,
           }}
         >
-          <Icon name="arrow" size={10} color={color || T.slateMid} />
+          <Icon name="arrow" size={10} color={color || 'var(--color-text-tertiary)'} />
         </span>
       </button>
       {open && (
@@ -114,7 +106,7 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
   subtitle,
 }) => {
   const [open, setOpen] = useState(defaultOpen);
-  const accent = accentColor || T.slate;
+  const accent = accentColor || '#334155';
   return (
     <div style={{ marginBottom: 12 }}>
       <button
@@ -126,22 +118,22 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
           gap: 10,
           width: '100%',
           padding: '14px 20px',
-          background: open ? T.white : T.cream,
-          border: `1px solid ${open ? T.border : T.sandDark}`,
+          background: open ? 'var(--color-bg-elevated)' : '#fafafa',
+          border: `1px solid ${open ? 'var(--color-border)' : 'var(--color-border)'}`,
           borderRadius: open ? '10px 10px 0 0' : 10,
           cursor: 'pointer',
-          fontFamily: font,
+          fontFamily: 'var(--font-sans)',
           transition: 'all .15s ease',
         }}
       >
         <Icon name={icon || 'info'} size={15} color={accent} />
         <span style={{ flex: 1, textAlign: 'left' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: T.navy }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-primary)' }}>
             {title}
           </span>
           {subtitle && (
             <span
-              style={{ fontSize: 11.5, color: T.textLight, marginLeft: 8 }}
+              style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginLeft: 8 }}
             >
               {subtitle}
             </span>
@@ -155,17 +147,17 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
               padding: '2px 8px',
               borderRadius: 10,
               background:
-                accent === T.red
-                  ? T.redLight
-                  : accent === T.amber
-                    ? T.amberLight
-                    : T.sandMid,
+                accent === 'var(--color-danger)'
+                  ? 'var(--color-danger-border)'
+                  : accent === 'var(--color-warning)'
+                    ? 'var(--color-warning-border)'
+                    : 'var(--color-bg-hover)',
               color:
-                accent === T.red
-                  ? T.red
-                  : accent === T.amber
-                    ? T.amber
-                    : T.slateMid,
+                accent === 'var(--color-danger)'
+                  ? 'var(--color-danger)'
+                  : accent === 'var(--color-warning)'
+                    ? 'var(--color-warning)'
+                    : 'var(--color-text-tertiary)',
             }}
           >
             {count}
@@ -178,15 +170,15 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
             display: 'inline-flex',
           }}
         >
-          <Icon name="arrow" size={12} color={T.slateMid} />
+          <Icon name="arrow" size={12} color="var(--color-text-tertiary)" />
         </span>
       </button>
       {open && (
         <div
           style={{
             padding: '18px 20px',
-            background: T.white,
-            border: `1px solid ${T.border}`,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border)',
             borderTop: 'none',
             borderRadius: '0 0 10px 10px',
             animation: 'fadeIn .15s ease',
@@ -198,6 +190,26 @@ export const ReportSection: React.FC<ReportSectionProps> = ({
     </div>
   );
 };
+
+/* ── Debounced input hook (shared by DebouncedText & DebouncedNumber) ── */
+
+function useDebouncedValue(value: string, onChange: (value: string) => void) {
+  const [local, setLocal] = useState(value || '');
+  const committed = useRef(value || '');
+  useEffect(() => {
+    if (value !== committed.current) {
+      setLocal(value || '');
+      committed.current = value || '';
+    }
+  }, [value]);
+  const commit = () => {
+    if (local !== committed.current) {
+      committed.current = local;
+      onChange(local);
+    }
+  };
+  return { local, setLocal, commit };
+}
 
 /* ── DebouncedText ── */
 
@@ -214,20 +226,7 @@ export const DebouncedText: React.FC<DebouncedTextProps> = ({
   placeholder,
   rows,
 }) => {
-  const [local, setLocal] = useState(value || '');
-  const committed = useRef(value || '');
-  useEffect(() => {
-    if (value !== committed.current) {
-      setLocal(value || '');
-      committed.current = value || '';
-    }
-  }, [value]);
-  const commit = () => {
-    if (local !== committed.current) {
-      committed.current = local;
-      onChange(local);
-    }
-  };
+  const { local, setLocal, commit } = useDebouncedValue(value, onChange);
   return (
     <textarea
       value={local}
@@ -238,9 +237,9 @@ export const DebouncedText: React.FC<DebouncedTextProps> = ({
       style={{
         padding: '10px 14px',
         borderRadius: 7,
-        border: `1.5px solid ${T.border}`,
+        border: '1.5px solid var(--color-border)',
         fontSize: 14,
-        fontFamily: font,
+        fontFamily: 'var(--font-sans)',
         width: '100%',
         outline: 'none',
         resize: 'vertical',
@@ -264,20 +263,7 @@ export const DebouncedNumber: React.FC<DebouncedNumberProps> = ({
   onChange,
   placeholder,
 }) => {
-  const [local, setLocal] = useState(value || '');
-  const committed = useRef(value || '');
-  useEffect(() => {
-    if (value !== committed.current) {
-      setLocal(value || '');
-      committed.current = value || '';
-    }
-  }, [value]);
-  const commit = () => {
-    if (local !== committed.current) {
-      committed.current = local;
-      onChange(local);
-    }
-  };
+  const { local, setLocal, commit } = useDebouncedValue(value, onChange);
   return (
     <input
       type="number"
@@ -290,15 +276,36 @@ export const DebouncedNumber: React.FC<DebouncedNumberProps> = ({
       style={{
         padding: '10px 14px',
         borderRadius: 7,
-        border: `1.5px solid ${T.border}`,
+        border: '1.5px solid var(--color-border)',
         fontSize: 14,
-        fontFamily: font,
+        fontFamily: 'var(--font-sans)',
         width: 140,
         outline: 'none',
       }}
     />
   );
 };
+
+/* ── Shared external-link icon (used by GuidanceRef & HelpTextWithLinks) ── */
+
+const ExternalLinkIcon: React.FC<{ size?: number; opacity?: number }> = ({ size = 10, opacity = 0.6 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    style={{
+      display: 'inline-block',
+      verticalAlign: 'middle',
+      marginLeft: size > 9 ? 3 : 2,
+      flexShrink: 0,
+      opacity,
+    }}
+  >
+    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" strokeWidth="2" stroke="currentColor" fill="none" />
+    <polyline points="15,3 21,3 21,9" strokeWidth="2" stroke="currentColor" fill="none" />
+    <line x1="10" y1="14" x2="21" y2="3" strokeWidth="2" stroke="currentColor" />
+  </svg>
+);
 
 /* ── GuidanceRef ── */
 
@@ -314,7 +321,7 @@ export const GuidanceRef: React.FC<GuidanceRefProps> = ({
   const link = findGuidanceLink(code);
   if (!link)
     return (
-      <span style={{ fontFamily: fontMono, fontSize: 11 }}>{code}</span>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{code}</span>
     );
   const section = code
     .replace(link.shortName, '')
@@ -326,9 +333,9 @@ export const GuidanceRef: React.FC<GuidanceRefProps> = ({
       target="_blank"
       rel="noopener noreferrer"
       style={{
-        color: T.blue,
+        color: 'var(--color-primary)',
         textDecoration: 'none',
-        borderBottom: `1px solid ${T.blue}33`,
+        borderBottom: '1px solid rgba(8, 145, 178, 0.2)',
         fontSize: 12,
         fontWeight: 500,
         lineHeight: 1.4,
@@ -338,39 +345,7 @@ export const GuidanceRef: React.FC<GuidanceRefProps> = ({
     >
       {link.fullName}
       {showSection && section ? ` ${section}` : ''}
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        style={{
-          display: 'inline-block',
-          verticalAlign: 'middle',
-          marginLeft: 3,
-          flexShrink: 0,
-          opacity: 0.6,
-        }}
-      >
-        <path
-          d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
-          strokeWidth="2"
-          stroke="currentColor"
-          fill="none"
-        />
-        <polyline
-          points="15,3 21,3 21,9"
-          strokeWidth="2"
-          stroke="currentColor"
-          fill="none"
-        />
-        <line
-          x1="10"
-          y1="14"
-          x2="21"
-          y2="3"
-          strokeWidth="2"
-          stroke="currentColor"
-        />
-      </svg>
+      <ExternalLinkIcon />
     </a>
   );
 };
@@ -475,45 +450,14 @@ export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({
             rel="noopener noreferrer"
             title={seg.fullName}
             style={{
-              color: T.blue,
+              color: 'var(--color-primary)',
               textDecoration: 'none',
-              borderBottom: `1px dotted ${T.blue}55`,
+              borderBottom: '1px dotted rgba(8, 145, 178, 0.33)',
               fontWeight: 500,
             }}
           >
             {seg.value}
-            <svg
-              width="9"
-              height="9"
-              viewBox="0 0 24 24"
-              style={{
-                display: 'inline-block',
-                verticalAlign: 'middle',
-                marginLeft: 2,
-                opacity: 0.5,
-              }}
-            >
-              <path
-                d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"
-                strokeWidth="2.5"
-                stroke="currentColor"
-                fill="none"
-              />
-              <polyline
-                points="15,3 21,3 21,9"
-                strokeWidth="2.5"
-                stroke="currentColor"
-                fill="none"
-              />
-              <line
-                x1="10"
-                y1="14"
-                x2="21"
-                y2="3"
-                strokeWidth="2.5"
-                stroke="currentColor"
-              />
-            </svg>
+            <ExternalLinkIcon size={9} opacity={0.5} />
           </a>
         ) : (
           <span key={i}>{seg.value}</span>
@@ -536,9 +480,9 @@ export const ConfBadge: React.FC<ConfBadgeProps> = ({
 }) => {
   const colors: Record<string, { bg: string; color: string; border: string }> =
     {
-      HIGH: { bg: T.greenLight, color: T.green, border: '#C6E7D4' },
-      MODERATE: { bg: T.amberLight, color: T.amber, border: '#F5E6B8' },
-      LOW: { bg: T.redLight, color: T.red, border: '#F5CACA' },
+      HIGH: { bg: '#d1fae5', color: 'var(--color-success)', border: '#C6E7D4' },
+      MODERATE: { bg: 'var(--color-warning-border)', color: 'var(--color-warning)', border: '#F5E6B8' },
+      LOW: { bg: 'var(--color-danger-border)', color: 'var(--color-danger)', border: '#F5CACA' },
     };
   const c = colors[level] || colors.MODERATE;
   const s =
@@ -660,66 +604,6 @@ export const AuthorityTag: React.FC<AuthorityTagProps> = ({
   );
 };
 
-/* ── Disclaimer ── */
-
-interface DisclaimerProps {
-  compact?: boolean;
-}
-
-export const Disclaimer: React.FC<DisclaimerProps> = ({
-  compact = false,
-}) => (
-  <div
-    style={{
-      background: '#FFF8F0',
-      border: '1px solid #F0DCC8',
-      borderRadius: 8,
-      padding: compact ? '10px 14px' : '12px 16px',
-      marginBottom: compact ? 12 : 20,
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-      <span
-        style={{
-          fontSize: compact ? 12 : 14,
-          flexShrink: 0,
-          marginTop: 1,
-        }}
-      >
-        {'\u2696'}
-      </span>
-      <div
-        style={{
-          fontSize: compact ? 11 : 12,
-          color: '#78593D',
-          lineHeight: 1.55,
-        }}
-      >
-        <strong style={{ color: '#1B7D56' }}>Intended for:</strong> Internal
-        change-control, RA review initiation, and submission planning.{' '}
-        <strong style={{ color: '#5C3D1F' }}>Not intended for:</strong> Formal
-        regulatory judgment, legal advice, or citation in submissions.{' '}
-        U.S.-primary assessment using FDA software change framework and PCCP
-        scope verification. Non-U.S. jurisdictions are covered by escalation
-        cues only, not full determinations.
-        {!compact && (
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 10.5,
-              fontFamily: fontMono,
-              color: '#9B7D5C',
-            }}
-          >
-            v1 &bull; Sources verified Mar 2026 &bull; Primary: US (FDA) &bull;
-            Follow-up cues: EU, UK, CA, JP, CN
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
 /* ── RadioRow ── */
 
 interface RadioRowProps {
@@ -746,7 +630,7 @@ export const RadioRow: React.FC<RadioRowProps> = ({
           cursor: 'pointer',
           padding: '6px 10px',
           borderRadius: 6,
-          background: value === opt ? T.blueLight : 'transparent',
+          background: value === opt ? 'var(--color-info-border)' : 'transparent',
           border: `1px solid ${value === opt ? '#BFDBFE' : 'transparent'}`,
           transition: 'all .1s',
         }}
@@ -757,9 +641,9 @@ export const RadioRow: React.FC<RadioRowProps> = ({
           value={opt}
           checked={value === opt}
           onChange={() => onChange(opt)}
-          style={{ accentColor: T.blue }}
+          style={{ accentColor: 'var(--color-primary)' }}
         />
-        <span style={{ fontSize: 13, color: T.text }}>{opt}</span>
+        <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{opt}</span>
       </label>
     ))}
   </div>
@@ -799,7 +683,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
             padding: '6px 10px',
             borderRadius: 6,
             background: (values || []).includes(opt)
-              ? T.blueLight
+              ? 'var(--color-info-border)'
               : 'transparent',
             border: `1px solid ${(values || []).includes(opt) ? '#BFDBFE' : 'transparent'}`,
             transition: 'all .1s',
@@ -809,9 +693,9 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
             type="checkbox"
             checked={(values || []).includes(opt)}
             onChange={() => toggle(opt)}
-            style={{ accentColor: T.blue }}
+            style={{ accentColor: 'var(--color-primary)' }}
           />
-          <span style={{ fontSize: 13, color: T.text }}>{opt}</span>
+          <span style={{ fontSize: 13, color: 'var(--color-text)' }}>{opt}</span>
         </label>
       ))}
     </div>
@@ -819,8 +703,6 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 };
 
 /* ── GlossaryPanel ── */
-
-import { glossary } from '../lib/content';
 
 interface GlossaryPanelProps {
   searchTerm?: string;
@@ -858,9 +740,9 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
             width: '100%',
             padding: '10px 14px',
             borderRadius: 7,
-            border: `1.5px solid ${T.border}`,
+            border: '1.5px solid var(--color-border)',
             fontSize: 13,
-            fontFamily: font,
+            fontFamily: 'var(--font-sans)',
             outline: 'none',
             boxSizing: 'border-box',
           }}
@@ -870,10 +752,10 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
       {/* Terms list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {filteredTerms.length === 0 ? (
-          <div style={{ 
-            padding: 16, 
-            textAlign: 'center', 
-            color: T.textLight,
+          <div style={{
+            padding: 16,
+            textAlign: 'center',
+            color: 'var(--color-text-muted)',
             fontSize: 13,
           }}>
             No glossary terms match your search.
@@ -884,8 +766,8 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
             return (
               <div key={term} style={{
                 borderRadius: 8,
-                border: `1px solid ${T.border}`,
-                background: T.white,
+                border: '1px solid var(--color-border)',
+                background: 'var(--color-bg-elevated)',
                 overflow: 'hidden',
               }}>
                 <button
@@ -896,10 +778,10 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
                     gap: 10,
                     width: '100%',
                     padding: '12px 16px',
-                    background: isExpanded ? T.cream : 'transparent',
+                    background: isExpanded ? '#fafafa' : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    fontFamily: font,
+                    fontFamily: 'var(--font-sans)',
                     textAlign: 'left',
                   }}
                 >
@@ -907,7 +789,7 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
                     flex: 1,
                     fontSize: 13,
                     fontWeight: 600,
-                    color: T.navy,
+                    color: 'var(--color-primary)',
                   }}>
                     {term}
                   </span>
@@ -917,16 +799,16 @@ export const GlossaryPanel: React.FC<GlossaryPanelProps> = ({ searchTerm = '' })
                     display: 'inline-flex',
                     flexShrink: 0,
                   }}>
-                    <Icon name="arrow" size={12} color={T.slateMid} />
+                    <Icon name="arrow" size={12} color="var(--color-text-tertiary)" />
                   </span>
                 </button>
                 {isExpanded && (
                   <div style={{
                     padding: '12px 16px',
-                    borderTop: `1px solid ${T.border}`,
+                    borderTop: '1px solid var(--color-border)',
                     fontSize: 12,
                     lineHeight: 1.65,
-                    color: T.text,
+                    color: 'var(--color-text)',
                     animation: 'fadeIn .15s ease',
                   }}>
                     <HelpTextWithLinks text={definition} />

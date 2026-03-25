@@ -675,91 +675,43 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             Determination Flags
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
-            {determination.isIntendedUseChange && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-danger-bg)',
-                color: 'var(--color-danger)',
-                border: '1px solid var(--color-danger-border)',
-              }}>
-                Intended Use Change
-              </span>
-            )}
-            {determination.isSignificant && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-warning-bg)',
-                color: 'var(--color-warning)',
-                border: '1px solid var(--color-warning-border)',
-              }}>
-                Significant Change
-              </span>
-            )}
-            {determination.pccpScopeVerified && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-success-bg)',
-                color: 'var(--color-success)',
-                border: '1px solid var(--color-success-border)',
-              }}>
-                PCCP Scope Verified
-              </span>
-            )}
-            {determination.isCyberOnly && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
-              }}>
-                Cybersecurity Only
-              </span>
-            )}
-            {determination.isBugFix && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-info-bg)',
-                color: 'var(--color-info)',
-                border: '1px solid var(--color-info-border)',
-              }}>
-                Bug Fix Only
-              </span>
-            )}
-            {determination.genAIHighImpactChange && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-warning-bg)',
-                color: 'var(--color-warning)',
-                border: '1px solid var(--color-warning-border)',
-              }}>
-                GenAI High Impact
-              </span>
-            )}
-            {!determination.isIntendedUseChange && !determination.isSignificant && !determination.pccpScopeVerified && 
-             !determination.isCyberOnly && !determination.isBugFix && !determination.genAIHighImpactChange && (
-              <span style={{
-                fontSize: 11,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--color-bg-hover)',
-                color: 'var(--color-text-muted)',
-                border: '1px solid var(--color-border)',
-              }}>
-                No special flags
-              </span>
-            )}
+            {(() => {
+              const flags: Array<{ key: string; label: string; variant: 'danger' | 'warning' | 'success' | 'info' }> = [
+                { key: 'isIntendedUseChange', label: 'Intended Use Change', variant: 'danger' },
+                { key: 'isSignificant', label: 'Significant Change', variant: 'warning' },
+                { key: 'pccpScopeVerified', label: 'PCCP Scope Verified', variant: 'success' },
+                { key: 'isCyberOnly', label: 'Cybersecurity Only', variant: 'info' },
+                { key: 'isBugFix', label: 'Bug Fix Only', variant: 'info' },
+                { key: 'genAIHighImpactChange', label: 'GenAI High Impact', variant: 'warning' },
+              ];
+              const active = flags.filter(f => determination[f.key]);
+              if (active.length === 0) {
+                return (
+                  <span style={{
+                    fontSize: 11,
+                    padding: '4px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--color-bg-hover)',
+                    color: 'var(--color-text-muted)',
+                    border: '1px solid var(--color-border)',
+                  }}>
+                    No special flags
+                  </span>
+                );
+              }
+              return active.map(f => (
+                <span key={f.key} style={{
+                  fontSize: 11,
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: `var(--color-${f.variant}-bg)`,
+                  color: `var(--color-${f.variant})`,
+                  border: `1px solid var(--color-${f.variant}-border)`,
+                }}>
+                  {f.label}
+                </span>
+              ));
+            })()}
           </div>
         </div>
       </Section>
