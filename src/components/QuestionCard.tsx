@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { HelpTextWithLinks, AuthorityTag, GuidanceRef } from './ui';
 import type { Question } from '../lib/assessment-engine';
@@ -10,6 +10,7 @@ interface QuestionCardProps {
   value: any;
   onChange: (value: any) => void;
   index: number;
+  hasValidationError?: boolean;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -17,6 +18,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   value,
   onChange,
   index,
+  hasValidationError = false,
 }) => {
   const [showHelp, setShowHelp] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -24,6 +26,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   // Get question-specific reasoning from library
   const qReasoning = questionReasoningLibrary[question.id];
+
+  useEffect(() => {
+    setLocalText(value == null ? '' : String(value));
+  }, [value]);
 
   // Section divider rendering
   if (question.sectionDivider) {
@@ -74,7 +80,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   if (question.skip) return null;
 
   const isCritical = question.critical || question.pathwayCritical;
-  const hasValue = value !== undefined && value !== null && value !== '';
+  const hasValue = Array.isArray(value)
+    ? value.length > 0
+    : value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
 
   // Commit text value on blur
   const commitText = () => {
@@ -264,7 +272,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               width: '100%',
               padding: 'var(--space-md)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
+              border: hasValidationError ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
               background: 'var(--color-bg-card)',
               color: 'var(--color-text)',
               fontSize: 14,
@@ -288,7 +296,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               width: 160,
               padding: 'var(--space-md)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--color-border)',
+              border: hasValidationError ? '1px solid var(--color-danger)' : '1px solid var(--color-border)',
               background: 'var(--color-bg-card)',
               color: 'var(--color-text)',
               fontSize: 14,
@@ -307,9 +315,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       style={{
         padding: 'var(--space-lg)',
         borderRadius: 'var(--radius-lg)',
-        border: question.disabled 
-          ? '1px dashed var(--color-border)' 
-          : '1px solid var(--color-border)',
+        border: question.disabled
+          ? '1px dashed var(--color-border)'
+          : hasValidationError
+            ? '1px solid var(--color-danger)'
+            : '1px solid var(--color-border)',
         background: question.disabled 
           ? '#f8fafc' 
           : '#ffffff',
@@ -318,7 +328,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         animationFillMode: 'backwards',
         opacity: question.disabled ? 0.7 : 1,
         position: 'relative',
-        boxShadow: question.disabled ? 'none' : '0 1px 3px rgba(0, 0, 0, 0.04)',
+        boxShadow: question.disabled
+          ? 'none'
+          : hasValidationError
+            ? '0 0 0 3px rgba(239, 68, 68, 0.12)'
+            : '0 1px 3px rgba(0, 0, 0, 0.04)',
       }}
     >
       {/* Disabled overlay */}
@@ -353,26 +367,32 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           width: 28,
           height: 28,
           borderRadius: 'var(--radius-sm)',
-          background: hasValue
-            ? 'var(--color-success-bg)'
-            : isCritical
-              ? 'var(--color-warning-bg)'
-              : 'var(--color-bg-hover)',
-          border: `1px solid ${hasValue
-            ? 'var(--color-success-border)'
-            : isCritical
-              ? 'var(--color-warning-border)'
-              : 'var(--color-border)'}`,
+          background: hasValidationError
+            ? 'var(--color-danger-bg)'
+            : hasValue
+              ? 'var(--color-success-bg)'
+              : isCritical
+                ? 'var(--color-warning-bg)'
+                : 'var(--color-bg-hover)',
+          border: `1px solid ${hasValidationError
+            ? 'var(--color-danger-border)'
+            : hasValue
+              ? 'var(--color-success-border)'
+              : isCritical
+                ? 'var(--color-warning-border)'
+                : 'var(--color-border)'}` ,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}>
-          {hasValue
-            ? <Icon name="check" size={14} color="var(--color-success)" />
-            : isCritical
-              ? <Icon name="alertCircle" size={14} color="var(--color-warning)" />
-              : <Icon name="info" size={14} color="var(--color-text-muted)" />
+          {hasValidationError
+            ? <Icon name="alertCircle" size={14} color="var(--color-danger)" />
+            : hasValue
+              ? <Icon name="check" size={14} color="var(--color-success)" />
+              : isCritical
+                ? <Icon name="alertCircle" size={14} color="var(--color-warning)" />
+                : <Icon name="info" size={14} color="var(--color-text-muted)" />
           }
         </div>
 
@@ -811,6 +831,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             This value has been set automatically based on your prior answers.
             Value: <strong>{String(question.forcedValue)}</strong>
           </div>
+        </div>
+      )}
+
+      {hasValidationError && (
+        <div style={{
+          padding: 'var(--space-sm) var(--space-md)',
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--color-danger-bg)',
+          border: '1px solid var(--color-danger-border)',
+          color: 'var(--color-danger)',
+          fontSize: 12,
+          fontWeight: 500,
+          marginBottom: 'var(--space-md)',
+        }}>
+          This required question must be completed before you can continue.
         </div>
       )}
 

@@ -5,9 +5,10 @@ interface IconProps {
   size?: number;
   color?: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export const Icon: React.FC<IconProps> = ({ name, size = 18, color = "currentColor", className }) => {
+export const Icon: React.FC<IconProps> = ({ name, size = 18, color = "currentColor", className, style }) => {
   const icons: Record<string, React.ReactNode> = {
     shield: <path d="M12 2L3 7v5c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V7l-9-5z" strokeWidth="1.5" stroke={color} fill="none"/>,
     plus: <><line x1="12" y1="5" x2="12" y2="19" strokeWidth="2" stroke={color}/><line x1="5" y1="12" x2="19" y2="12" strokeWidth="2" stroke={color}/></>,
@@ -57,7 +58,7 @@ export const Icon: React.FC<IconProps> = ({ name, size = 18, color = "currentCol
       height={size}
       viewBox="0 0 24 24"
       className={className}
-      style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}
+      style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0, ...style }}
     >
       {icons[name] || icons.info}
     </svg>

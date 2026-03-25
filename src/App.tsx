@@ -22,6 +22,12 @@ const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
 type Screen = 'gate' | 'dashboard' | 'assess';
 
+const isAnsweredValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '';
+  return value !== undefined && value !== null;
+};
+
 // Load saved answers from localStorage
 const loadSavedAnswers = (): Answers => {
   try {
@@ -105,7 +111,7 @@ export const App: React.FC = () => {
       }
       const questions = getQuestionsForBlock(block.id);
       counts[block.id] = questions.filter(q =>
-        !q.sectionDivider && !q.skip && answers[q.id] !== undefined && answers[q.id] !== ''
+        !q.sectionDivider && !q.skip && isAnsweredValue(answers[q.id])
       ).length;
     });
     return counts;
@@ -224,9 +230,7 @@ export const App: React.FC = () => {
     const requiredQuestions = questions.filter(q =>
       !q.sectionDivider && !q.skip && q.pathwayCritical
     );
-    return requiredQuestions.every(q =>
-      answers[q.id] !== undefined && answers[q.id] !== ''
-    );
+    return requiredQuestions.every(q => isAnsweredValue(answers[q.id]));
   }, [currentBlock, currentQuestions, answers]);
 
   // Validation state for highlighting missing required fields
@@ -248,7 +252,7 @@ export const App: React.FC = () => {
         currentQuestions
           .filter(q => !q.sectionDivider && !q.skip && q.pathwayCritical)
           .forEach(q => {
-            if (answers[q.id] === undefined || answers[q.id] === '') {
+            if (!isAnsweredValue(answers[q.id])) {
               errors[q.id] = true;
             }
           });
@@ -336,6 +340,7 @@ export const App: React.FC = () => {
             value={answers[question.id]}
             onChange={(value) => handleAnswerChange(question.id, value)}
             index={index}
+            hasValidationError={Boolean(validationErrors[question.id])}
           />
         ))}
       </div>
@@ -461,7 +466,7 @@ export const App: React.FC = () => {
             fontSize: 13,
             color: 'var(--color-text-secondary)',
           }}>
-            Some required questions are unanswered. You can continue, but the determination may be incomplete.
+            Complete the required questions in this section to continue.
           </span>
         </div>
       )}
