@@ -24,6 +24,7 @@ interface ReviewPanelProps {
   getQuestionsForBlock: (blockId: string) => Question[];
   onEditBlock: (blockIndex: number) => void;
   onFeedback?: () => void;
+  onHandoff?: () => void;
 }
 
 // Map pathway names to docRequirements keys
@@ -60,6 +61,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   getQuestionsForBlock,
   onEditBlock,
   onFeedback,
+  onHandoff,
 }) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['reasoning'])
@@ -919,6 +921,68 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           v1 | Sources reviewed Mar 2026 | Primary: US (FDA) | Follow-up: EU, UK, CA, JP, CN
         </p>
       </div>
+      {/* Preparation Checklist CTA */}
+      {onHandoff && !determination.isIncomplete && (
+        <div
+          data-testid="handoff-cta"
+          style={{
+            padding: 'var(--space-lg)',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--color-success-bg)',
+            border: '1px solid var(--color-success-border)',
+            marginTop: 'var(--space-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 'var(--space-lg)',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div>
+            <h4 style={{
+              fontSize: 14,
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              margin: '0 0 var(--space-xs)',
+            }}>
+              Ready to prepare documentation?
+            </h4>
+            <p style={{
+              fontSize: 13,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.5,
+              margin: 0,
+            }}>
+              Open a step-by-step preparation workflow for the determined pathway.
+            </p>
+          </div>
+          <button
+            onClick={onHandoff}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              padding: 'var(--space-md) var(--space-lg)',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-success)',
+              border: 'none',
+              color: '#fff',
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all var(--transition-fast)',
+            }}
+          >
+            {determination.isPCCPImpl
+              ? 'Prepare PCCP package'
+              : determination.isDocOnly
+                ? 'Prepare documentation'
+                : 'View preparation checklist'}
+            <Icon name="arrow" size={16} color="#fff" />
+          </button>
+        </div>
+      )}
       {/* Feedback CTA */}
       {onFeedback && (
         <div

@@ -5,6 +5,7 @@ import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
 import { ReviewPanel } from './components/ReviewPanel';
 import { FeedbackSurvey } from './components/FeedbackSurvey';
+import { HandoffPage } from './components/HandoffPage';
 import { Icon } from './components/Icon';
 import { SAMPLE_CASE } from './sampleCase';
 import {
@@ -12,7 +13,9 @@ import {
   getQuestions,
   computeDerivedState,
   computeDetermination,
+  changeTaxonomy,
   Answer,
+  AuthPathway,
   type Answers,
   type Block,
   type Question,
@@ -21,7 +24,7 @@ import {
 const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
-type Screen = 'gate' | 'dashboard' | 'assess' | 'feedback';
+type Screen = 'gate' | 'dashboard' | 'assess' | 'feedback' | 'handoff';
 
 const isAnsweredValue = (value: unknown): boolean => {
   if (Array.isArray(value)) return value.length > 0;
@@ -306,6 +309,26 @@ export const App: React.FC = () => {
     );
   }
 
+  // --- Handoff / preparation checklist ---
+  if (screen === 'handoff') {
+    return (
+      <HandoffPage
+        pathway={determination.pathway}
+        determination={determination}
+        answers={answers}
+        onBack={() => {
+          // Go back to assessment on the review block
+          setCurrentBlockIndex(blocks.length - 1);
+          setScreen('assess');
+        }}
+        onBackToAssessment={() => {
+          setCurrentBlockIndex(0);
+          setScreen('assess');
+        }}
+      />
+    );
+  }
+
   // --- Assessment (existing flow) ---
 
   // Render current block content
@@ -323,13 +346,170 @@ export const App: React.FC = () => {
           getQuestionsForBlock={getQuestionsForBlock}
           onEditBlock={handleBlockSelect}
           onFeedback={() => setScreen('feedback')}
+          onHandoff={() => setScreen('handoff')}
         />
       );
     }
 
-    // Question blocks
+    // Question blocks with contextual banners
+    const blockId = currentBlock.id;
+
     return (
       <div>
+        {/* Block-level contextual banners */}
+        {blockId === 'C' && answers.B3 === Answer.Yes && (
+          <div style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
+                Intended use change detected
+              </span>
+              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
+                A new submission is generally required.{' '}
+                {derivedState.isPMA
+                  ? 'PMA supplement required.'
+                  : `New ${derivedState.isDeNovo ? '510(k) or De Novo request' : '510(k)'} required.`}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {blockId === 'C' && answers.B3 === Answer.Uncertain && (
+          <div style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
+                Intended use uncertain — routing conservatively
+              </span>
+              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
+                Conservatively routed to new submission. Complete the questions below for your change control record.{' '}
+                <strong>A Pre-Submission (Q-Sub) is strongly recommended.</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {blockId === 'C' && derivedState.isDeNovo && !derivedState.isPMA && answers.B3 !== Answer.Yes && (
+          (answers.C0_DN1 === Answer.No || answers.C0_DN1 === Answer.Uncertain ||
+           answers.C0_DN2 === Answer.No || answers.C0_DN2 === Answer.Uncertain) ? (
+            <div style={{
+              marginBottom: 16,
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-danger-bg)',
+              border: '1px solid var(--color-danger-border)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <Icon name="alertCircle" size={15} color="var(--color-danger)" style={{ marginTop: 1 }} />
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-danger)' }}>
+                  De Novo device-type fit concern
+                </span>
+                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
+                  The modified device may no longer fit within the De Novo classification. An FDA Pre-Submission (Q-Sub) is strongly recommended.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--color-warning-bg)',
+              border: '1px solid var(--color-warning-border)',
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              lineHeight: 1.55,
+            }}>
+              <strong>De Novo advisory:</strong> {"For software changes, FDA's 510(k) change guidances are relevant to De Novo-authorized existing devices. For material or borderline changes, an FDA Pre-Submission is recommended."}
+            </div>
+          )
+        )}
+
+        {blockId === 'C' && !derivedState.isPMA && answers.B3 !== Answer.Yes &&
+         answers.C1 !== Answer.Yes && answers.C2 !== Answer.Yes &&
+         [answers.C3, answers.C4, answers.C5, answers.C6].includes(Answer.Uncertain) && (
+          <div style={{
+            marginBottom: 16,
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+            fontSize: 12,
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.55,
+          }}>
+            {'"Uncertain" answers are conservatively treated as significant. Complete remaining questions for documentation.'}
+          </div>
+        )}
+
+        {blockId === 'P' && (() => {
+          const selType = (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1 as string]?.types?.find((t: any) => t.name === answers.B2) : null;
+          const pccpStatus = selType?.pccp;
+          const pccpNote = selType?.pccpNote;
+          if (!selType || !pccpStatus) return null;
+          const isEligible = pccpStatus === 'YES' || pccpStatus === 'EXEMPT';
+          const isConditional = pccpStatus === 'CONDITIONAL';
+          return (
+            <div style={{
+              marginBottom: 16,
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: isEligible ? 'var(--color-success-bg)' : isConditional ? 'var(--color-warning-bg)' : 'var(--color-danger-bg)',
+              border: `1px solid ${isEligible ? 'var(--color-success-border)' : isConditional ? 'var(--color-warning-border)' : 'var(--color-danger-border)'}`,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 10,
+            }}>
+              <Icon
+                name={isEligible ? 'check' : 'alertCircle'}
+                size={15}
+                color={isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)'}
+                style={{ marginTop: 1 }}
+              />
+              <div>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
+                }}>
+                  Change-type fit for {`"${answers.B2 as string}"`}:{' '}
+                  {pccpStatus === 'YES' ? 'Generally eligible for PCCP'
+                    : pccpStatus === 'EXEMPT' ? 'Exempt — no submission needed'
+                    : pccpStatus === 'CONDITIONAL' ? 'Conditionally eligible — verify boundaries'
+                    : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit within PCCP scope'
+                    : 'Outside PCCP scope'}
+                </span>
+                {pccpNote && (
+                  <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
+                    {pccpNote}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {currentQuestions.map((question, index) => (
           <QuestionCard
             key={question.id}
