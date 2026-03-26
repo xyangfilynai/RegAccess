@@ -146,6 +146,7 @@ describe('computeDetermination — 510(k) / De Novo', () => {
   it('escalates cumulative drift plus unsupported substantial equivalence to New Submission Required', () => {
     const det = computeDetermination(
       base510k({
+        A8: '3',
         C10: Answer.Yes,
         C11: Answer.No,
       }),
@@ -160,6 +161,7 @@ describe('computeDetermination — 510(k) / De Novo', () => {
   it('marks cumulative-drift cases incomplete when C11 is still missing', () => {
     const det = computeDetermination(
       base510k({
+        A8: '3',
         C10: Answer.Yes,
       }),
     );
@@ -618,5 +620,104 @@ describe('PMA GenAI consistency checks', () => {
       D1: Answer.Yes,
     }));
     expect(det.genAIHighImpactChange).toBe(true);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════
+// Third-pass logic audit — stale answer hazards and PMA gap coverage
+// ════════════════════════════════════════════════════════════════════════
+
+describe('Stale C10/C11 answers after A8 correction to 0', () => {
+  it('stale C10=Yes with A8=0 does not trigger cumulative drift escalation', () => {
+    const det = computeDetermination(base510k({
+      A8: '0',
+      C10: Answer.Yes, // stale from when A8 was > 0
+      C11: Answer.No,  // stale
+    }));
+    expect(det.cumulativeEscalation).toBe(false);
+    expect(det.seNotSupportable).toBe(false);
+    expect(det.isSignificant).toBe(false);
+    expect(det.pathway).toBe(Pathway.LetterToFile);
+  });
+
+  it('stale C10=Yes with A8 empty does not trigger cumulative drift escalation', () => {
+    const det = computeDetermination(base510k({
+      C10: Answer.Yes, // stale
+    }));
+    expect(det.cumulativeEscalation).toBe(false);
+    expect(det.pathway).toBe(Pathway.LetterToFile);
+  });
+});
+
+describe('C1/C2 Uncertain consistency warnings must not fire for PMA devices', () => {
+  it('PMA device with stale C1=Uncertain does not produce cybersecurity exemption warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      C1: Answer.Uncertain, // stale from 510(k) session
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('Cybersecurity exemption'))).toBe(false);
+  });
+
+  it('PMA device with stale C2=Uncertain does not produce restore-to-spec warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      C2: Answer.Uncertain, // stale from 510(k) session
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('Restore-to-specification'))).toBe(false);
+  });
+});
+
+describe('PMA prompt/RAG consistency check', () => {
+  it('PMA device with D2=Yes (prompt change) + C_PMA1=No produces consistency warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      D2: Answer.Yes,
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('prompt') && i.includes('C_PMA1'))).toBe(true);
+  });
+
+  it('PMA device with D3=Yes (RAG change) + C_PMA1=No produces consistency warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      D3: Answer.Yes,
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('RAG') && i.includes('C_PMA1'))).toBe(true);
+  });
+});
+
+describe('PMA monitoring threshold consistency check', () => {
+  it('PMA device with monitoring threshold change + C_PMA1=No produces consistency warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      B1: 'Post-Market Surveillance',
+      B2: 'Monitoring threshold adjustment',
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('monitoring') && i.includes('C_PMA1'))).toBe(true);
+  });
+});
+
+describe('PCCP incomplete must not fire for PMA Annual Report pathway', () => {
+  it('PMA + PCCP + no supplement needed does not set pccpIncomplete', () => {
+    const det = computeDetermination(basePMA({
+      A2: Answer.Yes,
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      P1: Answer.Yes,
+      P2: Answer.Uncertain, // partially answered
+    }));
+    expect(det.pmaRequiresSupplement).toBe(false);
+    expect(det.pccpIncomplete).toBe(false); // PCCP not relevant since no supplement needed
+    expect(det.pathway).toBe(Pathway.PMAAnnualReport);
   });
 });

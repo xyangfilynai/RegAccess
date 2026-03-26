@@ -28,10 +28,13 @@ export const computeDetermination = (ans: Answers) => {
     !_isCyberOnly && !_isBugFix &&
     ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No;
 
-  const _cumulativeEscalation = !_isPMA && (ans.C10 === Answer.Yes || ans.C10 === Answer.Uncertain);
-  const _seNotSupportable = !_isPMA && ans.C11 === Answer.No;
-  const _seUncertain = !_isPMA && ans.C11 === Answer.Uncertain;
-  const _needsCumulativeSEQuestion = !_isPMA && ans.A1 === AuthPathway.FiveOneZeroK &&
+  // C10 is only shown when A8 > 0 (changes since last submission).
+  // Guard against stale C10/C11 answers if the user corrects A8 to 0.
+  const _hasChangesSinceLastSub = !!ans.A8 && parseInt(ans.A8) > 0;
+  const _cumulativeEscalation = !_isPMA && _hasChangesSinceLastSub && (ans.C10 === Answer.Yes || ans.C10 === Answer.Uncertain);
+  const _seNotSupportable = !_isPMA && _hasChangesSinceLastSub && ans.C11 === Answer.No;
+  const _seUncertain = !_isPMA && _hasChangesSinceLastSub && ans.C11 === Answer.Uncertain;
+  const _needsCumulativeSEQuestion = !_isPMA && _hasChangesSinceLastSub && ans.A1 === AuthPathway.FiveOneZeroK &&
     !_isIntendedUseChange && !_isIntendedUseUncertain && !_isCyberOnly && !_isBugFix &&
     ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No &&
     ans.C10 === Answer.Yes && ![Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C11);
@@ -77,6 +80,9 @@ export const computeDetermination = (ans: Answers) => {
   if (!_isPMA && (ans.D2 === Answer.Yes || ans.D3 === Answer.Yes) && ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No) {
     _consistencyIssues.push("A prompt or RAG knowledge-base change was marked non-significant across all U.S. significance questions. Confirm the clinical behavior, risk-control, and performance rationale before closing as Letter to File.");
   }
+  if (_isPMA && (ans.D2 === Answer.Yes || ans.D3 === Answer.Yes) && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A prompt or RAG knowledge-base change was reported, but the PMA safety/effectiveness question was marked NO. Prompt and RAG changes can alter clinical behavior — reassess C_PMA1 before relying on the determination.");
+  }
   if (ans.E3 === Answer.Yes && ans.B3 === Answer.No) {
     _consistencyIssues.push("New demographic populations were introduced while intended-use impact was marked NO. Confirm that this does not expand the authorized population or effective clinical scope.");
   }
@@ -92,14 +98,20 @@ export const computeDetermination = (ans: Answers) => {
   if (_isIntendedUseUncertain) {
     _consistencyIssues.push("Intended use impact is marked Uncertain. This uncertainty must be resolved through RA/clinical expert review or an FDA Pre-Submission (Q-Sub) before relying on any pathway determination. Do not treat this assessment as a final regulatory conclusion.");
   }
-  if (ans.C1 === Answer.Uncertain) {
+  // C1/C2 exemptions are 510(k)/De Novo concepts — only warn if not PMA (avoids stale answer false positives)
+  if (!_isPMA && ans.C1 === Answer.Uncertain) {
     _consistencyIssues.push("Cybersecurity exemption eligibility is uncertain. The exemption requires affirmative demonstration that the change is solely to strengthen cybersecurity with zero functional impact. Because this could not be confirmed, the assessment continues to the full significance evaluation. Resolve the uncertainty before claiming exemption in any regulatory documentation.");
   }
-  if (ans.C2 === Answer.Uncertain) {
+  if (!_isPMA && ans.C2 === Answer.Uncertain) {
     _consistencyIssues.push("Restore-to-specification exemption eligibility is uncertain. The exemption requires affirmative demonstration that the change restores the device to a known, documented, cleared state. Because this could not be confirmed, the assessment continues to the full significance evaluation.");
   }
-  if (ans.B1 === "Post-Market Surveillance" && ans.C5 === Answer.No && (ans.B2 || "").includes("Monitoring threshold")) {
-    _consistencyIssues.push("A monitoring threshold change was reported with no risk-control impact. If the change weakens monitoring sensitivity, it may affect an existing risk control measure. Reassess C5.");
+  if (ans.B1 === "Post-Market Surveillance" && (ans.B2 || "").includes("Monitoring threshold")) {
+    if (!_isPMA && ans.C5 === Answer.No) {
+      _consistencyIssues.push("A monitoring threshold change was reported with no risk-control impact. If the change weakens monitoring sensitivity, it may affect an existing risk control measure. Reassess C5.");
+    }
+    if (_isPMA && ans.C_PMA1 === Answer.No) {
+      _consistencyIssues.push("A monitoring threshold change was reported, but the PMA safety/effectiveness question was marked NO. If the change weakens monitoring sensitivity, it may affect safety or effectiveness. Reassess C_PMA1.");
+    }
   }
   if (_baselineIncomplete && !_isCyberOnly && !_isBugFix) {
     _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
@@ -129,9 +141,12 @@ export const computeDetermination = (ans: Answers) => {
     (!_p5Applicable || ans.P5 === Answer.Yes);
   const _pccpScopeFailed = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
     (ans.P1 === Answer.No || ans.P2 === Answer.No || ans.P3 === Answer.No || ans.P4 === Answer.No || ans.P5 === Answer.No);
+  // PCCP verification is only relevant when the change would otherwise require a submission.
+  // For PMA: only when _pmaRequiresSupplement is true (otherwise it's PMAAnnualReport — no PCCP needed).
+  // For non-PMA: only when _isSignificant is true (otherwise it's Letter to File — no PCCP needed).
   const _pccpIncomplete = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
     !_pccpScopeVerified && !_pccpScopeFailed &&
-    (_isSignificant || (_isPMA && !_pmaIncomplete));
+    ((!_isPMA && _isSignificant) || (_isPMA && !_pmaIncomplete && _pmaRequiresSupplement));
 
   let pathway;
   if (_isPMA) {
