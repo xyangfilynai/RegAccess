@@ -57,14 +57,17 @@ const pathwayToDocKey: Record<string, string> = {
 const getRuleKey = (determination: any): string | null => {
   if (determination.isIntendedUseChange) return "SCREEN-01-Yes";
   if (determination.isIntendedUseUncertain) return "SCREEN-01-Uncertain";
+  // PMA-specific rules — check before 510(k) framework rules
+  if (determination.pathway === Pathway.PMASupplementRequired) return "PMA-Supplement";
+  if (determination.pathway === Pathway.PMAAnnualReport) return "PMA-AnnualReport";
+  // 510(k)/De Novo framework rules
   if (determination.deNovoDeviceTypeFitFailed) return "DENOVO-FIT-FAILED";
   if (determination.isCyberOnly) return "SCREEN-02-Yes";
   if (determination.isBugFix) return "SCREEN-03-Yes";
+  // PCCP — applicable to both PMA and 510(k)/De Novo
   if (determination.pccpScopeVerified) return "PCCP-Verified";
   if (determination.pccpScopeFailed) return "PCCP-Failed";
   if (determination.isSignificant) return "RISK-01-Yes";
-  if (determination.pathway === Pathway.PMASupplementRequired) return "PMA-Supplement";
-  if (determination.pathway === Pathway.PMAAnnualReport) return "PMA-AnnualReport";
   if (determination.pathway === Pathway.LetterToFile) return "LTF-NonSignificant";
   return null;
 };

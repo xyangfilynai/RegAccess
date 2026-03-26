@@ -533,3 +533,90 @@ describe('dead code removal (Finding #3)', () => {
     expect('consistencyBlock' in det).toBe(false);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// Logic audit fixes — preventing misroutes and stale-answer hazards
+// ════════════════════════════════════════════════════════════════════════
+
+describe('PMA devices must not use 510(k) exemption flags', () => {
+  it('PMA device with C1=Yes does not set isCyberOnly (510(k) exemption does not apply to PMA)', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      C1: Answer.Yes, // stale or coincidental
+    }));
+    expect(det.isCyberOnly).toBe(false);
+    expect(det.pathway).toBe(Pathway.PMAAnnualReport);
+  });
+
+  it('PMA device with C2=Yes does not set isBugFix (510(k) exemption does not apply to PMA)', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      C2: Answer.Yes, // stale or coincidental
+    }));
+    expect(det.isBugFix).toBe(false);
+    expect(det.pathway).toBe(Pathway.PMAAnnualReport);
+  });
+});
+
+describe('PCCP scope verification requires active PCCP (A2=Yes)', () => {
+  it('stale P-block answers do not trigger pccpScopeVerified when A2=No', () => {
+    const det = computeDetermination(base510k({
+      A2: Answer.No, // no PCCP
+      P1: Answer.Yes,
+      P2: Answer.Yes,
+      P3: Answer.Yes,
+      P4: Answer.Yes,
+      P5: Answer.Yes, // stale from previous session
+    }));
+    expect(det.pccpScopeVerified).toBe(false);
+    expect(det.pccpScopeFailed).toBe(false);
+    expect(det.pccpIncomplete).toBe(false);
+    expect(det.pathway).toBe(Pathway.LetterToFile);
+  });
+
+  it('stale P-block answers do not trigger pccpScopeFailed when A2=No', () => {
+    const det = computeDetermination(base510k({
+      A2: Answer.No,
+      C3: Answer.Yes, // significant
+      P1: Answer.No, // stale
+    }));
+    expect(det.pccpScopeFailed).toBe(false);
+    expect(det.pathway).toBe(Pathway.NewSubmission);
+  });
+});
+
+describe('PMA GenAI consistency checks', () => {
+  it('PMA device with D4=Yes (guardrail change) + C_PMA1=No produces consistency warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      D4: Answer.Yes,
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('guardrail') && i.includes('C_PMA1'))).toBe(true);
+  });
+
+  it('PMA device with D1=Yes (base model swap) + C_PMA1=No produces consistency warning', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      D1: Answer.Yes,
+    }));
+    expect(det.consistencyIssues.some((i: string) => i.includes('foundation/base model') && i.includes('C_PMA1'))).toBe(true);
+  });
+
+  it('PMA GenAI high-impact flag fires for PMA devices', () => {
+    const det = computeDetermination(basePMA({
+      C_PMA1: Answer.No,
+      C_PMA2: Answer.No,
+      C_PMA3: Answer.No,
+      D1: Answer.Yes,
+    }));
+    expect(det.genAIHighImpactChange).toBe(true);
+  });
+});

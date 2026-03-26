@@ -3,9 +3,11 @@ import { Answer, AuthPathway, Pathway, Answers } from './types';
 export const computeDetermination = (ans: Answers) => {
   const _isIntendedUseChange = ans.B3 === Answer.Yes;
   const _isIntendedUseUncertain = ans.B3 === Answer.Uncertain;
-  const _isCyberOnly = !_isIntendedUseChange && !_isIntendedUseUncertain && ans.C1 === Answer.Yes;
-  const _isBugFix = !_isIntendedUseChange && !_isIntendedUseUncertain && !_isCyberOnly && ans.C2 === Answer.Yes;
   const _isPMA = ans.A1 === AuthPathway.PMA;
+  // Cybersecurity and restore-to-spec exemptions are 510(k) framework concepts (FDA-SW-510K-2017).
+  // They do not apply to PMA devices — PMA uses 21 CFR 814.39 safety/effectiveness analysis.
+  const _isCyberOnly = !_isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && ans.C1 === Answer.Yes;
+  const _isBugFix = !_isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && !_isCyberOnly && ans.C2 === Answer.Yes;
   const _isDeNovo = ans.A1 === AuthPathway.DeNovo;
   const _hasPCCP = ans.A2 === Answer.Yes;
 
@@ -54,14 +56,23 @@ export const computeDetermination = (ans: Answers) => {
       _cumulativeDriftUnresolved
     );
 
-  const _genAIHighImpactChange = !_isPMA && (ans.D1 === Answer.Yes || ans.D4 === Answer.Yes);
+  const _genAIHighImpactChange = ans.D1 === Answer.Yes || ans.D4 === Answer.Yes;
 
   const _consistencyIssues: string[] = [];
+  // GenAI consistency checks — apply to all pathways including PMA.
+  // For 510(k)/De Novo, cross-reference against C3-C6 significance answers.
+  // For PMA, cross-reference against C_PMA1 safety/effectiveness answer.
   if (!_isPMA && ans.D4 === Answer.Yes && ans.C5 === Answer.No) {
     _consistencyIssues.push("A GenAI guardrail / safety filter change was marked YES, but the risk-control significance question was marked NO. Reassess C5 before relying on the determination.");
   }
+  if (_isPMA && ans.D4 === Answer.Yes && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A GenAI guardrail / safety filter change was marked YES, but the PMA safety/effectiveness question was marked NO. Guardrail changes directly affect risk controls — reassess C_PMA1 before relying on the determination.");
+  }
   if (!_isPMA && ans.D1 === Answer.Yes && ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No) {
     _consistencyIssues.push("A foundation/base model change was marked non-significant across all U.S. significance questions. This is unusual and should be re-reviewed against performance, risk, and intended-use baselines.");
+  }
+  if (_isPMA && ans.D1 === Answer.Yes && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A foundation/base model change was reported, but the PMA safety/effectiveness question was marked NO. Base model swaps almost always affect safety or effectiveness — reassess C_PMA1 before relying on the determination.");
   }
   if (!_isPMA && (ans.D2 === Answer.Yes || ans.D3 === Answer.Yes) && ans.C3 === Answer.No && ans.C4 === Answer.No && ans.C5 === Answer.No && ans.C6 === Answer.No) {
     _consistencyIssues.push("A prompt or RAG knowledge-base change was marked non-significant across all U.S. significance questions. Confirm the clinical behavior, risk-control, and performance rationale before closing as Letter to File.");
@@ -112,8 +123,9 @@ export const computeDetermination = (ans: Answers) => {
     ans.C_PMA2 === Answer.Yes || ans.C_PMA3 === Answer.Yes
   );
 
-  const _p5Applicable = ans.P1 === Answer.Yes && ans.P2 !== Answer.No && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes;
-  const _pccpScopeVerified = ans.P1 === Answer.Yes && ans.P2 === Answer.Yes && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes &&
+  const _p5Applicable = _hasPCCP && ans.P1 === Answer.Yes && ans.P2 !== Answer.No && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes;
+  // Gate on _hasPCCP to prevent stale P-block answers from triggering false verification
+  const _pccpScopeVerified = _hasPCCP && ans.P1 === Answer.Yes && ans.P2 === Answer.Yes && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes &&
     (!_p5Applicable || ans.P5 === Answer.Yes);
   const _pccpScopeFailed = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
     (ans.P1 === Answer.No || ans.P2 === Answer.No || ans.P3 === Answer.No || ans.P4 === Answer.No || ans.P5 === Answer.No);
