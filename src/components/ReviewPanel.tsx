@@ -18,7 +18,7 @@ import {
   buildExpertReviewItems,
 } from '../lib/review-insights';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
-import { buildAssessmentBasis, splitReportNarrative } from '../lib/report-basis';
+import { splitReportNarrative } from '../lib/report-basis';
 
 // ─ Small helper components ─
 
@@ -203,10 +203,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const reportNarrative = useMemo(
     () => splitReportNarrative(caseReasoning?.narrative || []),
     [caseReasoning],
-  );
-  const assessmentBasis = useMemo(
-    () => buildAssessmentBasis(answers, determination),
-    [answers, determination],
   );
 
   const getPathwayConfig = () => {
@@ -795,48 +791,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           {/* MERGED RATIONALE SECTION */}
           <div>
             <SectionLabel>Decision Rationale</SectionLabel>
-
-            {/* Assessment Basis */}
-            {assessmentBasis.length > 0 && (
-              <div style={{
-                marginBottom: 16,
-                padding: '12px 14px',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-              }}>
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#475569',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  marginBottom: 8,
-                }}>
-                  Basis
-                </div>
-                <ul style={{
-                  margin: 0,
-                  paddingLeft: 16,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                }}>
-                  {assessmentBasis.map((item, index) => (
-                    <li
-                      key={`basis-item-${index}`}
-                      style={{
-                        fontSize: 12.5,
-                        color: '#334155',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      <HelpTextWithLinks text={item} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {/* Supporting reasoning paragraphs */}
             {reportNarrative.supportingReasoning.length > 0 && (
