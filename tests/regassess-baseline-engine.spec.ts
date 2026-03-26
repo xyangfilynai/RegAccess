@@ -64,6 +64,26 @@ describe('computeDetermination — 510(k) / De Novo', () => {
     expect(det.isIncomplete).toBe(false);
   });
 
+  it('records the matched declarative pathway rule and recommendation trace', () => {
+    const det = computeDetermination(base510k());
+
+    expect(det.decisionTrace.pathwayRule.id).toBe('nonpma-all-significance-no');
+    expect(det.decisionTrace.pccpRecommendationRule.id).toBe('suppress-pccp-recommendation');
+    expect(det.decisionTrace.consistencyRules).toEqual([]);
+  });
+
+  it('records triggered declarative consistency rules', () => {
+    const det = computeDetermination(base510k({ D1: Answer.Yes }));
+
+    expect(det.decisionTrace.consistencyRules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'nonpma-foundation-model-all-significance-no',
+        }),
+      ]),
+    );
+  });
+
   it('routes pure cybersecurity changes to Letter to File', () => {
     const det = computeDetermination(base510k({ C1: Answer.Yes }));
 
