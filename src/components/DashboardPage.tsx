@@ -181,7 +181,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 paddingTop: 10,
                 borderTop: '1px solid #f3f4f6',
               }}>
-                Example: New clinical sites with different scanners and demographics, no PCCP established.
+                Example: New clinical sites with different scanners and demographics, uncertain subgroup impact, no PCCP established.
               </p>
             </div>
             <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
