@@ -10,8 +10,9 @@ import {
   getQuestions,
 } from '../src/lib/assessment-engine';
 import { computeEvidenceGaps } from '../src/lib/evidence-gaps';
-import { generateAssessmentArtifact } from '../src/lib/report-generator';
+import { formatArtifactAsText, generateAssessmentArtifact } from '../src/lib/report-generator';
 import { buildCaseSpecificReasoning } from '../src/lib/case-specific-reasoning';
+import { buildEvidenceGapInsightItems, buildExpertReviewItems } from '../src/lib/review-insights';
 
 type Answers = Record<string, any>;
 
@@ -163,5 +164,92 @@ describe('Case-specific reasoning credibility fixes', () => {
     expect(
       reasoning.counterConsiderations.some((step) => step.includes('revising C5 to No')),
     ).toBe(true);
+  });
+});
+
+describe('Review insight specificity fixes', () => {
+  it('turns unresolved significance review items into question-specific expert actions', () => {
+    const answers = base510k({
+      B1: 'Model Architecture',
+      B2: 'Layer addition / removal',
+      B4: 'The architecture update adds an intermediate attention block.',
+      C1: Answer.No,
+      C2: Answer.No,
+      C3: Answer.No,
+      C4: Answer.No,
+      C5: Answer.Uncertain,
+      C6: Answer.No,
+    });
+    const determination = computeDetermination(answers);
+    const items = buildExpertReviewItems(answers, determination);
+    const item = items.find((candidate) => candidate.id === 'nonpma-unresolved-significance-uncertainty-policy');
+
+    expect(item).toBeDefined();
+    expect(item?.title).toContain('C5 (risk-control impact)');
+    expect(item?.title).toContain('Layer addition / removal');
+    expect(item?.meta).toContain('Current route: New Submission Required');
+    expect(item?.actionText).toContain('threshold, guardrail, override, monitoring rule, or mitigation');
+  });
+
+  it('turns evidence gaps into change-specific evidence requests instead of generic notes', () => {
+    const answers = base510k({
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B4: 'Adds data from three new hospitals using Canon scanners and a broader protocol mix.',
+      C1: Answer.No,
+      C2: Answer.No,
+      C3: Answer.Uncertain,
+      C4: Answer.No,
+      C5: Answer.No,
+      C6: Answer.Yes,
+      E1: Answer.No,
+      E2: Answer.No,
+    });
+    const determination = computeDetermination(answers);
+    const gaps = computeEvidenceGaps(answers, determination);
+    const items = buildEvidenceGapInsightItems(answers, determination, gaps);
+
+    const representativeness = items.find((item) => item.id === 'GAP-TRAINING-REPR');
+    const subgroup = items.find((item) => item.id === 'GAP-SUBGROUP');
+    const uncertainty = items.find((item) => item.id === 'GAP-SIG-UNCERTAIN');
+
+    expect(representativeness?.title).toContain('Additional data — new clinical sites');
+    expect(representativeness?.actionText).toContain('newly added site');
+    expect(representativeness?.actionText).toContain('scanner/vendor mix');
+
+    expect(subgroup?.title).toContain('Additional data — new clinical sites');
+    expect(subgroup?.actionText).toContain('new-site cohorts');
+
+    expect(uncertainty?.title).toContain('C3 (new or modified cause of harm)');
+    expect(uncertainty?.actionText).toContain('creates a new cause of harm');
+  });
+
+  it('prints full source-document names in the exported artifact for the new insight sections', () => {
+    const answers = base510k({
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B4: 'Adds data from three new hospitals using Canon scanners.',
+      C1: Answer.No,
+      C2: Answer.No,
+      C3: Answer.Uncertain,
+      C4: Answer.No,
+      C5: Answer.No,
+      C6: Answer.Yes,
+      E1: Answer.No,
+      E2: Answer.No,
+    });
+    const determination = computeDetermination(answers);
+    const ds = computeDerivedState(answers);
+    const blocks = getBlocks(answers, ds);
+    const artifact = generateAssessmentArtifact(
+      answers,
+      determination,
+      blocks,
+      (blockId: string) => getQuestions(blockId, answers, ds),
+    );
+    const text = formatArtifactAsText(artifact);
+
+    expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
+    expect(text).toContain('AI-Enabled Device Software Functions: Lifecycle Management and Marketing Submission Recommendations');
   });
 });

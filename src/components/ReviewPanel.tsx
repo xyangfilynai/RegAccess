@@ -18,6 +18,10 @@ import {
 import { changeTaxonomy } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
 import type { ReviewerNote } from '../lib/assessment-store';
+import {
+  buildEvidenceGapInsightItems,
+  buildExpertReviewItems,
+} from '../lib/review-insights';
 import { classifySource } from '../lib/source-classification';
 import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
 
@@ -110,7 +114,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   // Evidence gaps
   const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
   const criticalGaps = evidenceGaps.filter(g => g.severity === 'critical');
-  const importantGaps = evidenceGaps.filter(g => g.severity === 'important');
+  const expertReviewItems = useMemo(
+    () => buildExpertReviewItems(answers, determination),
+    [answers, determination],
+  );
+  const evidenceGapItems = useMemo(
+    () => buildEvidenceGapInsightItems(answers, determination, evidenceGaps),
+    [answers, determination, evidenceGaps],
+  );
 
   // Get documentation requirements for this pathway
   const docKey = pathwayToDocKey[pathway];
@@ -569,7 +580,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       {/* ============================================
           CONSISTENCY ISSUES (if any)
           ============================================ */}
-      {consistencyIssues.length > 0 && (
+      {expertReviewItems.length > 0 && (
         <div style={{
           padding: '16px 20px',
           borderRadius: 6,
@@ -581,37 +592,100 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            marginBottom: 10,
+            marginBottom: 12,
           }}>
             <Icon name="alert" size={16} color="#d97706" />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
-              Items Needing Expert Review ({consistencyIssues.length})
+              Expert Review Required Before Reliance ({expertReviewItems.length})
             </span>
           </div>
-          <ul style={{
-            margin: 0,
-            paddingLeft: 20,
+          <p style={{
+            fontSize: 12,
+            color: '#78350f',
+            margin: '0 0 12px',
+            lineHeight: 1.55,
+          }}>
+            Each item below identifies a specific contradiction, unresolved judgment, or threshold decision that still needs expert resolution for this case.
+          </p>
+          <div style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 6,
+            gap: 10,
           }}>
-            {consistencyIssues.map((issue: string, i: number) => (
-              <li key={i} style={{
-                fontSize: 13,
-                color: '#78350f',
-                lineHeight: 1.5,
+            {expertReviewItems.map((item) => (
+              <div key={item.id} style={{
+                padding: '12px 14px',
+                borderRadius: 6,
+                background: '#fffcf2',
+                border: '1px solid #fde7a7',
               }}>
-                <HelpTextWithLinks text={issue} />
-              </li>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#7c2d12',
+                  lineHeight: 1.45,
+                  marginBottom: 4,
+                }}>
+                  <HelpTextWithLinks text={item.title} />
+                </div>
+                <div style={{
+                  fontSize: 11,
+                  color: '#a16207',
+                  marginBottom: 8,
+                  lineHeight: 1.45,
+                }}>
+                  {item.meta}
+                </div>
+                <div style={{
+                  fontSize: 12.5,
+                  color: '#78350f',
+                  lineHeight: 1.6,
+                  marginBottom: 8,
+                }}>
+                  <strong>Why this matters here:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
+                </div>
+                <div style={{
+                  fontSize: 12.5,
+                  color: '#78350f',
+                  lineHeight: 1.6,
+                }}>
+                  <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
+                </div>
+                {item.sourceRefs.length > 0 && (
+                  <div style={{
+                    fontSize: 12,
+                    color: '#6b7280',
+                    lineHeight: 1.5,
+                    marginTop: 8,
+                    paddingTop: 8,
+                    borderTop: '1px solid #f3e8c1',
+                  }}>
+                    <strong>Basis:</strong>
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      marginTop: 4,
+                    }}>
+                      {item.sourceRefs.map((ref) => (
+                        <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                          <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
+                          <EvidenceGapSourceRef code={ref} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
       {/* ============================================
           EVIDENCE GAPS CHECKLIST
           ============================================ */}
-      {evidenceGaps.length > 0 && (
+      {evidenceGapItems.length > 0 && (
         <div style={{
           padding: '16px 20px',
           borderRadius: 6,
@@ -627,7 +701,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }}>
             <Icon name="alertCircle" size={16} color={criticalGaps.length > 0 ? '#dc2626' : '#d97706'} />
             <span style={{ fontSize: 13, fontWeight: 600, color: criticalGaps.length > 0 ? '#991b1b' : '#92400e' }}>
-              Evidence Gaps ({evidenceGaps.length})
+              Evidence Needed Before Reliance ({evidenceGapItems.length})
               {criticalGaps.length > 0 && (
                 <span style={{
                   fontSize: 10,
@@ -649,62 +723,55 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             margin: '0 0 12px',
             lineHeight: 1.5,
           }}>
-            The following gaps must be resolved before the assessment result can be relied upon for regulatory decisions.
+            These items identify missing analyses or documents for this specific case. The assessment can be reviewed now, but it should not be relied upon until the listed evidence is added.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {evidenceGaps.map((gap) => (
-              <div key={gap.id} style={{
+            {evidenceGapItems.map((item) => (
+              <div key={item.id} style={{
                 padding: '10px 12px',
-                background: gap.severity === 'critical' ? '#fff5f5' : '#fffdf5',
+                background: item.severity === 'critical' ? '#fff5f5' : '#fffdf5',
                 borderRadius: 4,
-                border: `1px solid ${gap.severity === 'critical' ? '#fed7d7' : '#fef3c7'}`,
+                border: `1px solid ${item.severity === 'critical' ? '#fed7d7' : '#fef3c7'}`,
               }}>
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 4,
-                }}>
-                  <span style={{
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: '1px 5px',
-                    borderRadius: 3,
-                    background: gap.severity === 'critical' ? '#fecaca' : gap.severity === 'important' ? '#fde68a' : '#e5e7eb',
-                    color: gap.severity === 'critical' ? '#dc2626' : gap.severity === 'important' ? '#92400e' : '#6b7280',
-                    textTransform: 'uppercase',
-                  }}>
-                    {gap.severity}
-                  </span>
-                  <span style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#374151',
-                  }}>
-                    {gap.category}
-                  </span>
-                  <AuthorityTag level={sourceClassToLevel[gap.sourceClass] || 'best_practice'} compact />
-                </div>
-                <div style={{
                   fontSize: 13,
+                  fontWeight: 600,
                   color: '#111827',
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   marginBottom: 4,
                 }}>
-                  {gap.description}
+                  <HelpTextWithLinks text={item.title} />
                 </div>
                 <div style={{
-                  fontSize: 12,
-                  color: '#6b7280',
-                  lineHeight: 1.5,
+                  fontSize: 11,
+                  color: '#9a3412',
+                  lineHeight: 1.45,
+                  marginBottom: 8,
                 }}>
-                  <strong>Action:</strong> {gap.remediation}
+                  {item.meta}
+                </div>
+                <div style={{
+                  fontSize: 12.5,
+                  color: '#4b5563',
+                  lineHeight: 1.6,
+                  marginBottom: 8,
+                }}>
+                  <strong>Why this matters here:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
+                </div>
+                <div style={{
+                  fontSize: 12.5,
+                  color: '#6b7280',
+                  lineHeight: 1.6,
+                }}>
+                  <strong>{item.actionLabel}:</strong> <HelpTextWithLinks text={item.actionText} />
                 </div>
                 <div style={{
                   fontSize: 12,
                   color: '#6b7280',
                   lineHeight: 1.5,
-                  marginTop: 6,
+                  marginTop: 8,
+                  paddingTop: 8,
+                  borderTop: '1px solid #f3f4f6',
                 }}>
                   <strong>Source documents:</strong>
                   <div style={{
@@ -713,12 +780,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                     gap: 4,
                     marginTop: 4,
                   }}>
-                    {gap.source
-                      .split(';')
-                      .map((ref) => ref.trim())
-                      .filter(Boolean)
-                      .map((ref) => (
-                        <div key={`${gap.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                    {item.sourceRefs.map((ref) => (
+                        <div key={`${item.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                           <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
                           <EvidenceGapSourceRef code={ref} />
                         </div>

@@ -5,7 +5,7 @@ import { DashboardPage } from '../src/components/DashboardPage';
 import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
-import { Answer, Pathway, type Block, type Question } from '../src/lib/assessment-engine';
+import { Answer, Pathway, computeDetermination, type Block, type Question } from '../src/lib/assessment-engine';
 
 describe('UI workflow', () => {
   it('prioritizes continuing existing work ahead of starting a new assessment', () => {
@@ -206,5 +206,47 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
     expect(screen.getByText('Print Assessment Summary')).toBeInTheDocument();
+  });
+
+  it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {
+    const answers = {
+      A1: '510(k)',
+      A1b: 'K123456',
+      A1c: 'v4.2 cleared build',
+      A1d: 'Authorized IFU summary',
+      A2: 'No',
+      A3: ['US'],
+      B1: 'Training Data',
+      B2: 'Additional data — new clinical sites',
+      B4: 'Adds data from three new hospitals using Canon scanners and a broader protocol mix.',
+      B3: 'No',
+      C1: 'No',
+      C2: 'No',
+      C3: 'Uncertain',
+      C4: 'No',
+      C5: 'No',
+      C6: 'Yes',
+      E1: 'No',
+      E2: 'No',
+    };
+
+    render(
+      <ReviewPanel
+        pathway={Pathway.NewSubmission}
+        determination={computeDetermination(answers)}
+        answers={answers}
+        blocks={[]}
+        getQuestionsForBlock={() => []}
+        onEditBlock={() => {}}
+      />
+    );
+
+    expect(
+      screen.getByText(/The data supporting Additional data — new clinical sites is not yet shown to represent the cleared population/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/List each newly added site for Additional data — new clinical sites/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/C3 \(new or modified cause of harm\) is still unresolved for Additional data — new clinical sites/i).length,
+    ).toBeGreaterThan(0);
   });
 });

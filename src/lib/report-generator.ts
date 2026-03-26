@@ -6,7 +6,10 @@
 import type { Answers, Block, Question } from './assessment-engine';
 import { Pathway } from './assessment-engine';
 import { docRequirements } from './content';
+import { getSourceBadge } from './content';
 import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';
+import type { ReviewInsightItem, EvidenceGapInsightItem } from './review-insights';
+import { buildEvidenceGapInsightItems, buildExpertReviewItems } from './review-insights';
 import { classifySource, type SourceClass } from './source-classification';
 import { buildCaseSpecificReasoning } from './case-specific-reasoning';
 
@@ -42,7 +45,9 @@ export interface AssessmentArtifact {
   }>;
   assumptions: string[];
   unresolvedQuestions: string[];
+  expertReviewItems: ReviewInsightItem[];
   evidenceGaps: EvidenceGap[];
+  evidenceGapItems: EvidenceGapInsightItem[];
   nextActions: string[];
   consistencyIssues: string[];
   documentationRequirements: {
@@ -149,6 +154,8 @@ export function generateAssessmentArtifact(
 
   // Evidence gaps
   const evidenceGaps = computeEvidenceGaps(answers, determination);
+  const expertReviewItems = buildExpertReviewItems(answers, determination);
+  const evidenceGapItems = buildEvidenceGapInsightItems(answers, determination, evidenceGaps);
 
   // Next actions
   const nextActions: string[] = [];
@@ -220,7 +227,9 @@ export function generateAssessmentArtifact(
     keyInputs,
     assumptions,
     unresolvedQuestions,
+    expertReviewItems,
     evidenceGaps,
+    evidenceGapItems,
     nextActions,
     consistencyIssues: determination.consistencyIssues || [],
     documentationRequirements,
@@ -233,6 +242,7 @@ export function generateAssessmentArtifact(
 export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentName?: string): string {
   const lines: string[] = [];
   const hr = '─'.repeat(60);
+  const formatSourceRef = (sourceRef: string): string => getSourceBadge(sourceRef).full || sourceRef;
 
   lines.push(hr);
   lines.push('REGULATORY CHANGE ASSESSMENT REPORT');
@@ -298,23 +308,35 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     lines.push('');
   }
 
-  if (artifact.evidenceGaps.length > 0) {
+  if (artifact.expertReviewItems.length > 0) {
     lines.push(hr);
-    lines.push('EVIDENCE GAPS');
+    lines.push('EXPERT REVIEW REQUIRED');
     lines.push(hr);
-    artifact.evidenceGaps.forEach((g, i) => {
-      lines.push(`${i + 1}. [${g.severity.toUpperCase()}] ${g.description}`);
-      lines.push(`   Category: ${g.category} | Source: ${g.sourceClass}`);
-      lines.push(`   Remediation: ${g.remediation}`);
+    artifact.expertReviewItems.forEach((item, i) => {
+      lines.push(`${i + 1}. ${item.title}`);
+      lines.push(`   ${item.meta}`);
+      lines.push(`   Why this matters here: ${item.whyThisMatters}`);
+      lines.push(`   ${item.actionLabel}: ${item.actionText}`);
+      if (item.sourceRefs.length > 0) {
+        lines.push(`   Basis: ${item.sourceRefs.map(formatSourceRef).join('; ')}`);
+      }
     });
     lines.push('');
   }
 
-  if (artifact.consistencyIssues.length > 0) {
+  if (artifact.evidenceGapItems.length > 0) {
     lines.push(hr);
-    lines.push('CONSISTENCY ISSUES');
+    lines.push('EVIDENCE NEEDED BEFORE RELIANCE');
     lines.push(hr);
-    artifact.consistencyIssues.forEach((issue, i) => lines.push(`${i + 1}. ${issue}`));
+    artifact.evidenceGapItems.forEach((item, i) => {
+      lines.push(`${i + 1}. ${item.title}`);
+      lines.push(`   ${item.meta}`);
+      lines.push(`   Why this matters here: ${item.whyThisMatters}`);
+      lines.push(`   ${item.actionLabel}: ${item.actionText}`);
+      if (item.sourceRefs.length > 0) {
+        lines.push(`   Source documents: ${item.sourceRefs.map(formatSourceRef).join('; ')}`);
+      }
+    });
     lines.push('');
   }
 
