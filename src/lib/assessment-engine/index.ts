@@ -1,4 +1,4 @@
-export { Answer, AuthPathway, Pathway, isAnsweredValue, pathwayToDocKey } from './types';
+export { Answer, AuthPathway, Pathway, isAnsweredValue } from './types';
 export type { Answers } from './types';
 export { computeDetermination } from './computeDetermination';
 export type { DeterminationResult } from './computeDetermination';

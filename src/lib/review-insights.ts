@@ -1,5 +1,6 @@
-import { Answer, changeTaxonomy, type Answers, type DeterminationResult } from './assessment-engine';
+import { Answer, type Answers, type DeterminationResult } from './assessment-engine';
 import type { EvidenceGap, GapSeverity } from './evidence-gaps';
+import { joinWithAnd, getChangeLabel, getSelectedChangeContext } from './change-utils';
 
 export interface ReviewInsightItem {
   id: string;
@@ -22,34 +23,9 @@ const splitSources = (source: string | null | undefined): string[] =>
     .map((entry) => entry.trim())
     .filter(Boolean);
 
-const joinWithAnd = (items: string[]): string => {
-  if (items.length === 0) return '';
-  if (items.length === 1) return items[0];
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
-};
-
-const getChangeLabel = (answers: Answers): string =>
-  (answers.B2 as string) || (answers.B1 as string) || 'the reported change';
-
 const getAnswerLabel = (value: unknown): string => {
   if (value === undefined || value === null || value === '') return 'not answered';
   return String(value);
-};
-
-const getSelectedChange = (answers: Answers) => {
-  const category = answers.B1 as string | undefined;
-  const typeName = answers.B2 as string | undefined;
-  if (!category && !typeName) return null;
-  const typeConfig = category && typeName
-    ? changeTaxonomy[category]?.types?.find((item: { name: string }) => item.name === typeName)
-    : null;
-  return {
-    category: category || null,
-    typeName: typeName || category || 'the reported change',
-    pccpNote: typeConfig?.pccpNote || null,
-    description: typeConfig?.desc || null,
-  };
 };
 
 const getSeverityLabel = (severity: GapSeverity): string => {
@@ -384,7 +360,7 @@ export function buildEvidenceGapInsightItems(
   determination: DeterminationResult,
   gaps: EvidenceGap[],
 ): EvidenceGapInsightItem[] {
-  const changeContext = getSelectedChange(answers);
+  const changeContext = getSelectedChangeContext(answers);
   const uncertainSignificance = describeSignificanceUncertainty(answers);
 
   return gaps.map((gap) => {

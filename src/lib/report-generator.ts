@@ -4,7 +4,7 @@
  */
 
 import type { Answers, Block, DeterminationResult, Question } from './assessment-engine';
-import { Pathway, pathwayToDocKey } from './assessment-engine';
+import { Pathway } from './assessment-engine';
 import { docRequirements } from './content';
 import { getSourceBadge } from './content';
 import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';
@@ -118,8 +118,7 @@ export function generateAssessmentArtifact(
   nextActions.push('Have qualified regulatory and clinical professionals review this assessment before action.');
 
   // Documentation requirements with source classes
-  const docKey = pathwayToDocKey[determination.pathway];
-  const docs = docKey ? docRequirements[docKey] : null;
+  const docs = docRequirements[determination.pathway] || null;
   const documentationRequirements = {
     required: (docs?.required || []).map((d: { doc: string; source: string }) => ({
       ...d,

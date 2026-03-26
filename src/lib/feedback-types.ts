@@ -85,11 +85,6 @@ export function shouldShowContact(q6: Q6Option[]): boolean {
   return !(q6.length === 1 && q6[0] === 'Not at this time');
 }
 
-/** Returns true if Q8 (referral) should be shown — same condition as Q7. */
-export function shouldShowReferral(q6: Q6Option[]): boolean {
-  return shouldShowContact(q6);
-}
-
 export function createEmptyForm(): FeedbackFormData {
   return {
     q1_conclusion: '',

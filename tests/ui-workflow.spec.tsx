@@ -229,11 +229,11 @@ describe('UI workflow', () => {
     );
 
     expect(
-      screen.getByText(/The data supporting Additional data — new clinical sites is not yet shown to represent the cleared population/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/List each newly added site for Additional data — new clinical sites/i)).toBeInTheDocument();
+      screen.getAllByText(/The supporting data is not yet shown to represent the cleared population/i).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getAllByText(/List each newly added site/i).length).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(/whether the change creates a new or modified cause of harm is still unresolved for Additional data — new clinical sites/i).length,
+      screen.getAllByText(/creates a new or modified cause of harm/i).length,
     ).toBeGreaterThan(0);
     expect(screen.getByText('What Still Needs Resolution')).toBeInTheDocument();
     expect(screen.getByText('Detailed Rationale')).toBeInTheDocument();

@@ -2,7 +2,6 @@ import {
   Answer,
   AuthPathway,
   Pathway,
-  changeTaxonomy,
   isAnsweredValue,
   type Answers,
   type Block,
@@ -10,6 +9,7 @@ import {
   type Question,
 } from './assessment-engine';
 import { ruleReasoningLibrary } from './content';
+import { joinWithAnd, getChangeLabel as getChangeLabelShared, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
 
 export interface CaseSpecificReasoning {
   ruleKey: string | null;
@@ -21,13 +21,6 @@ export interface CaseSpecificReasoning {
   counterTitle: string | null;
   counterConsiderations: string[];
   sources: string[];
-}
-
-interface SelectedChangeContext {
-  category: string | null;
-  typeName: string;
-  description: string | null;
-  pccpNote: string | null;
 }
 
 const pushUnique = (items: string[], value: string | null | undefined) => {
@@ -61,9 +54,8 @@ const getAuthorizationDescriptor = (answers: Answers): string => {
   return 'the device under assessment';
 };
 
-const getChangeLabel = (answers: Answers): string => {
-  return (answers.B2 as string) || (answers.B1 as string) || 'the change under assessment';
-};
+const getChangeLabel = (answers: Answers): string =>
+  getChangeLabelShared(answers, 'the change under assessment');
 
 const getPCCPStatusText = (answers: Answers): string => {
   if (answers.A2 === Answer.Yes) return 'An authorized PCCP is on file.';
@@ -74,13 +66,6 @@ const getPCCPStatusText = (answers: Answers): string => {
 const getSubmittedCaseSentence = (answers: Answers): string | null => {
   const excerpt = truncate(answers.B4 as string | undefined);
   return excerpt ? `From the submitted change description: ${excerpt}` : null;
-};
-
-const joinWithAnd = (items: string[]): string => {
-  if (items.length === 0) return '';
-  if (items.length === 1) return items[0];
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 };
 
 const getMissingCriticalQuestions = (
@@ -98,24 +83,6 @@ const getMissingCriticalQuestions = (
     });
   });
   return missing;
-};
-
-const getSelectedChangeContext = (answers: Answers): SelectedChangeContext | null => {
-  const category = typeof answers.B1 === 'string' && answers.B1.trim() ? answers.B1.trim() : null;
-  const typeName = typeof answers.B2 === 'string' && answers.B2.trim() ? answers.B2.trim() : null;
-  if (!category && !typeName) return null;
-
-  const categoryConfig = category ? changeTaxonomy[category] : null;
-  const typeConfig = typeName
-    ? categoryConfig?.types?.find((type: { name: string }) => type.name === typeName)
-    : null;
-
-  return {
-    category,
-    typeName: typeName || category || 'the reported change',
-    description: typeConfig?.desc || null,
-    pccpNote: typeConfig?.pccpNote || null,
-  };
 };
 
 const getReasoningSectionTitles = (

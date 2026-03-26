@@ -10,7 +10,6 @@ import {
   Q4_OPTIONS,
   Q6_OPTIONS,
   shouldShowContact,
-  shouldShowReferral,
   createEmptyForm,
 } from '../lib/feedback-types';
 import { feedbackService } from '../lib/feedback-service';
@@ -98,7 +97,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
   const showQ1b = Q1_FOLLOWUP_TRIGGERS.includes(form.q1_conclusion as Q1Option);
   const showQ4b = form.q4_use_cases.includes('Other');
   const showQ7 = shouldShowContact(form.q6_followup);
-  const showQ8 = shouldShowReferral(form.q6_followup);
+  const showQ8 = shouldShowContact(form.q6_followup);
 
   return (
     <div style={{ maxWidth: 640, margin: '0 auto', padding: 'var(--space-xl) var(--space-lg)' }}>

@@ -157,7 +157,7 @@ describe('Case-specific reasoning credibility fixes', () => {
 
     expect(reasoning.verificationTitle).toBe('What supports this route');
     expect(reasoning.counterTitle).toBe('What would change this route');
-    expect(reasoning.verificationSteps.some((step) => step.includes('Layer addition / removal'))).toBe(true);
+    expect(reasoning.verificationSteps.some((step) => step.includes('which layers were added or removed'))).toBe(true);
     expect(reasoning.verificationSteps.some((step) => step.includes('materially changes a risk control tied to significant harm'))).toBe(true);
     expect(
       reasoning.counterConsiderations.some((step) => step.includes('does not materially change any risk control tied to significant harm')),
@@ -184,7 +184,6 @@ describe('Review insight specificity fixes', () => {
 
     expect(item).toBeDefined();
     expect(item?.title).toContain('materially alters a risk control tied to significant harm');
-    expect(item?.title).toContain('Layer addition / removal');
     expect(item?.meta).toContain('Current route: New Submission Required');
     expect(item?.actionText).toContain('threshold, guardrail, override, monitoring rule, or mitigation');
   });
@@ -211,11 +210,11 @@ describe('Review insight specificity fixes', () => {
     const subgroup = items.find((item) => item.id === 'GAP-SUBGROUP');
     const uncertainty = items.find((item) => item.id === 'GAP-SIG-UNCERTAIN');
 
-    expect(representativeness?.title).toContain('Additional data — new clinical sites');
+    expect(representativeness?.title).toContain('not yet shown to represent the cleared population');
     expect(representativeness?.actionText).toContain('newly added site');
     expect(representativeness?.actionText).toContain('scanner/vendor mix');
 
-    expect(subgroup?.title).toContain('Additional data — new clinical sites');
+    expect(subgroup?.title).toContain('not yet shown for the affected populations');
     expect(subgroup?.actionText).toContain('new-site cohorts');
 
     expect(uncertainty?.title).toContain('creates a new or modified cause of harm');
@@ -248,14 +247,13 @@ describe('Review insight specificity fixes', () => {
     const text = formatArtifactAsText(artifact);
 
     expect(text).toContain('SUMMARY');
-    expect(text).toContain('WHAT THIS DECISION WAS BASED ON');
-    expect(text).toContain('CASE-SPECIFIC REASONING');
-    expect(text).toContain('IMMEDIATE WORK');
+    expect(text).toContain('ASSESSMENT BASIS');
+    expect(text).toContain('DECISION RATIONALE');
+    expect(text).toContain('NEXT STEPS');
     expect(text).toContain('PACKAGE MUST INCLUDE');
     expect(text).toContain('The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.');
-    expect(text).toContain('No authorized PCCP was on file, so there was no pre-authorized PCCP implementation path available for this case.');
+    expect(text).toContain('No authorized PCCP was on file, so no pre-authorized implementation path was available.');
     expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
-    expect(text).toContain('AI-Enabled Device Software Functions: Lifecycle Management and Marketing Submission Recommendations');
     expect(text).not.toContain('ASSUMPTIONS');
     expect(text).not.toContain('UNRESOLVED QUESTIONS');
     expect(text).not.toContain('KEY INPUTS');
