@@ -821,7 +821,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       gap: 8,
                     }}>
                       <Icon name="checkCircle" size={14} color="#16a34a" />
-                      Case-Specific Verification Focus
+                      {caseReasoning.verificationTitle || 'Case-Specific Verification Focus'}
                     </summary>
                     <div style={{
                       padding: '12px 14px',
@@ -868,7 +868,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       gap: 8,
                     }}>
                       <Icon name="alert" size={14} color="#d97706" />
-                      What Could Still Change This Conclusion
+                      {caseReasoning.counterTitle || 'What Could Still Change This Conclusion'}
                     </summary>
                     <div style={{
                       padding: '12px 14px',

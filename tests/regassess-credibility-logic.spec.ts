@@ -133,4 +133,35 @@ describe('Case-specific reasoning credibility fixes', () => {
     expect(reasoning.decisionPath.some((step) => step.includes('Clinical performance screen (C6): Yes'))).toBe(true);
     expect(reasoning.narrative.some((paragraph) => paragraph.includes('Canon scanners'))).toBe(true);
   });
+
+  it('makes verification and route-change sections case-specific instead of generic', () => {
+    const answers = base510k({
+      B1: 'Model Architecture',
+      B2: 'Layer addition / removal',
+      B4: 'The architecture update adds an intermediate attention block.',
+      C1: Answer.No,
+      C2: Answer.No,
+      C3: Answer.No,
+      C4: Answer.No,
+      C5: Answer.Uncertain,
+      C6: Answer.No,
+    });
+    const determination = computeDetermination(answers);
+    const ds = computeDerivedState(answers);
+    const blocks = getBlocks(answers, ds);
+    const reasoning = buildCaseSpecificReasoning(
+      answers,
+      determination,
+      blocks,
+      (blockId: string) => getQuestions(blockId, answers, ds),
+    );
+
+    expect(reasoning.verificationTitle).toBe('What Evidence Confirms This Route');
+    expect(reasoning.counterTitle).toBe('What Would Need To Change To Avoid This Route');
+    expect(reasoning.verificationSteps.some((step) => step.includes('Layer addition / removal'))).toBe(true);
+    expect(reasoning.verificationSteps.some((step) => step.includes('Resolve C5'))).toBe(true);
+    expect(
+      reasoning.counterConsiderations.some((step) => step.includes('revising C5 to No')),
+    ).toBe(true);
+  });
 });

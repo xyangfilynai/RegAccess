@@ -28,7 +28,9 @@ export interface AssessmentArtifact {
     ruleKey: string | null;
     narrative: string[];
     decisionPath: string[];
+    verificationTitle: string | null;
     verificationSteps: string[];
+    counterTitle: string | null;
     counterConsiderations: string[];
     sources: string[];
   };
@@ -209,7 +211,9 @@ export function generateAssessmentArtifact(
       ruleKey: caseReasoning.ruleKey,
       narrative: caseReasoning.narrative,
       decisionPath: caseReasoning.decisionPath,
+      verificationTitle: caseReasoning.verificationTitle,
       verificationSteps: caseReasoning.verificationSteps,
+      counterTitle: caseReasoning.counterTitle,
       counterConsiderations: caseReasoning.counterConsiderations,
       sources: caseReasoning.sources,
     },
@@ -263,12 +267,12 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   }
   if (artifact.rationale.verificationSteps.length > 0) {
     lines.push('');
-    lines.push('Case-Specific Verification Focus:');
+    lines.push(`${artifact.rationale.verificationTitle || 'Case-Specific Verification Focus'}:`);
     artifact.rationale.verificationSteps.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
   }
   if (artifact.rationale.counterConsiderations.length > 0) {
     lines.push('');
-    lines.push('What Could Still Change This Conclusion:');
+    lines.push(`${artifact.rationale.counterTitle || 'What Could Still Change This Conclusion'}:`);
     artifact.rationale.counterConsiderations.forEach((item, i) => lines.push(`  ${i + 1}. ${item}`));
   }
   if (artifact.rationale.sources.length > 0) {

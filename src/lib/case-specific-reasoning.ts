@@ -2,6 +2,7 @@ import {
   Answer,
   AuthPathway,
   Pathway,
+  changeTaxonomy,
   type Answers,
   type Block,
   type Question,
@@ -13,9 +14,18 @@ export interface CaseSpecificReasoning {
   primaryReason: string;
   narrative: string[];
   decisionPath: string[];
+  verificationTitle: string | null;
   verificationSteps: string[];
+  counterTitle: string | null;
   counterConsiderations: string[];
   sources: string[];
+}
+
+interface SelectedChangeContext {
+  category: string | null;
+  typeName: string;
+  description: string | null;
+  pccpNote: string | null;
 }
 
 const isAnsweredValue = (value: unknown): boolean => {
@@ -94,6 +104,146 @@ const getMissingCriticalQuestions = (
   return missing;
 };
 
+const getSelectedChangeContext = (answers: Answers): SelectedChangeContext | null => {
+  const category = typeof answers.B1 === 'string' && answers.B1.trim() ? answers.B1.trim() : null;
+  const typeName = typeof answers.B2 === 'string' && answers.B2.trim() ? answers.B2.trim() : null;
+  if (!category && !typeName) return null;
+
+  const categoryConfig = category ? changeTaxonomy[category] : null;
+  const typeConfig = typeName
+    ? categoryConfig?.types?.find((type: { name: string }) => type.name === typeName)
+    : null;
+
+  return {
+    category,
+    typeName: typeName || category || 'the reported change',
+    description: typeConfig?.desc || null,
+    pccpNote: typeConfig?.pccpNote || null,
+  };
+};
+
+const getReasoningSectionTitles = (
+  pathway: string,
+): { verificationTitle: string | null; counterTitle: string | null } => {
+  if (pathway === Pathway.AssessmentIncomplete) {
+    return {
+      verificationTitle: 'What Would Resolve This Case',
+      counterTitle: 'What Would Still Keep This Case Open',
+    };
+  }
+  if (pathway === Pathway.ImplementPCCP) {
+    return {
+      verificationTitle: 'What Must Be Confirmed Before Implementation',
+      counterTitle: 'What Would Break PCCP Eligibility',
+    };
+  }
+  if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
+    return {
+      verificationTitle: 'What Evidence Supports Staying On This Route',
+      counterTitle: 'What Would Escalate This Case',
+    };
+  }
+  return {
+    verificationTitle: 'What Evidence Confirms This Route',
+    counterTitle: 'What Would Need To Change To Avoid This Route',
+  };
+};
+
+const getAnswerResolutionVerb = (answer: unknown): string => (
+  answer === Answer.Uncertain ? 'Resolve' : 'Support'
+);
+
+const getChangeSpecificVerificationStep = (
+  changeContext: SelectedChangeContext | null,
+): string | null => {
+  if (!changeContext) return null;
+
+  switch (changeContext.typeName) {
+    case 'Layer addition / removal':
+      return 'For the reported "Layer addition / removal" change, document exactly which layers were added or removed, where they sit in the model, and whether they change feature extraction, post-processing, thresholding, guardrails, monitoring, or clinician-facing behavior.';
+    case 'Additional data — new clinical sites':
+      return 'For the reported "Additional data — new clinical sites" change, document the new sites, acquisition systems, protocols, subgroup mix, and whether the added data stays within the authorized population and operating conditions.';
+    case 'Additional data — expanded demographics':
+      return 'For the reported "Additional data — expanded demographics" change, document the exact demographic expansion, the authorized population boundary, and whether the modified device remains inside that boundary.';
+    case 'Decision threshold adjustment':
+      return 'For the reported "Decision threshold adjustment" change, document the exact before/after threshold, the clinical rationale for the shift, and the resulting sensitivity/specificity tradeoff at the cleared operating point.';
+    case 'Base / foundation model swap':
+      return 'For the reported "Base / foundation model swap" change, document the exact before/after model identifiers, provider/version changes, and the validation used to show whether clinical behavior remained within the authorized boundary.';
+    case 'Prompt / instruction template change':
+      return 'For the reported "Prompt / instruction template change" change, document the exact controlled prompt changes, output constraints, and regression testing used to show whether clinical behavior stayed within scope.';
+    case 'RAG knowledge base update':
+      return 'For the reported "RAG knowledge base update" change, document the new sources, coverage boundaries, and retrieval validation used to show whether the device behavior stayed within the authorized clinical scope.';
+    case 'Guardrail / safety filter modification':
+      return 'For the reported "Guardrail / safety filter modification" change, document exactly which guardrails changed, what unsafe outputs or workflows they control, and whether the change strengthens, weakens, or replaces an existing risk control.';
+    case 'Monitoring threshold change':
+      return 'For the reported "Monitoring threshold change" change, document the exact before/after threshold, the signals affected, and whether the revised threshold weakens, delays, or narrows detection of emerging safety or performance issues.';
+    default:
+      break;
+  }
+
+  switch (changeContext.category) {
+    case 'Training Data':
+      return `For the reported "${changeContext.typeName}" change, document dataset provenance, subgroup composition, and whether the modified training set remains within the authorized population, sites, and acquisition conditions.`;
+    case 'Model Architecture':
+      return `For the reported "${changeContext.typeName}" change, document the exact before/after architecture and whether the modification changes any component that affects risk controls, post-processing, or clinician-facing outputs.`;
+    case 'Preprocessing & Feature Engineering':
+      return `For the reported "${changeContext.typeName}" change, document the exact before/after preprocessing or feature pipeline and where the modified logic changes the inputs seen by the cleared decision path.`;
+    case 'Clinical Output & Decision Thresholds':
+      return `For the reported "${changeContext.typeName}" change, document the exact before/after operating point or output behavior and the resulting effect on sensitivity, specificity, alerting, or clinician interpretation.`;
+    case 'Intended Use / Indications for Use':
+      return `For the reported "${changeContext.typeName}" change, document the exact authorized IFU language and the exact post-change claim, population, setting, or output scope being compared.`;
+    case 'Deployment & Infrastructure':
+      return `For the reported "${changeContext.typeName}" change, document the before/after deployment environment, software stack, and any numerical, latency, or integration effects that could change device behavior.`;
+    case 'Continuous Learning / Periodic Retraining':
+      return `For the reported "${changeContext.typeName}" change, document the retraining trigger, data eligibility, training procedure, acceptance criteria, and rollback/monitoring controls actually used for this update.`;
+    case 'Labeling & Clinical User Interface':
+      return `For the reported "${changeContext.typeName}" change, document the exact before/after clinician-facing behavior and whether the presentation change affects interpretation, workflow, or user reliance.`;
+    case 'Foundation Model / Generative AI':
+      return `For the reported "${changeContext.typeName}" change, document the exact before/after model or prompt configuration, the governed inputs/outputs, and the validation used to show whether clinical behavior remained within the authorized boundary.`;
+    case 'Post-Market Surveillance':
+      return `For the reported "${changeContext.typeName}" change, document the before/after monitoring logic and whether any safety-signal detection or escalation threshold became weaker, delayed, or narrower.`;
+    case 'Cybersecurity':
+      return `For the reported "${changeContext.typeName}" change, document the exact software components touched and the analysis showing whether any inference, preprocessing, latency, or clinical workflow behavior changed.`;
+    default:
+      return null;
+  }
+};
+
+const getQuestionSpecificVerificationStep = (
+  questionId: 'C3' | 'C4' | 'C5' | 'C6',
+  answer: unknown,
+  changeLabel: string,
+): string => {
+  const prefix = `${getAnswerResolutionVerb(answer)} ${questionId}`;
+  switch (questionId) {
+    case 'C3':
+      return `${prefix} with a hazard-by-hazard analysis showing whether "${changeLabel}" creates a new or modified cause of harm with patient-injury potential, including subgroup and edge-case behavior.`;
+    case 'C4':
+      return `${prefix} with risk analysis showing whether "${changeLabel}" creates a hazardous situation not present in the current authorized design.`;
+    case 'C5':
+      return `${prefix} by mapping the before/after design for "${changeLabel}" to every risk control tied to significant harm and stating whether each control is unchanged, strengthened, weakened, or replaced.`;
+    case 'C6':
+      return `${prefix} with pre/post validation for "${changeLabel}" at the cleared operating point, including subgroup-, site-, modality-, or environment-specific analyses relevant to the change.`;
+  }
+};
+
+const getRouteChangeConditionForQuestion = (
+  questionId: 'C3' | 'C4' | 'C5' | 'C6',
+  changeLabel: string,
+  pathway: string,
+): string => {
+  switch (questionId) {
+    case 'C3':
+      return `This case could move off ${pathway} only if the record supports revising C3 to No with evidence that "${changeLabel}" does not create a new or modified cause of harm with patient-injury potential.`;
+    case 'C4':
+      return `This case could move off ${pathway} only if the record supports revising C4 to No with evidence that "${changeLabel}" does not introduce a new hazardous situation.`;
+    case 'C5':
+      return `This case could move off ${pathway} only if the record supports revising C5 to No with evidence that "${changeLabel}" does not materially change any risk control tied to significant harm.`;
+    case 'C6':
+      return `This case could move off ${pathway} only if the record supports revising C6 to No with evidence that "${changeLabel}" does not materially change clinical performance at the cleared operating point or in affected subgroups/contexts.`;
+  }
+};
+
 export const getRuleKey = (determination: any): string | null => {
   if (determination.isIntendedUseChange) return 'SCREEN-01-Yes';
   if (determination.isIntendedUseUncertain) return 'SCREEN-01-Uncertain';
@@ -120,6 +270,7 @@ export function buildCaseSpecificReasoning(
   const sources: string[] = [];
   const narrative: string[] = [];
   const decisionPath: string[] = [];
+  const sectionTitles = getReasoningSectionTitles(determination.pathway);
   const verificationSteps: string[] = [];
   const counterConsiderations: string[] = [];
 
@@ -127,6 +278,7 @@ export function buildCaseSpecificReasoning(
 
   const authDescriptor = getAuthorizationDescriptor(answers);
   const changeLabel = getChangeLabel(answers);
+  const changeContext = getSelectedChangeContext(answers);
   const baselineText = answers.A1c
     ? `against authorized baseline "${answers.A1c as string}"`
     : 'against the authorized baseline';
@@ -372,50 +524,61 @@ export function buildCaseSpecificReasoning(
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
     decisionPath.push(`Result: ${determination.pathway}.`);
 
-    pushUnique(
-      verificationSteps,
-      'Document exactly which significance answers drove the route and tie each one to pre/post evidence, not just expected behavior.',
-    );
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
+    pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
+    if (answers.B4) {
       pushUnique(
         verificationSteps,
-        'Walk the risk management file hazard-by-hazard and document whether the change creates a new cause of harm, modifies an existing cause, or leaves patient-harm risk unresolved.',
+        `Tie the route-driving answer(s) for "${changeLabel}" to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.`,
       );
+    }
+    if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
+      pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C3', answers.C3, changeLabel));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C4)) {
-      pushUnique(
-        verificationSteps,
-        'Document whether the change introduces a genuinely new hazardous situation that was not present in the current risk analysis.',
-      );
+      pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C4', answers.C4, changeLabel));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C5)) {
-      pushUnique(
-        verificationSteps,
-        'Identify every risk control touched by the change, including thresholds, guardrails, overrides, monitoring, or bias mitigations.',
-      );
+      pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C5', answers.C5, changeLabel));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.C6)) {
-      pushUnique(
-        verificationSteps,
-        'Provide pre/post performance results at the cleared operating threshold, including subgroup-, site-, or modality-specific analyses relevant to the change.',
-      );
+      pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C6', answers.C6, changeLabel));
     }
     if ([Answer.Yes, Answer.Uncertain].includes(answers.E3) || answers.E1 === Answer.Uncertain || answers.E4 === Answer.No) {
       pushUnique(
         verificationSteps,
-        'Update the subgroup/bias evidence package so the change is supported for the populations and environments affected by this case.',
+        `Update the subgroup and bias evidence package for "${changeLabel}" so the populations, environments, and protected groups affected by this case are explicitly covered.`,
       );
       addSources(sources, 'FDA-LIFECYCLE-2025 §IV.B');
     }
 
-    pushUnique(
-      counterConsiderations,
-      'If the team believes the change is still documentation-only, the record would need enough evidence to reverse each triggered significance answer back to a defensible No.',
-    );
-    if (answers.A2 === Answer.No) {
+    if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
+      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C3', changeLabel, determination.pathway));
+    }
+    if ([Answer.Yes, Answer.Uncertain].includes(answers.C4)) {
+      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C4', changeLabel, determination.pathway));
+    }
+    if ([Answer.Yes, Answer.Uncertain].includes(answers.C5)) {
+      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C5', changeLabel, determination.pathway));
+    }
+    if ([Answer.Yes, Answer.Uncertain].includes(answers.C6)) {
+      pushUnique(counterConsiderations, getRouteChangeConditionForQuestion('C6', changeLabel, determination.pathway));
+    }
+    if (determination.seNotSupportable) {
       pushUnique(
         counterConsiderations,
-        'Potential future PCCP suitability does not change the present case. Without an already authorized PCCP, this change cannot be implemented under PCCP today.',
+        `This case could move off ${determination.pathway} only if substantial equivalence can be re-established against the predicate on the current cumulative-change record.`,
+      );
+    }
+    if (determination.seUncertain) {
+      pushUnique(
+        counterConsiderations,
+        `This case could move off ${determination.pathway} only if the cumulative-change review supports a definitive substantial-equivalence conclusion rather than leaving it unresolved.`,
+      );
+    }
+    if (determination.deNovoDeviceTypeFitFailed) {
+      pushUnique(
+        counterConsiderations,
+        `This case could move off ${determination.pathway} only if the modified device can still be shown to fit the existing De Novo device type and special controls.`,
       );
     }
   } else if (determination.pathway === Pathway.LetterToFile) {
@@ -426,13 +589,14 @@ export function buildCaseSpecificReasoning(
       decisionPath.push('B3 was answered No, so the case stayed within the software-change framework.');
       decisionPath.push('C1 was answered Yes, so the cybersecurity exemption is the basis for the documentation-only route.');
       addSources(sources, 'FDA-SW-510K-2017 Q1; FDA-CYBER-2026');
+      pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
         verificationSteps,
         'Retain the evidence showing zero functional or clinical-performance impact from the cybersecurity update.',
       );
       pushUnique(
         counterConsiderations,
-        'Any hidden framework, dependency, latency, or model-behavior change would remove the cybersecurity exemption basis.',
+        `This case would leave ${determination.pathway} if the cybersecurity update changes any model behavior, preprocessing, dependency behavior, latency profile, or clinician-facing workflow instead of only strengthening security controls.`,
       );
     } else if (determination.isBugFix) {
       narrative.push(
@@ -441,13 +605,14 @@ export function buildCaseSpecificReasoning(
       decisionPath.push('B3 was answered No, so the case stayed within the software-change framework.');
       decisionPath.push('C2 was answered Yes, so the restore-to-specification exemption is the basis for the documentation-only route.');
       addSources(sources, 'FDA-SW-510K-2017 Q2');
+      pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
         verificationSteps,
         'Retain the version-controlled evidence showing the change restores the device to the previously authorized configuration.',
       );
       pushUnique(
         counterConsiderations,
-        'If the target restored state is not clearly documented as an authorized configuration, the restore-to-specification exemption is not defensible.',
+        `This case would leave ${determination.pathway} if the target restored state cannot be shown to match a previously authorized configuration exactly.`,
       );
     } else {
       narrative.push(
@@ -459,13 +624,20 @@ export function buildCaseSpecificReasoning(
       }
       decisionPath.push('C3-C6 were all answered No, so the case did not trigger a new submission on the current record.');
       addSources(sources, 'FDA-SW-510K-2017 Q3; FDA-SW-510K-2017 Q4');
+      pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
       pushUnique(
         verificationSteps,
-        'Retain the evidence behind each No answer, especially the analyses showing no new harm pathway, no new hazardous situation, no material risk-control change, and no meaningful clinical-performance impact.',
+        `Retain the case-specific evidence for "${changeLabel}" behind each No answer, especially the analyses showing no new harm pathway, no new hazardous situation, no material risk-control change, and no meaningful clinical-performance impact.`,
       );
+      if (answers.B4) {
+        pushUnique(
+          verificationSteps,
+          `Show why the specific facts described in the submitted change description do not require any of C3, C4, C5, or C6 to move away from No.`,
+        );
+      }
       pushUnique(
         counterConsiderations,
-        'This conclusion is only as strong as the evidence behind the No answers. New subgroup findings, changed risk controls, or clinically meaningful performance drift would overturn a Letter to File conclusion.',
+        `This case would leave ${determination.pathway} if additional review of "${changeLabel}" requires any of C3, C4, C5, or C6 to change from No to Yes or Uncertain.`,
       );
     }
 
@@ -495,10 +667,17 @@ export function buildCaseSpecificReasoning(
     decisionPath.push('P1-P5 were satisfied as applicable, so the current change remains within authorized PCCP scope.');
     decisionPath.push(`Result: ${determination.pathway}.`);
 
+    pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
     pushUnique(
       verificationSteps,
       'Execute the authorized PCCP validation protocol exactly as approved, including every acceptance criterion and any subgroup/performance checks tied to this change type.',
     );
+    if (changeContext?.pccpNote) {
+      pushUnique(
+        verificationSteps,
+        `For "${changeContext.typeName}", confirm that the authorized PCCP explicitly covers the expected boundary condition: ${changeContext.pccpNote}`,
+      );
+    }
     pushUnique(
       verificationSteps,
       answers.A1 === AuthPathway.PMA
@@ -507,7 +686,7 @@ export function buildCaseSpecificReasoning(
     );
     pushUnique(
       counterConsiderations,
-      'If the actual modification exceeds the authorized boundary conditions or cumulative limits, the PCCP route is no longer available for this implementation.',
+      `This case would leave ${determination.pathway} if the actual "${changeLabel}" exceeds the authorized change type, boundary conditions, validation protocol, or cumulative limits in the PCCP.`,
     );
   } else if (determination.pathway === Pathway.PMASupplementRequired) {
     const pmaDrivers: string[] = [];
@@ -539,9 +718,10 @@ export function buildCaseSpecificReasoning(
     if (answers.C_PMA2 === Answer.Yes) addSources(sources, '21 CFR 814.39(a); 21 CFR 814.39(b)');
     if (answers.C_PMA3 === Answer.Yes) addSources(sources, '21 CFR 814.39(a); 21 CFR 814.39(f)');
 
+    pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
     pushUnique(
       verificationSteps,
-      'Document exactly how the change affects safety or effectiveness and align that evidence to the anticipated PMA supplement category.',
+      `Document exactly how "${changeLabel}" affects safety or effectiveness and align that evidence to the anticipated PMA supplement category.`,
     );
     if (answers.C_PMA4) {
       pushUnique(
@@ -551,7 +731,11 @@ export function buildCaseSpecificReasoning(
     }
     pushUnique(
       counterConsiderations,
-      'Do not apply the 510(k) significance framing here. For PMA devices, any unresolved safety/effectiveness impact is enough to push the case into supplement review.',
+      `This case could move down from ${determination.pathway} only if the record supports revising C_PMA1 to No with evidence that "${changeLabel}" does not affect safety or effectiveness.`,
+    );
+    pushUnique(
+      counterConsiderations,
+      'Do not apply the 510(k) significance framework here. For PMA devices, unresolved safety/effectiveness impact is itself enough to keep the case in supplement review.',
     );
   } else if (determination.pathway === Pathway.PMAAnnualReport) {
     narrative.push(
@@ -564,25 +748,19 @@ export function buildCaseSpecificReasoning(
     decisionPath.push(`Result: ${determination.pathway}.`);
 
     addSources(sources, '21 CFR 814.39(b); 21 CFR 814.84');
+    pushUnique(verificationSteps, getChangeSpecificVerificationStep(changeContext));
     pushUnique(
       verificationSteps,
-      'Retain the evidence supporting the No answer to C_PMA1 and document why the change does not affect safety or effectiveness.',
+      `Retain the evidence supporting the No answer to C_PMA1 and document why "${changeLabel}" does not affect safety or effectiveness.`,
     );
     pushUnique(
       counterConsiderations,
-      'If the change actually affects safety, effectiveness, labeling, or qualifying manufacturing methods more than currently documented, the PMA annual-report path is no longer sufficient.',
+      `This case would leave ${determination.pathway} if additional review shows that "${changeLabel}" affects safety, effectiveness, labeling, or qualifying manufacturing methods more than currently documented.`,
     );
   }
 
   if (answers.B4 && !caseDescriptionSentence) {
     narrative.push(`Submitted case description considered in this assessment: ${answers.B4 as string}`);
-  }
-
-  if (verificationSteps.length === 0 && ruleReasoning?.verify) {
-    pushUnique(verificationSteps, ruleReasoning.verify);
-  }
-  if (counterConsiderations.length === 0 && ruleReasoning?.counter) {
-    pushUnique(counterConsiderations, ruleReasoning.counter);
   }
 
   const primaryReason = narrative.join(' ');
@@ -592,7 +770,9 @@ export function buildCaseSpecificReasoning(
     primaryReason,
     narrative,
     decisionPath,
+    verificationTitle: verificationSteps.length > 0 ? sectionTitles.verificationTitle : null,
     verificationSteps,
+    counterTitle: counterConsiderations.length > 0 ? sectionTitles.counterTitle : null,
     counterConsiderations,
     sources,
   };
