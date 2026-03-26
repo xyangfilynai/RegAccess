@@ -55,6 +55,7 @@ export interface Block {
   label: string;
   shortLabel: string;
   icon: string;
+  description?: string;
 }
 
 /**
@@ -62,15 +63,15 @@ export interface Block {
  */
 export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   const b: Block[] = [
-    { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield" },
-    { id: "B", label: "What changed?", shortLabel: "Change Classification", icon: "layers" },
-    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory Significance", icon: "alert" },
+    { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield", description: "Anchor the assessment to the authorized device, baseline, intended use, and markets before any change analysis." },
+    { id: "B", label: "What changed?", shortLabel: "Change Classification", icon: "layers", description: "Describe the modification precisely so downstream pathway logic evaluates the right change category and intended use impact." },
+    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory Significance", icon: "alert", description: "Assess whether the change affects safety, effectiveness, substantial equivalence, or submission obligations." },
   ];
-  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP Scope", icon: "checkCircle" });
-  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu" });
-  if (ds.hasNonUSMarket) b.push({ id: "F", label: "Non-U.S. follow-up", shortLabel: "Jurisdictions", icon: "globe" });
-  b.push({ id: "E", label: "Population impact check", shortLabel: "Bias & Equity", icon: "scale" });
-  b.push({ id: "review", label: "Review & generate report", shortLabel: "Review", icon: "check" });
+  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP Scope", icon: "checkCircle", description: "Verify whether the proposed change remains inside the authorized PCCP boundaries, validation plan, and cumulative limits." });
+  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu", description: "Review base model, prompt, RAG, guardrails, and GenAI-specific behavior changes that can alter clinical performance or controls." });
+  if (ds.hasNonUSMarket) b.push({ id: "F", label: "Non-U.S. follow-up", shortLabel: "Jurisdictions", icon: "globe", description: "Flag jurisdiction-specific follow-up needs for authorized markets outside the U.S. primary analysis." });
+  b.push({ id: "E", label: "Population impact check", shortLabel: "Bias & Equity", icon: "scale", description: "Check whether performance, bias controls, validation evidence, or affected populations require additional expert review." });
+  b.push({ id: "review", label: "Review & generate report", shortLabel: "Review", icon: "check", description: "Review the routing logic, evidence gaps, documentation needs, and expert-review notes before relying on the assessment." });
   return b;
 };
 

@@ -42,6 +42,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onDeleteAssessment,
 }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const hasSavedWork = hasSavedSession || savedAssessments.length > 0;
 
   return (
     <div style={{
@@ -103,178 +104,78 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             color: '#6b7280',
             margin: 0,
             lineHeight: 1.6,
-            maxWidth: 560,
+            maxWidth: 700,
           }}>
-            U.S.-primary regulatory pathway analysis with escalation cues for EU, UK, Canada, Japan, and China.
+            FDA-primary change-routing workspace for regulatory, ML, quality, and clinical reviewers. Capture the authorized baseline, classify the change, review pathway logic, and generate an internal assessment record with expert-review cues.
           </p>
         </div>
 
-        {/* Action Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 56 }}>
-
-          {/* Quick Expert Review - Recommended */}
-          <button
-            onClick={onQuickReview}
-            data-testid="quick-review-btn"
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 20,
-              padding: '24px 28px',
-              borderRadius: 8,
-              background: '#ffffff',
-              border: '1px solid #d1fae5',
-              textAlign: 'left',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              position: 'relative',
-            }}
-            {...hoverHandlers('#86efac', '#d1fae5')}
-          >
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 8,
-              background: '#f0fdf4',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Icon name="zap" size={20} color="#16a34a" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: '#111827',
-                }}>
-                  Guided Example
-                </span>
-                <span style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  borderRadius: 4,
-                  background: '#dcfce7',
-                  color: '#15803d',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}>
-                  Sample Case
-                </span>
-              </div>
-              <p style={{
-                fontSize: 14,
-                color: '#6b7280',
-                margin: 0,
-                lineHeight: 1.55,
-              }}>
-                Walk through a pre-filled sample case to see how the assessment works. Review and adjust responses, then view the determination.
-              </p>
-              <p style={{
-                fontSize: 12,
-                color: '#9ca3af',
-                margin: '10px 0 0',
-                lineHeight: 1.5,
-                paddingTop: 10,
-                borderTop: '1px solid #f3f4f6',
-              }}>
-                Example: New clinical sites with different scanners and demographics, uncertain subgroup impact, no PCCP established.
-              </p>
-            </div>
-            <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
-          </button>
-
-          {/* Full Assessment */}
-          <button
-            onClick={onFullAssessment}
-            data-testid="full-assessment-btn"
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 20,
-              padding: '24px 28px',
-              borderRadius: 8,
-              background: '#ffffff',
-              border: '1px solid #e5e7eb',
-              textAlign: 'left',
-              cursor: 'pointer',
-              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-            }}
-            {...hoverHandlers('#d1d5db', '#e5e7eb')}
-          >
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: 8,
-              background: '#f3f4f6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <Icon name="fileText" size={20} color="#4b5563" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <span style={{
-                fontSize: 15,
-                fontWeight: 600,
-                color: '#111827',
-                display: 'block',
-                marginBottom: 6,
-              }}>
-                Full Assessment
-              </span>
-              <p style={{
-                fontSize: 14,
-                color: '#6b7280',
-                margin: 0,
-                lineHeight: 1.55,
-              }}>
-                Complete the full regulatory workflow for your device. Includes U.S. pathway determination and non-U.S. escalation cues.
-              </p>
-            </div>
-            <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
-          </button>
-
-          {/* Resume Session */}
-          {hasSavedSession && (
-            <button
-              onClick={onResume}
-              data-testid="resume-btn"
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 12,
+          marginBottom: 36,
+        }}>
+          {[
+            {
+              title: 'FDA-primary',
+              desc: 'U.S. routing logic first, with follow-up cues for EU, UK, Canada, Japan, and China.',
+              icon: 'shield',
+              accent: '#0891b2',
+              bg: '#ecfeff',
+              border: '#a5f3fc',
+            },
+            {
+              title: 'Expert review workflow',
+              desc: 'Track blockers, evidence gaps, notes, and review status before relying on the output.',
+              icon: 'users',
+              accent: '#0f766e',
+              bg: '#ecfdf5',
+              border: '#a7f3d0',
+            },
+            {
+              title: 'Assessment record',
+              desc: 'Export a report or JSON artifact for internal change control and submission planning.',
+              icon: 'fileText',
+              accent: '#475569',
+              bg: '#f8fafc',
+              border: '#cbd5e1',
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
               style={{
+                padding: '16px 18px',
+                borderRadius: 10,
+                background: item.bg,
+                border: `1px solid ${item.border}`,
+              }}
+            >
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 16,
-                padding: '16px 28px',
-                borderRadius: 8,
-                background: '#fefce8',
-                border: '1px solid #fef08a',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transition: 'border-color 0.15s ease',
-              }}
-              {...hoverHandlers('#fde047', '#fef08a')}
-            >
-              <Icon name="clock" size={18} color="#ca8a04" />
-              <div style={{ flex: 1 }}>
+                gap: 8,
+                marginBottom: 8,
+              }}>
+                <Icon name={item.icon} size={15} color={item.accent} />
                 <span style={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#854d0e',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: item.accent,
+                  letterSpacing: '0.03em',
+                  textTransform: 'uppercase',
                 }}>
-                  Resume In-Progress Assessment
+                  {item.title}
                 </span>
               </div>
-              <Icon name="arrow" size={16} color="#ca8a04" />
-            </button>
-          )}
+              <p style={{ fontSize: 13, color: '#475569', lineHeight: 1.55, margin: 0 }}>
+                {item.desc}
+              </p>
+            </div>
+          ))}
         </div>
 
-        {/* Saved Assessments */}
-        {savedAssessments.length > 0 && (
+        {hasSavedWork && (
           <section style={{ marginBottom: 56 }}>
             <div style={{
               display: 'flex',
@@ -290,7 +191,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
               }}>
-                Saved Assessments ({savedAssessments.length})
+                Continue Working
               </h2>
               <div style={{
                 height: 1,
@@ -300,6 +201,51 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               }} />
             </div>
 
+            {hasSavedSession && (
+              <button
+                onClick={onResume}
+                data-testid="resume-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 16,
+                  width: '100%',
+                  padding: '18px 22px',
+                  borderRadius: 10,
+                  background: '#fefce8',
+                  border: '1px solid #fef08a',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s ease',
+                  marginBottom: savedAssessments.length > 0 ? 12 : 0,
+                }}
+                {...hoverHandlers('#fde047', '#fef08a')}
+              >
+                <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 8,
+                  background: '#fef3c7',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <Icon name="clock" size={18} color="#ca8a04" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#854d0e', marginBottom: 4 }}>
+                    Resume current browser session
+                  </div>
+                  <p style={{ fontSize: 13, color: '#a16207', lineHeight: 1.55, margin: 0 }}>
+                    Continue the assessment currently stored in this browser without starting a new case.
+                  </p>
+                </div>
+                <Icon name="arrow" size={16} color="#ca8a04" style={{ marginTop: 4 }} />
+              </button>
+            )}
+
+            {savedAssessments.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {savedAssessments.map(assessment => {
                 const sc = statusColors[assessment.status] || statusColors['Draft'];
@@ -454,8 +400,176 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 );
               })}
             </div>
+            )}
           </section>
         )}
+
+        <section style={{ marginBottom: 56 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 24,
+          }}>
+            <h2 style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#9ca3af',
+              margin: 0,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+            }}>
+              Start Assessment
+            </h2>
+            <div style={{
+              height: 1,
+              flex: 1,
+              background: '#e5e7eb',
+              marginLeft: 20,
+            }} />
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <button
+              onClick={onFullAssessment}
+              data-testid="full-assessment-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 20,
+                padding: '24px 28px',
+                borderRadius: 10,
+                background: '#ffffff',
+                border: '1px solid #a5f3fc',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+                boxShadow: '0 1px 2px rgba(8, 145, 178, 0.06)',
+              }}
+              {...hoverHandlers('#67e8f9', '#a5f3fc')}
+            >
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: '#ecfeff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Icon name="fileText" size={20} color="#0891b2" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#111827',
+                  }}>
+                    Full Assessment
+                  </span>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    background: '#ecfeff',
+                    color: '#0891b2',
+                    border: '1px solid #a5f3fc',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}>
+                    Primary workflow
+                  </span>
+                </div>
+                <p style={{
+                  fontSize: 14,
+                  color: '#475569',
+                  margin: 0,
+                  lineHeight: 1.55,
+                }}>
+                  Start a new case from the authorized baseline and work through the full regulatory, PCCP, GenAI, bias/equity, and jurisdiction review flow.
+                </p>
+              </div>
+              <Icon name="arrow" size={18} color="#0891b2" style={{ marginTop: 4 }} />
+            </button>
+
+            <button
+              onClick={onQuickReview}
+              data-testid="quick-review-btn"
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 20,
+                padding: '22px 28px',
+                borderRadius: 10,
+                background: '#ffffff',
+                border: '1px solid #e5e7eb',
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+              }}
+              {...hoverHandlers('#d1d5db', '#e5e7eb')}
+            >
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: '#f8fafc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                <Icon name="zap" size={20} color="#475569" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: '#111827',
+                  }}>
+                    Guided Example
+                  </span>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    padding: '3px 8px',
+                    borderRadius: 4,
+                    background: '#f8fafc',
+                    color: '#64748b',
+                    border: '1px solid #e2e8f0',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                  }}>
+                    Sample case
+                  </span>
+                </div>
+                <p style={{
+                  fontSize: 14,
+                  color: '#6b7280',
+                  margin: 0,
+                  lineHeight: 1.55,
+                }}>
+                  Open a pre-filled example to inspect the workflow, reasoning, and report structure before using the tool on a live case.
+                </p>
+                <p style={{
+                  fontSize: 12,
+                  color: '#9ca3af',
+                  margin: '10px 0 0',
+                  lineHeight: 1.5,
+                  paddingTop: 10,
+                  borderTop: '1px solid #f3f4f6',
+                }}>
+                  Example: new clinical sites with different scanners and demographics, uncertain subgroup impact, no PCCP established.
+                </p>
+              </div>
+              <Icon name="arrow" size={18} color="#9ca3af" style={{ marginTop: 4 }} />
+            </button>
+          </div>
+        </section>
 
         {/* How It Works */}
         <section>
@@ -485,7 +599,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: 1,
             background: '#e5e7eb',
             borderRadius: 8,

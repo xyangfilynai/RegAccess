@@ -284,6 +284,21 @@ const getHandoffDesc = (
   return 'Prepare the 510(k) submission package.';
 };
 
+const getPreparationPackageLabel = (
+  determination: any,
+  answers: Answers,
+): string => {
+  const isPMA = answers.A1 === AuthPathway.PMA;
+  const isDeNovo = answers.A1 === AuthPathway.DeNovo;
+
+  if (determination.isPCCPImpl) return isPMA ? 'PCCP implementation record + PMA annual-report support' : 'PCCP implementation record';
+  if (determination.isPMAAnnualReport) return 'PMA annual report entry + Letter to File';
+  if (determination.isLetterToFile) return 'Letter to File package';
+  if (isPMA) return answers.C_PMA4 ? `${answers.C_PMA4} supplement package` : 'PMA supplement package';
+  if (isDeNovo) return '510(k) or De Novo strategy package';
+  return '510(k) submission package';
+};
+
 export const HandoffPage: React.FC<HandoffPageProps> = ({
   pathway,
   determination,
@@ -298,6 +313,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
   const isPMA = answers.A1 === AuthPathway.PMA;
   const isNewSub = determination.isNewSub;
   const isIncomplete = determination.isIncomplete;
+  const consistencyIssues = determination.consistencyIssues || [];
 
   const sections = useMemo(
     () => getSections(pathway, determination, answers),
@@ -305,6 +321,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
   );
   const title = getHandoffTitle(pathway, determination, answers);
   const desc = getHandoffDesc(pathway, determination, answers);
+  const packageLabel = getPreparationPackageLabel(determination, answers);
 
   if (isIncomplete) {
     return (
@@ -508,6 +525,37 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               </div>
             </div>
 
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 10,
+              marginBottom: 18,
+            }}>
+              {[
+                { label: 'Regulatory route', value: pathway },
+                { label: 'Primary package', value: packageLabel },
+                { label: 'Change', value: (answers.B2 as string) || (answers.B1 as string) || 'Not specified' },
+                { label: 'Authorized baseline', value: (answers.A1c as string) || 'Not specified' },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    background: 'var(--color-bg-card)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginBottom: 4 }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.45 }}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {/* Progress bar */}
             <div style={{
               display: 'flex',
@@ -558,7 +606,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.55,
               }}>
-                <strong style={{ color: 'var(--color-success)' }}>Preparation Workflow</strong> — Process steps to execute the determined pathway. For the full document inventory with regulatory citations, see the Documentation tab in the assessment report.
+                <strong style={{ color: 'var(--color-success)' }}>Preparation workflow</strong> — Use this page to turn the report into an execution checklist. For the supporting document inventory and citations, refer back to the Review screen.
               </div>
             </div>
 
@@ -578,9 +626,32 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.5,
               }}>
-                Not a complete submission guide. Actual requirements depend on your specific device, market, authorization history, and company QMS. A qualified RA professional should review and augment this checklist before use.
+                Not a complete submission guide. Actual deliverables still depend on device specifics, authorization history, testing outcomes, and company QMS. Qualified RA review is required before using this checklist to drive package execution.
               </div>
             </div>
+
+            {consistencyIssues.length > 0 && (
+              <div style={{
+                padding: '12px 16px',
+                marginBottom: 20,
+                borderRadius: 8,
+                background: 'var(--color-warning-bg)',
+                border: '1px solid var(--color-warning-border)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+              }}>
+                <Icon name="alertCircle" size={13} color="var(--color-warning)" style={{ marginTop: 1 }} />
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.55,
+                }}>
+                  <strong style={{ color: 'var(--color-warning)' }}>Resolve flagged review items first.</strong>{' '}
+                  The underlying assessment still contains {consistencyIssues.length} review item{consistencyIssues.length === 1 ? '' : 's'} that may affect package strategy or documentation language.
+                </div>
+              </div>
+            )}
 
             {/* Assessment context */}
             <div style={{
@@ -602,20 +673,26 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               </div>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: 8,
               }}>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Change:</strong> {answers.B2 as string || 'Not specified'}
+                  <strong>Authorization:</strong> {answers.A1 as string || 'Not specified'}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Pathway:</strong> {pathway}
+                  <strong>Authorization ID:</strong> {answers.A1b as string || 'Not specified'}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>Device:</strong> {answers.A1 as string || '—'}{isDeNovo ? ' (De Novo)' : ''}{answers.A1b ? ` — ${answers.A1b}` : ''}
+                  <strong>Current route:</strong> {pathway}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
                   <strong>Baseline:</strong> {(answers.A1c as string) || <span style={{ color: 'var(--color-warning)', fontStyle: 'italic' }}>Not specified</span>}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
+                  <strong>Change type:</strong> {answers.B2 as string || answers.B1 as string || 'Not specified'}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
+                  <strong>PCCP status:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not specified'}
                 </div>
               </div>
             </div>
@@ -725,7 +802,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                             color: 'var(--color-text-muted)',
                             marginTop: 1,
                           }}>
-                            {section.detail}
+                            {section.detail} • {section.items.length} item{section.items.length === 1 ? '' : 's'}
                           </div>
                         </div>
                       </div>

@@ -16,7 +16,6 @@ import {
 } from '../lib/content';
 import { changeTaxonomy } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
-import { generateAssessmentArtifact, formatArtifactAsText } from '../lib/report-generator';
 import type { AssessmentStatus, ReviewerNote } from '../lib/assessment-store';
 import { classifySource } from '../lib/source-classification';
 
@@ -87,8 +86,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onEditBlock,
   onFeedback,
   onHandoff,
-  onSave,
-  assessmentName,
   assessmentStatus,
   onStatusChange,
   reviewerNotes,
@@ -100,7 +97,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   );
   const [noteAuthor, setNoteAuthor] = useState('');
   const [noteText, setNoteText] = useState('');
-  const [exportNotice, setExportNotice] = useState('');
 
   const toggleSection = (id: string) => {
     const newSet = new Set(expandedSections);
@@ -199,41 +195,16 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   // Hard gating: determine if assessment has critical unknowns that should block doc-only conclusion
   const hasCriticalGaps = criticalGaps.length > 0;
   const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
-
-  // Export handler
-  const handleExportText = () => {
-    const artifact = generateAssessmentArtifact(answers, determination, blocks, getQuestionsForBlock);
-    const text = formatArtifactAsText(artifact, assessmentName);
-    navigator.clipboard.writeText(text).then(() => {
-      setExportNotice('Report copied to clipboard');
-      setTimeout(() => setExportNotice(''), 3000);
-    }).catch(() => {
-      // Fallback: download as file
-      const blob = new Blob([text], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `assessment-report-${new Date().toISOString().slice(0, 10)}.txt`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setExportNotice('Report downloaded');
-      setTimeout(() => setExportNotice(''), 3000);
-    });
-  };
-
-  const handleExportJSON = () => {
-    const artifact = generateAssessmentArtifact(answers, determination, blocks, getQuestionsForBlock);
-    const json = JSON.stringify(artifact, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `assessment-artifact-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    setExportNotice('JSON artifact downloaded');
-    setTimeout(() => setExportNotice(''), 3000);
-  };
+  const pccpHeroSummary = showPCCPRecommendation ? {
+    heading: pccpEligibility === 'TYPICAL'
+      ? 'PCCP application recommended in the upcoming submission'
+      : 'PCCP application may be worth requesting in the upcoming submission',
+    likelihood: pccpEligibility === 'TYPICAL' ? 'Likely fit' : 'Conditional fit',
+    summary: pccpEligibility === 'TYPICAL'
+      ? `${(answers.B2 as string) || 'This change type'} is generally suitable for future PCCP authorization. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right time to seek pre-authorization for similar future changes within explicit bounds.`
+      : `${(answers.B2 as string) || 'This change type'} can sometimes be authorized in a PCCP, but only when future modifications can be tightly bounded and prospectively validated. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right opportunity to evaluate that option.`,
+    detail: selectedChangeType?.pccpNote || null,
+  } : null;
 
   // Collapsible section component
   const CollapsibleSection = ({
@@ -485,17 +456,17 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           {isIncomplete ? 'Assessment Incomplete — Expert Review Required' : pathway}
         </h1>
 
-        {/* Regulatory basis */}
-        {docs?.basis && (
-          <p style={{
-            fontSize: 13,
-            color: '#6b7280',
-            margin: '0 0 16px',
-            lineHeight: 1.6,
-          }}>
-            <HelpTextWithLinks text={docs.basis} />
-          </p>
-        )}
+        <p style={{
+          fontSize: 13,
+          color: '#6b7280',
+          margin: '0 0 16px',
+          lineHeight: 1.65,
+          maxWidth: 900,
+        }}>
+          {isIncomplete
+            ? 'Critical questions remain unresolved, so this output is not reliance-ready.'
+            : 'This hero summarizes the current routing, immediate next step, and any strategic follow-up that should be considered before the next submission is prepared.'}
+        </p>
 
         {/* Primary next action */}
         <div style={{
@@ -518,6 +489,79 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </div>
         </div>
 
+        {pccpHeroSummary && (
+          <div
+            data-testid="pccp-recommendation"
+            style={{
+              padding: '16px 18px',
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              borderRadius: 8,
+              marginBottom: 20,
+            }}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flexWrap: 'wrap',
+              marginBottom: 8,
+            }}>
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#1d4ed8',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+              }}>
+                PCCP submission strategy
+              </span>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: pccpEligibility === 'TYPICAL' ? '#dbeafe' : '#fef3c7',
+                color: pccpEligibility === 'TYPICAL' ? '#1d4ed8' : '#92400e',
+                border: `1px solid ${pccpEligibility === 'TYPICAL' ? '#93c5fd' : '#fde68a'}`,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}>
+                {pccpHeroSummary.likelihood}
+              </span>
+            </div>
+            <div style={{
+              fontSize: 15,
+              fontWeight: 700,
+              color: '#0f172a',
+              marginBottom: 8,
+              lineHeight: 1.35,
+            }}>
+              {pccpHeroSummary.heading}
+            </div>
+            <p style={{
+              fontSize: 13,
+              color: '#475569',
+              lineHeight: 1.65,
+              margin: 0,
+            }}>
+              {pccpHeroSummary.summary}
+            </p>
+            {pccpHeroSummary.detail && (
+              <p style={{
+                fontSize: 12.5,
+                color: '#1e40af',
+                lineHeight: 1.6,
+                margin: '10px 0 0',
+                paddingTop: 10,
+                borderTop: '1px solid #dbeafe',
+              }}>
+                <strong>What must be true:</strong> {pccpHeroSummary.detail}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <button
@@ -539,75 +583,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             <Icon name="printer" size={14} color="#fff" />
             Print Report
           </button>
-          <button
-            onClick={handleExportText}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 18px',
-              borderRadius: 6,
-              background: '#fff',
-              border: '1px solid #d1d5db',
-              color: '#374151',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            <Icon name="fileText" size={14} color="#374151" />
-            Export Report
-          </button>
-          <button
-            onClick={handleExportJSON}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '10px 18px',
-              borderRadius: 6,
-              background: '#fff',
-              border: '1px solid #d1d5db',
-              color: '#374151',
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: 'pointer',
-            }}
-          >
-            <Icon name="settings" size={14} color="#374151" />
-            Export JSON
-          </button>
-          {onSave && (
-            <button
-              onClick={onSave}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 18px',
-                borderRadius: 6,
-                background: '#fff',
-                border: '1px solid #d1d5db',
-                color: '#374151',
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
-            >
-              <Icon name="check" size={14} color="#374151" />
-              Save Assessment
-            </button>
-          )}
-          {exportNotice && (
-            <span style={{
-              fontSize: 12,
-              color: '#16a34a',
-              fontWeight: 500,
-              animation: 'fadeIn .15s ease',
-            }}>
-              {exportNotice}
-            </span>
-          )}
         </div>
       </div>
 
@@ -630,7 +605,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }}>
             <Icon name="alert" size={16} color="#d97706" />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#92400e' }}>
-              Review Required ({consistencyIssues.length})
+              Items Needing Expert Review ({consistencyIssues.length})
             </span>
           </div>
           <ul style={{
@@ -752,39 +727,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       )}
 
       {/* ============================================
-          SECTION 2: KEY FACTS STRIP
-          ============================================ */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: 1,
-        background: '#e5e7eb',
-        borderRadius: 6,
-        overflow: 'hidden',
-        marginBottom: 32,
-      }}>
-        {[
-          { label: 'Authorization', value: answers.A1 || 'Not specified' },
-          { label: 'PCCP Status', value: answers.A2 === 'Yes' ? 'Authorized' : 'None' },
-          { label: 'Intended Use Impact', value: answers.B3 || 'Not assessed' },
-          { label: 'Change Category', value: answers.B1 || 'Not specified' },
-        ].map((item, i) => (
-          <div key={i} style={{
-            padding: '14px 16px',
-            background: '#ffffff',
-          }}>
-            <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 4, letterSpacing: '0.02em' }}>
-              {item.label}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
-              {item.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ============================================
-          SECTION 3: MAIN CONTENT AREA
+          SECTION 2: MAIN CONTENT AREA
           ============================================ */}
       <div style={{
         background: '#ffffff',
@@ -1019,41 +962,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 <HelpTextWithLinks text={docs.scopeNote} />
               </div>
             )}
-          </CollapsibleSection>
-        )}
-
-        {/* PCCP Recommendation */}
-        {showPCCPRecommendation && (
-          <CollapsibleSection id="pccp-rec" title="PCCP Opportunity">
-            <div data-testid="pccp-recommendation" style={{
-              padding: '14px 16px',
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: 6,
-            }}>
-              <p style={{
-                fontSize: 13,
-                color: '#166534',
-                lineHeight: 1.6,
-                margin: 0,
-              }}>
-                <strong>{(answers.B2 as string) || 'This change type'}</strong>{' '}
-                is {pccpEligibility === 'TYPICAL' ? 'generally a suitable change type' : 'conditionally suitable'} for
-                future PCCP coverage. Including a PCCP in the upcoming submission could enable future similar changes without additional submissions.
-              </p>
-              {pccpEligibility === 'CONDITIONAL' && selectedChangeType?.pccpNote && (
-                <p style={{
-                  fontSize: 12,
-                  color: '#15803d',
-                  lineHeight: 1.6,
-                  margin: '8px 0 0',
-                  paddingTop: 8,
-                  borderTop: '1px solid #dcfce7',
-                }}>
-                  <strong>Conditions:</strong> {selectedChangeType.pccpNote}
-                </p>
-              )}
-            </div>
           </CollapsibleSection>
         )}
 
@@ -1493,11 +1401,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </p>
         <p style={{
           fontSize: 11,
-          fontFamily: 'monospace',
-          color: '#9ca3af',
+          color: '#94a3b8',
           margin: '6px 0 0',
+          lineHeight: 1.5,
         }}>
-          v1 | Sources reviewed Mar 2026 | Primary: US (FDA) | Follow-up: EU, UK, CA, JP, CN
+          Authority tags distinguish regulations, statutes, standards, guidance, and internal policy so reviewers can see what is binding versus advisory.
         </p>
       </div>
 

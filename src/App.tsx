@@ -116,6 +116,12 @@ export const App: React.FC = () => {
     return getQuestions(blockId, answers, derivedState);
   }, [answers, derivedState]);
 
+  useEffect(() => {
+    if (currentBlockIndex > blocks.length - 1) {
+      setCurrentBlockIndex(Math.max(0, blocks.length - 1));
+    }
+  }, [blocks.length, currentBlockIndex]);
+
   const currentBlock = blocks[currentBlockIndex];
   const currentQuestions = currentBlock ? getQuestionsForBlock(currentBlock.id) : [];
 
@@ -123,33 +129,68 @@ export const App: React.FC = () => {
   const determination = useMemo(() => computeDetermination(answers), [answers]);
 
   // Calculate answered and total question counts per block in a single pass
-  const { answeredCounts, totalCounts } = useMemo(() => {
+  const {
+    answeredCounts,
+    totalCounts,
+    requiredAnsweredCounts,
+    requiredCounts,
+    overallAnswered,
+    overallTotal,
+    overallRequiredAnswered,
+    overallRequiredTotal,
+  } = useMemo(() => {
     const answered: Record<string, number> = {};
     const total: Record<string, number> = {};
+    const requiredAnswered: Record<string, number> = {};
+    const requiredTotal: Record<string, number> = {};
+    let overallAnsweredCount = 0;
+    let overallTotalCount = 0;
+    let overallRequiredAnsweredCount = 0;
+    let overallRequiredTotalCount = 0;
+
     blocks.forEach(block => {
       if (block.id === 'review') {
         answered[block.id] = 0;
         total[block.id] = 0;
+        requiredAnswered[block.id] = 0;
+        requiredTotal[block.id] = 0;
         return;
       }
       const questions = getQuestionsForBlock(block.id);
       const visible = questions.filter(q => !q.sectionDivider && !q.skip);
+      const required = visible.filter(q => q.pathwayCritical);
       total[block.id] = visible.length;
       answered[block.id] = visible.filter(q => isAnsweredValue(answers[q.id])).length;
+      requiredTotal[block.id] = required.length;
+      requiredAnswered[block.id] = required.filter(q => isAnsweredValue(answers[q.id])).length;
+      overallTotalCount += visible.length;
+      overallAnsweredCount += answered[block.id];
+      overallRequiredTotalCount += required.length;
+      overallRequiredAnsweredCount += requiredAnswered[block.id];
     });
-    return { answeredCounts: answered, totalCounts: total };
+
+    return {
+      answeredCounts: answered,
+      totalCounts: total,
+      requiredAnsweredCounts: requiredAnswered,
+      requiredCounts: requiredTotal,
+      overallAnswered: overallAnsweredCount,
+      overallTotal: overallTotalCount,
+      overallRequiredAnswered: overallRequiredAnsweredCount,
+      overallRequiredTotal: overallRequiredTotalCount,
+    };
   }, [blocks, answers, getQuestionsForBlock]);
 
   // Track completed blocks
   const completedBlocks = useMemo(() => {
     const completed = new Set<string>();
-    blocks.forEach((block, index) => {
-      if (index < currentBlockIndex) {
+    blocks.forEach((block) => {
+      if (block.id !== 'review' && (requiredCounts[block.id] || 0) > 0 && requiredAnsweredCounts[block.id] === requiredCounts[block.id]) {
         completed.add(block.id);
       }
     });
     return completed;
-  }, [blocks, currentBlockIndex]);
+  }, [blocks, requiredAnsweredCounts, requiredCounts]);
 
   // Handle answer change with cascade clearing (matches original setAnswer logic)
   const handleAnswerChange = useCallback((questionId: string, value: any) => {
@@ -247,6 +288,43 @@ export const App: React.FC = () => {
 
   // Validation state for highlighting missing required fields
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+
+  const currentMissingRequired = useMemo(() => {
+    if (!currentBlock || currentBlock.id === 'review') return 0;
+    return Math.max(0, (requiredCounts[currentBlock.id] || 0) - (requiredAnsweredCounts[currentBlock.id] || 0));
+  }, [currentBlock, requiredCounts, requiredAnsweredCounts]);
+
+  const caseSummary = useMemo(() => {
+    const baselineMissing = !answers.A1c;
+    const authIdMissing = !answers.A1b;
+    return [
+      {
+        label: 'Authorization',
+        value: answers.A1 ? String(answers.A1) : 'Missing',
+        tone: answers.A1 ? 'default' : 'warning',
+      },
+      {
+        label: 'Authorization ID',
+        value: answers.A1b ? String(answers.A1b) : 'Missing',
+        tone: authIdMissing ? 'warning' : 'default',
+      },
+      {
+        label: 'Authorized baseline',
+        value: answers.A1c ? String(answers.A1c) : 'Missing',
+        tone: baselineMissing ? 'warning' : 'default',
+      },
+      {
+        label: 'Change',
+        value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not yet classified',
+        tone: answers.B2 || answers.B1 ? 'info' : 'default',
+      },
+      {
+        label: 'PCCP',
+        value: answers.A2 === Answer.Yes ? 'Authorized PCCP present' : answers.A2 === Answer.No ? 'No PCCP authorized' : 'Not yet specified',
+        tone: answers.A2 === Answer.Yes ? 'success' : 'default',
+      },
+    ] as const;
+  }, [answers.A1, answers.A1b, answers.A1c, answers.A2, answers.B1, answers.B2]);
 
   // Clear validation errors when answers change
   useEffect(() => {
@@ -499,6 +577,29 @@ export const App: React.FC = () => {
     return (
       <div>
         {/* Block-level contextual banners */}
+        {!currentBlockComplete && (
+          <div style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-warning-bg)',
+            border: '1px solid var(--color-warning-border)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+          }}>
+            <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
+            <div>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
+                {currentMissingRequired} required item{currentMissingRequired === 1 ? '' : 's'} still open in this section
+              </span>
+              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
+                Answer the questions marked <strong>Required</strong> to finalize the pathway logic. Optional fields can still improve review quality and documentation quality.
+              </div>
+            </div>
+          </div>
+        )}
+
         {blockId === 'C' && answers.B3 === Answer.Yes && (
           <div style={{
             marginBottom: 16,
@@ -635,12 +736,12 @@ export const App: React.FC = () => {
                   fontWeight: 600,
                   color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
                 }}>
-                  Change-type fit for {`"${answers.B2 as string}"`}:{' '}
-                  {pccpStatus === 'TYPICAL' ? 'Generally suitable change type for PCCP — verify against authorized scope'
-                    : pccpStatus === 'EXEMPT' ? 'Exempt — no submission needed'
-                    : pccpStatus === 'CONDITIONAL' ? 'May be suitable for PCCP — depends on scope and boundaries'
-                    : pccpStatus === 'UNLIKELY' ? 'Rarely suitable for PCCP coverage'
-                    : 'Outside PCCP scope per guidance'}
+                  Future PCCP planning fit for {`"${answers.B2 as string}"`}:{' '}
+                  {pccpStatus === 'TYPICAL' ? 'Generally suitable if explicitly pre-authorized and bounded'
+                    : pccpStatus === 'EXEMPT' ? 'PCCP is usually not the key mechanism when this change truly remains documentation-only'
+                    : pccpStatus === 'CONDITIONAL' ? 'Potentially suitable, but only if scope, data, and boundaries are explicitly authorized'
+                    : pccpStatus === 'UNLIKELY' ? 'Rarely suitable for future PCCP coverage'
+                    : 'Generally outside PCCP scope per current FDA framework'}
                 </span>
                 {pccpNote && (
                   <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
@@ -674,49 +775,19 @@ export const App: React.FC = () => {
       completedBlocks={completedBlocks}
       answeredCounts={answeredCounts}
       totalCounts={totalCounts}
+      requiredAnsweredCounts={requiredAnsweredCounts}
+      requiredCounts={requiredCounts}
+      overallAnswered={overallAnswered}
+      overallTotal={overallTotal}
+      overallRequiredAnswered={overallRequiredAnswered}
+      overallRequiredTotal={overallRequiredTotal}
+      caseSummary={caseSummary.map(item => ({ ...item }))}
       onReset={handleReset}
       onHome={handleHome}
       onSave={handleSaveAssessment}
       onSaveAndNew={handleSaveAndNew}
       saveNotice={saveNotice}
     >
-      {/* Assessment name input (when on review block and assessment is being managed) */}
-      {currentBlock?.id === 'review' && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 20,
-          padding: '12px 16px',
-          background: '#f9fafb',
-          borderRadius: 8,
-          border: '1px solid #e5e7eb',
-        }}>
-          <Icon name="fileText" size={16} color="#6b7280" />
-          <input
-            type="text"
-            value={currentAssessmentName}
-            onChange={e => setCurrentAssessmentName(e.target.value)}
-            placeholder="Assessment name (e.g., 'CT-AI v4.1 retraining change')"
-            style={{
-              flex: 1,
-              padding: '6px 0',
-              border: 'none',
-              background: 'transparent',
-              fontSize: 14,
-              fontWeight: 500,
-              color: '#111827',
-              outline: 'none',
-            }}
-          />
-          {saveNotice && (
-            <span style={{ fontSize: 12, color: '#16a34a', fontWeight: 500 }}>
-              {saveNotice}
-            </span>
-          )}
-        </div>
-      )}
-
       {renderBlockContent()}
 
       {/* Navigation buttons */}

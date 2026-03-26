@@ -56,8 +56,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   index,
   hasValidationError = false,
 }) => {
-  const [showHelp, setShowHelp] = useState(false);
-  const [showReasoning, setShowReasoning] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   const [localText, setLocalText] = useState(value || '');
 
   // Get question-specific reasoning from library
@@ -119,6 +118,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const hasValue = Array.isArray(value)
     ? value.length > 0
     : value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '');
+  const hasSupportingContext = Boolean(
+    question.help ||
+    qReasoning ||
+    question.mlguidance ||
+    question.infoNote ||
+    question.classificationGuidance ||
+    question.selectedTypeData ||
+    question.autoWarn ||
+    question.boundaryNote
+  );
 
   // Commit text value on blur
   const commitText = () => {
@@ -406,6 +415,34 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         <div style={{ flex: 1 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-sm)',
+            flexWrap: 'wrap',
+            marginBottom: 'var(--space-xs)',
+          }}>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              padding: '2px 7px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--color-bg-hover)',
+              color: 'var(--color-text-muted)',
+              letterSpacing: '0.04em',
+            }}>
+              {question.id}
+            </span>
+            {question.disabled && (
+              <span style={{
+                fontSize: 10,
+                color: 'var(--color-text-muted)',
+              }}>
+                Locked by prior answers
+              </span>
+            )}
+          </div>
+
           {/* Tags */}
           <div style={{
             display: 'flex',
@@ -525,160 +562,63 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </h4>
         </div>
 
-        {/* Help button */}
-        {question.help && (
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            style={{
-              padding: 'var(--space-sm)',
-              borderRadius: 'var(--radius-sm)',
-              background: showHelp ? 'var(--color-primary-muted)' : 'transparent',
-              color: showHelp ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              flexShrink: 0,
-            }}
-            aria-label="Toggle help"
-          >
-            <Icon name="helpCircle" size={18} />
-          </button>
-        )}
       </div>
 
-      {/* Help text */}
-      {showHelp && question.help && (
+      {hasValidationError && (
         <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-bg-hover)',
-          border: '1px solid var(--color-border)',
+          padding: 'var(--space-sm) var(--space-md)',
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--color-danger-bg)',
+          border: '1px solid var(--color-danger-border)',
           marginBottom: 'var(--space-md)',
-          fontSize: 13,
-          color: 'var(--color-text-secondary)',
-          lineHeight: 1.6,
+          color: 'var(--color-danger)',
+          fontSize: 12,
+          fontWeight: 500,
         }}>
-          <HelpTextWithLinks text={question.help} />
+          This required question must be completed before you can continue.
         </div>
       )}
 
-      {/* Question reasoning from library */}
-      {qReasoning && (
-        <div style={{ marginBottom: 'var(--space-md)' }}>
-          <button
-            onClick={() => setShowReasoning(!showReasoning)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              padding: 'var(--space-sm) var(--space-md)',
-              borderRadius: 'var(--radius-md)',
-              background: showReasoning ? 'var(--color-primary-muted)' : 'var(--color-bg-hover)',
-              border: '1px solid var(--color-border)',
-              color: showReasoning ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left',
-            }}
-          >
-            <Icon name="book" size={14} />
-            <span style={{ flex: 1 }}>{qReasoning.title || 'Regulatory Context'}</span>
-            {qReasoning.status && <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />}
-            <Icon name={showReasoning ? 'arrowUp' : 'arrowDown'} size={12} />
-          </button>
-          {showReasoning && (
-            <div 
-              className="animate-fade-in"
-              style={{
-                padding: 'var(--space-md)',
-                borderRadius: '0 0 var(--radius-md) var(--radius-md)',
-                background: 'var(--color-bg-hover)',
-                borderLeft: '1px solid var(--color-border)',
-                borderRight: '1px solid var(--color-border)',
-                borderBottom: '1px solid var(--color-border)',
-                marginTop: -1,
-              }}
-            >
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-                <HelpTextWithLinks text={qReasoning.text} />
-              </div>
-              {qReasoning.verify && (
-                <div style={{
-                  marginTop: 'var(--space-sm)',
-                  padding: 'var(--space-sm) var(--space-md)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-success-bg)',
-                  border: '1px solid var(--color-success-border)',
-                  fontSize: 11,
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.5,
-                }}>
-                  <strong style={{ color: 'var(--color-success)' }}>Verify:</strong>{' '}
-                  <HelpTextWithLinks text={qReasoning.verify} />
-                </div>
-              )}
-              {qReasoning.counter && (
-                <div style={{
-                  marginTop: 'var(--space-sm)',
-                  padding: 'var(--space-sm) var(--space-md)',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--color-warning-bg)',
-                  border: '1px solid var(--color-warning-border)',
-                  fontSize: 11,
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.5,
-                }}>
-                  <strong style={{ color: 'var(--color-warning)' }}>Counter:</strong>{' '}
-                  <HelpTextWithLinks text={qReasoning.counter} />
-                </div>
-              )}
-              {qReasoning.source && (
-                <div style={{
-                  marginTop: 'var(--space-sm)',
-                  fontSize: 10,
-                  color: 'var(--color-text-muted)',
-                }}>
-                  Source: <GuidanceRef code={qReasoning.source} />
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ML Guidance */}
-      {question.mlguidance && (
-        <NoteBox variant="info" icon="cpu" label="AI/ML Guidance">
-          <HelpTextWithLinks text={question.mlguidance} />
-        </NoteBox>
-      )}
-
-      {/* Auto warning */}
       {question.autoWarn && (
         <NoteBox variant="warning" icon="alert">
           <HelpTextWithLinks text={question.autoWarn} />
         </NoteBox>
       )}
 
-      {/* Info note */}
-      {question.infoNote && (
-        <NoteBox variant="success" icon="info">
-          <HelpTextWithLinks text={question.infoNote} />
-        </NoteBox>
-      )}
-
-      {/* Classification guidance */}
-      {question.classificationGuidance && (
-        <NoteBox variant="neutral" label="Classification Guidance">
-          <HelpTextWithLinks text={question.classificationGuidance} />
-        </NoteBox>
-      )}
-
-      {/* Boundary note */}
       {question.boundaryNote && (
         <NoteBox variant="warning" label="Boundary Note">
           <HelpTextWithLinks text={question.boundaryNote} />
         </NoteBox>
       )}
+
+      {/* Forced value explanation — only show when forcedValue is a non-null, non-empty value */}
+      {question.forcedValue != null && question.forcedValue !== '' && (
+        <div style={{
+          padding: 'var(--space-md)',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--color-info-bg)',
+          border: '1px solid var(--color-info-border)',
+          marginBottom: 'var(--space-md)',
+          display: 'flex',
+          gap: 'var(--space-sm)',
+        }}>
+          <Icon name="info" size={16} color="var(--color-info)" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={{
+            fontSize: 12,
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.6,
+          }}>
+            <strong style={{ color: 'var(--color-info)' }}>Auto-determined:</strong>{' '}
+            This value has been set automatically based on your prior answers.
+            Value: <strong>{String(question.forcedValue)}</strong>
+          </div>
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ marginBottom: hasSupportingContext || question.consequencePreview || question.selectedTypeData ? 'var(--space-md)' : 0 }}>
+        {renderInput()}
+      </div>
 
       {/* Consequence preview */}
       {question.consequencePreview && (
@@ -730,7 +670,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       )}
 
-      {/* Selected type data */}
       {question.selectedTypeData && (
         <div style={{
           padding: 'var(--space-md)',
@@ -742,6 +681,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           color: 'var(--color-text-secondary)',
           lineHeight: 1.6,
         }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: 'var(--color-text-muted)',
+            letterSpacing: '0.03em',
+            textTransform: 'uppercase',
+            marginBottom: 'var(--space-xs)',
+          }}>
+            Change-Type Context
+          </div>
           {question.selectedTypeData.typicalPathway && (
             <div style={{ marginBottom: 'var(--space-sm)' }}>
               <strong>Typical Pathway:</strong> {question.selectedTypeData.typicalPathway}
@@ -755,47 +704,153 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       )}
 
-      {/* Forced value explanation — only show when forcedValue is a non-null, non-empty value */}
-      {question.forcedValue != null && question.forcedValue !== '' && (
-        <div style={{
-          padding: 'var(--space-md)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--color-info-bg)',
-          border: '1px solid var(--color-info-border)',
-          marginBottom: 'var(--space-md)',
-          display: 'flex',
-          gap: 'var(--space-sm)',
-        }}>
-          <Icon name="info" size={16} color="var(--color-info)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{
-            fontSize: 12,
-            color: 'var(--color-text-secondary)',
-            lineHeight: 1.6,
-          }}>
-            <strong style={{ color: 'var(--color-info)' }}>Auto-determined:</strong>{' '}
-            This value has been set automatically based on your prior answers.
-            Value: <strong>{String(question.forcedValue)}</strong>
-          </div>
+      {hasSupportingContext && (
+        <div style={{ marginTop: 'var(--space-sm)' }}>
+          <button
+            onClick={() => setShowSupport(!showSupport)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--space-sm)',
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: showSupport ? 'var(--radius-md) var(--radius-md) 0 0' : 'var(--radius-md)',
+              background: showSupport ? 'var(--color-bg-hover)' : 'var(--color-bg-card)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-text-secondary)',
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: 'left',
+            }}
+          >
+            <Icon name="book" size={14} color="var(--color-primary)" />
+            <span style={{ flex: 1 }}>Why this question matters and what to verify</span>
+            {(qReasoning?.status || question.mlguidance) && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {qReasoning?.status && (
+                  <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />
+                )}
+                {question.mlguidance && (
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                    borderRadius: 4,
+                    background: 'var(--color-info-bg)',
+                    color: 'var(--color-info)',
+                    border: '1px solid var(--color-info-border)',
+                  }}>
+                    AI/ML
+                  </span>
+                )}
+              </span>
+            )}
+            <Icon name={showSupport ? 'arrowUp' : 'arrowDown'} size={12} />
+          </button>
+
+          {showSupport && (
+            <div
+              className="animate-fade-in"
+              style={{
+                padding: 'var(--space-md)',
+                borderRadius: '0 0 var(--radius-md) var(--radius-md)',
+                background: 'var(--color-bg-hover)',
+                borderLeft: '1px solid var(--color-border)',
+                borderRight: '1px solid var(--color-border)',
+                borderBottom: '1px solid var(--color-border)',
+                marginTop: -1,
+              }}
+            >
+              {question.help && (
+                <div style={{
+                  marginBottom: 'var(--space-md)',
+                  fontSize: 13,
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.7,
+                }}>
+                  <HelpTextWithLinks text={question.help} />
+                </div>
+              )}
+
+              {qReasoning && (
+                <div style={{ marginBottom: 'var(--space-md)' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-sm)',
+                    marginBottom: 'var(--space-sm)',
+                  }}>
+                    <strong style={{ fontSize: 12, color: 'var(--color-text)' }}>
+                      {qReasoning.title || 'Regulatory Context'}
+                    </strong>
+                    {qReasoning.status && <AuthorityTag level={qReasoning.status.toLowerCase().replace(' ', '_')} compact />}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+                    <HelpTextWithLinks text={qReasoning.text} />
+                  </div>
+                  {qReasoning.verify && (
+                    <div style={{
+                      marginTop: 'var(--space-sm)',
+                      padding: 'var(--space-sm) var(--space-md)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-success-bg)',
+                      border: '1px solid var(--color-success-border)',
+                      fontSize: 11,
+                      color: 'var(--color-text-secondary)',
+                      lineHeight: 1.5,
+                    }}>
+                      <strong style={{ color: 'var(--color-success)' }}>Verify:</strong>{' '}
+                      <HelpTextWithLinks text={qReasoning.verify} />
+                    </div>
+                  )}
+                  {qReasoning.counter && (
+                    <div style={{
+                      marginTop: 'var(--space-sm)',
+                      padding: 'var(--space-sm) var(--space-md)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-warning-bg)',
+                      border: '1px solid var(--color-warning-border)',
+                      fontSize: 11,
+                      color: 'var(--color-text-secondary)',
+                      lineHeight: 1.5,
+                    }}>
+                      <strong style={{ color: 'var(--color-warning)' }}>Counter-consideration:</strong>{' '}
+                      <HelpTextWithLinks text={qReasoning.counter} />
+                    </div>
+                  )}
+                  {qReasoning.source && (
+                    <div style={{
+                      marginTop: 'var(--space-sm)',
+                      fontSize: 10,
+                      color: 'var(--color-text-muted)',
+                    }}>
+                      Source: <GuidanceRef code={qReasoning.source} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {question.mlguidance && (
+                <NoteBox variant="info" icon="cpu" label="AI/ML Guidance">
+                  <HelpTextWithLinks text={question.mlguidance} />
+                </NoteBox>
+              )}
+
+              {question.infoNote && (
+                <NoteBox variant="success" icon="info">
+                  <HelpTextWithLinks text={question.infoNote} />
+                </NoteBox>
+              )}
+
+              {question.classificationGuidance && (
+                <NoteBox variant="neutral" label="Classification Guidance">
+                  <HelpTextWithLinks text={question.classificationGuidance} />
+                </NoteBox>
+              )}
+            </div>
+          )}
         </div>
       )}
-
-      {hasValidationError && (
-        <div style={{
-          padding: 'var(--space-sm) var(--space-md)',
-          borderRadius: 'var(--radius-sm)',
-          background: 'var(--color-danger-bg)',
-          border: '1px solid var(--color-danger-border)',
-          color: 'var(--color-danger)',
-          fontSize: 12,
-          fontWeight: 500,
-          marginBottom: 'var(--space-md)',
-        }}>
-          This required question must be completed before you can continue.
-        </div>
-      )}
-
-      {/* Input */}
-      {renderInput()}
     </div>
   );
 };

@@ -2,6 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './Icon';
 import type { Block } from '../lib/assessment-engine';
 
+interface SummaryItem {
+  label: string;
+  value: string;
+  tone?: 'default' | 'warning' | 'success' | 'info';
+}
+
 interface LayoutProps {
   children: React.ReactNode;
   blocks: Block[];
@@ -10,6 +16,13 @@ interface LayoutProps {
   completedBlocks: Set<string>;
   answeredCounts: Record<string, number>;
   totalCounts: Record<string, number>;
+  requiredAnsweredCounts?: Record<string, number>;
+  requiredCounts?: Record<string, number>;
+  overallAnswered?: number;
+  overallTotal?: number;
+  overallRequiredAnswered?: number;
+  overallRequiredTotal?: number;
+  caseSummary?: SummaryItem[];
   onReset?: () => void;
   onHome?: () => void;
   onSave?: () => void;
@@ -25,6 +38,13 @@ export const Layout: React.FC<LayoutProps> = ({
   completedBlocks,
   answeredCounts,
   totalCounts,
+  requiredAnsweredCounts = {},
+  requiredCounts = {},
+  overallAnswered = 0,
+  overallTotal = 0,
+  overallRequiredAnswered = 0,
+  overallRequiredTotal = 0,
+  caseSummary = [],
   onReset,
   onHome,
   onSave,
@@ -36,13 +56,45 @@ export const Layout: React.FC<LayoutProps> = ({
 
   // Scroll main content to top when block changes
   useEffect(() => {
-    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof mainRef.current?.scrollTo === 'function') {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [currentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
-  const progress = blocks.length > 0 
-    ? Math.round((currentBlockIndex / (blocks.length - 1)) * 100) 
+  const progress = overallRequiredTotal > 0
+    ? Math.round((overallRequiredAnswered / overallRequiredTotal) * 100)
     : 0;
+  const currentAnswered = currentBlock ? (answeredCounts[currentBlock.id] || 0) : 0;
+  const currentTotal = currentBlock ? (totalCounts[currentBlock.id] || 0) : 0;
+  const currentRequiredAnswered = currentBlock ? (requiredAnsweredCounts[currentBlock.id] || 0) : 0;
+  const currentRequiredTotal = currentBlock ? (requiredCounts[currentBlock.id] || 0) : 0;
+  const currentMissingRequired = Math.max(0, currentRequiredTotal - currentRequiredAnswered);
+  const isReviewBlock = currentBlock?.id === 'review';
+  const reviewReady = overallRequiredTotal > 0 && overallRequiredAnswered === overallRequiredTotal;
+
+  const summaryToneStyles: Record<NonNullable<SummaryItem['tone']>, { bg: string; color: string; border: string }> = {
+    default: {
+      bg: 'var(--color-bg-card)',
+      color: 'var(--color-text)',
+      border: 'var(--color-border)',
+    },
+    warning: {
+      bg: 'var(--color-warning-bg)',
+      color: 'var(--color-warning)',
+      border: 'var(--color-warning-border)',
+    },
+    success: {
+      bg: 'var(--color-success-bg)',
+      color: 'var(--color-success)',
+      border: 'var(--color-success-border)',
+    },
+    info: {
+      bg: 'var(--color-info-bg)',
+      color: 'var(--color-info)',
+      border: 'var(--color-info-border)',
+    },
+  };
 
   return (
     <div style={{
@@ -200,8 +252,24 @@ export const Layout: React.FC<LayoutProps> = ({
             background: 'var(--color-bg-card)',
             border: '1px solid var(--color-border)',
           }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Progress</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{progress}%</span>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Required completion</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+              {overallRequiredAnswered}/{overallRequiredTotal || 0}
+            </span>
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-sm)',
+            padding: '6px 12px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--color-bg-card)',
+            border: '1px solid var(--color-border)',
+          }}>
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Responses</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+              {overallAnswered}/{overallTotal || 0}
+            </span>
           </div>
           {onReset && (
             <button
@@ -267,10 +335,10 @@ export const Layout: React.FC<LayoutProps> = ({
               marginBottom: 'var(--space-sm)',
             }}>
               <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-                Assessment Progress
+                Assessment Readiness
               </span>
               <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>
-                {currentBlockIndex + 1} of {blocks.length}
+                {progress}%
               </span>
             </div>
             <div style={{
@@ -282,10 +350,25 @@ export const Layout: React.FC<LayoutProps> = ({
               <div style={{
                 height: '100%',
                 width: `${progress}%`,
-                background: 'var(--color-primary)',
+                background: currentMissingRequired > 0 && !isReviewBlock
+                  ? 'var(--color-warning)'
+                  : reviewReady
+                    ? 'var(--color-success)'
+                    : 'var(--color-primary)',
                 borderRadius: 2,
                 transition: 'width var(--transition-slow)',
               }} />
+            </div>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 'var(--space-sm)',
+              marginTop: 'var(--space-sm)',
+              fontSize: 11,
+              color: 'var(--color-text-muted)',
+            }}>
+              <span>{overallRequiredAnswered}/{overallRequiredTotal || 0} required answered</span>
+              <span>{overallAnswered}/{overallTotal || 0} total responses</span>
             </div>
           </div>
 
@@ -293,12 +376,45 @@ export const Layout: React.FC<LayoutProps> = ({
           <nav style={{ flex: 1, overflow: 'auto', padding: 'var(--space-sm)' }}>
             {blocks.map((block, index) => {
               const isCurrent = index === currentBlockIndex;
-              const isCompleted = completedBlocks.has(block.id);
-              const isPast = index < currentBlockIndex;
               const answered = answeredCounts[block.id] || 0;
               const total = totalCounts[block.id] || 0;
+              const requiredAnswered = requiredAnsweredCounts[block.id] || 0;
+              const requiredTotal = requiredCounts[block.id] || 0;
+              const missingRequired = Math.max(0, requiredTotal - requiredAnswered);
               const isReview = block.id === 'review';
-              const canNavigate = isPast || isCurrent || isCompleted;
+              const isCompleted = isReview
+                ? reviewReady
+                : completedBlocks.has(block.id);
+              const canNavigate = true;
+              const isStarted = answered > 0 || isCurrent || isCompleted;
+              const statusLabel = isReview
+                ? reviewReady
+                  ? 'Ready for final review'
+                  : 'Use to inspect blockers and report output'
+                : missingRequired > 0
+                  ? `${missingRequired} blocker${missingRequired === 1 ? '' : 's'} remaining`
+                  : total > 0 && answered < total
+                    ? 'Required complete; optional context available'
+                    : 'Complete';
+              const indicatorBg = isCompleted
+                ? 'var(--color-success)'
+                : isCurrent
+                  ? 'var(--color-primary)'
+                  : isStarted
+                    ? 'var(--color-warning-bg)'
+                    : 'var(--color-bg-card)';
+              const indicatorBorder = isCompleted || isCurrent
+                ? 'none'
+                : isStarted
+                  ? '1px solid var(--color-warning-border)'
+                  : '1px solid var(--color-border)';
+              const indicatorColor = isCompleted
+                ? '#fff'
+                : isCurrent
+                  ? '#fff'
+                  : isStarted
+                    ? 'var(--color-warning)'
+                    : 'var(--color-text-muted)';
 
               return (
                 <button
@@ -313,11 +429,11 @@ export const Layout: React.FC<LayoutProps> = ({
                     padding: 'var(--space-md)',
                     borderRadius: 'var(--radius-md)',
                     textAlign: 'left',
-                    background: isCurrent ? '#ecfeff' : 'transparent',
-                    border: isCurrent ? '1px solid #a5f3fc' : '1px solid transparent',
+                    background: isCurrent ? '#ecfeff' : isStarted ? '#ffffff' : 'transparent',
+                    border: isCurrent ? '1px solid #a5f3fc' : isStarted ? '1px solid var(--color-border-subtle)' : '1px solid transparent',
                     boxShadow: isCurrent ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
-                    opacity: canNavigate ? 1 : 0.5,
-                    cursor: canNavigate ? 'pointer' : 'not-allowed',
+                    opacity: 1,
+                    cursor: 'pointer',
                     marginBottom: 'var(--space-xs)',
                     transition: 'all var(--transition-fast)',
                   }}
@@ -331,23 +447,17 @@ export const Layout: React.FC<LayoutProps> = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    background: isCompleted || isPast
-                      ? 'var(--color-success)'
-                      : isCurrent
-                        ? 'var(--color-primary)'
-                        : 'var(--color-bg-card)',
-                    border: isCompleted || isPast || isCurrent
-                      ? 'none'
-                      : '1px solid var(--color-border)',
+                    background: indicatorBg,
+                    border: indicatorBorder,
                     transition: 'all var(--transition-fast)',
                   }}>
-                    {isCompleted || isPast ? (
+                    {isCompleted ? (
                       <Icon name="check" size={14} color="#fff" />
                     ) : (
                       <Icon 
                         name={block.icon} 
                         size={14} 
-                        color={isCurrent ? '#fff' : 'var(--color-text-muted)'} 
+                        color={indicatorColor} 
                       />
                     )}
                   </div>
@@ -365,10 +475,14 @@ export const Layout: React.FC<LayoutProps> = ({
                     </div>
                     {!isReview && total > 0 && (
                       <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
                         fontSize: 11,
                         color: 'var(--color-text-muted)',
                       }}>
-                        {answered} of {total} answered
+                        <span>{statusLabel}</span>
+                        <span>{requiredAnswered}/{requiredTotal || 0} required, {answered}/{total} total</span>
                       </div>
                     )}
                     {isReview && (
@@ -376,7 +490,7 @@ export const Layout: React.FC<LayoutProps> = ({
                         fontSize: 11,
                         color: 'var(--color-text-muted)',
                       }}>
-                        Review assessment
+                        {statusLabel}
                       </div>
                     )}
                   </div>
@@ -393,8 +507,8 @@ export const Layout: React.FC<LayoutProps> = ({
             <div style={{
               padding: 'var(--space-md)',
               borderRadius: 'var(--radius-md)',
-              background: 'var(--color-warning-bg)',
-              border: '1px solid var(--color-warning-border)',
+              background: reviewReady ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+              border: `1px solid ${reviewReady ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
             }}>
               <div style={{
                 display: 'flex',
@@ -402,9 +516,17 @@ export const Layout: React.FC<LayoutProps> = ({
                 gap: 'var(--space-sm)',
                 marginBottom: 'var(--space-xs)',
               }}>
-                <Icon name="alertCircle" size={14} color="var(--color-warning)" />
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-warning)' }}>
-                  Advisory Tool
+                <Icon
+                  name={reviewReady ? 'checkCircle' : 'alertCircle'}
+                  size={14}
+                  color={reviewReady ? 'var(--color-success)' : 'var(--color-warning)'}
+                />
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
+                }}>
+                  {reviewReady ? 'Ready For Review' : 'Expert Review Needed'}
                 </span>
               </div>
               <p style={{
@@ -413,7 +535,9 @@ export const Layout: React.FC<LayoutProps> = ({
                 lineHeight: 1.5,
                 margin: 0,
               }}>
-                For internal use only. Not for formal regulatory submissions.
+                {reviewReady
+                  ? 'All visible pathway-critical questions are answered. Review reasoning, evidence gaps, and documentation needs before relying on the result.'
+                  : 'Resolve remaining blockers and then review the report before relying on the pathway recommendation.'}
               </p>
             </div>
           </div>
@@ -458,6 +582,112 @@ export const Layout: React.FC<LayoutProps> = ({
               }}>
                 {currentBlock.label}
               </h1>
+              {currentBlock.description && (
+                <p style={{
+                  fontSize: 13,
+                  color: 'var(--color-text-secondary)',
+                  lineHeight: 1.65,
+                  maxWidth: 840,
+                  margin: '10px 0 0',
+                }}>
+                  {currentBlock.description}
+                </p>
+              )}
+              {isReviewBlock && (
+                <div style={{
+                  marginTop: 'var(--space-md)',
+                  padding: '12px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-bg-card)',
+                  border: '1px solid var(--color-border)',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 'var(--space-sm)',
+                    marginBottom: caseSummary.length > 0 ? 'var(--space-sm)' : 0,
+                  }}>
+                    {[
+                      {
+                        label: 'Required completion',
+                        value: `${overallRequiredAnswered}/${overallRequiredTotal || 0}`,
+                        tone: 'default' as const,
+                      },
+                      {
+                        label: 'Responses',
+                        value: `${overallAnswered}/${overallTotal || 0}`,
+                        tone: 'default' as const,
+                      },
+                      {
+                        label: 'Review status',
+                        value: reviewReady ? 'Reliance-ready inputs captured' : 'Outstanding blockers remain',
+                        tone: reviewReady ? 'success' as const : 'warning' as const,
+                      },
+                    ].map((item) => {
+                      const tone = summaryToneStyles[item.tone];
+                      return (
+                        <div
+                          key={item.label}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '8px 10px',
+                            borderRadius: '999px',
+                            background: tone.bg,
+                            border: `1px solid ${tone.border}`,
+                          }}
+                        >
+                          <span style={{ fontSize: 10.5, color: 'var(--color-text-muted)' }}>{item.label}</span>
+                          <span style={{
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
+                          }}>
+                            {item.value}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {caseSummary.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 'var(--space-sm)',
+                    }}>
+                      {caseSummary.map((item) => {
+                        const tone = summaryToneStyles[item.tone || 'default'];
+                        return (
+                          <div
+                            key={item.label}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              padding: '8px 10px',
+                              borderRadius: '999px',
+                              background: tone.bg,
+                              border: `1px solid ${tone.border}`,
+                              maxWidth: '100%',
+                            }}
+                          >
+                            <span style={{ fontSize: 10.5, color: 'var(--color-text-muted)' }}>{item.label}</span>
+                            <span style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: tone.color === 'var(--color-text)' ? 'var(--color-text)' : tone.color,
+                              lineHeight: 1.4,
+                            }}>
+                              {item.value}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
