@@ -548,6 +548,13 @@ export const AuthorityTag: React.FC<AuthorityTagProps> = ({
       border: '#D0E3FF',
       icon: '\u2696',
     },
+    statute: {
+      label: 'STATUTE',
+      bg: '#EDE9FE',
+      color: '#6D28D9',
+      border: '#C4B5FD',
+      icon: '\u2696',
+    },
     final_guidance: {
       label: 'FINAL GUIDANCE',
       bg: '#E7F5EE',

@@ -6,7 +6,8 @@
 import type { Answers, Block, Question } from './assessment-engine';
 import { Pathway } from './assessment-engine';
 import { ruleReasoningLibrary, docRequirements } from './content';
-import { computeEvidenceGaps, type EvidenceGap, type SourceClass } from './evidence-gaps';
+import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';
+import { classifySource, type SourceClass } from './source-classification';
 
 export interface AssessmentArtifact {
   meta: {
@@ -71,15 +72,6 @@ const getRuleKey = (determination: any): string | null => {
   if (determination.pathway === Pathway.LetterToFile) return "LTF-NonSignificant";
   return null;
 };
-
-function classifySource(source: string): SourceClass {
-  if (/FD&C Act|FDORA|§\d{3}[A-Z]/.test(source)) return 'Regulation'; // Statutes — mapped to Regulation for SourceClass compat
-  if (/21 CFR|Part \d{3}/.test(source)) return 'Regulation';
-  if (/draft/i.test(source)) return 'Draft guidance';
-  if (/FDA-|Guidance|guidance/.test(source)) return 'Final guidance';
-  if (/[Oo]rganization|[Ii]nternal/.test(source)) return 'Internal conservative policy';
-  return 'Best practice';
-}
 
 export function generateAssessmentArtifact(
   answers: Answers,

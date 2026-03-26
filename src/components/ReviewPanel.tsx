@@ -18,6 +18,7 @@ import { changeTaxonomy } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
 import { generateAssessmentArtifact, formatArtifactAsText } from '../lib/report-generator';
 import type { AssessmentStatus, ReviewerNote } from '../lib/assessment-store';
+import { classifySource } from '../lib/source-classification';
 
 interface ReviewPanelProps {
   pathway: string;
@@ -68,9 +69,11 @@ const getRuleKey = (determination: any): string | null => {
 
 // Source class to AuthorityTag level mapping
 const sourceClassToLevel: Record<string, string> = {
+  'Statute': 'statute',
   'Regulation': 'regulation',
   'Final guidance': 'final_guidance',
   'Draft guidance': 'draft_guidance',
+  'Standard': 'standard',
   'Internal conservative policy': 'internal_policy',
   'Best practice': 'best_practice',
 };
@@ -1627,11 +1630,4 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   );
 };
 
-/** Inline source classification for documentation items */
-function classifySourceInline(source: string): string {
-  if (/21 CFR|§\d|FD&C|Part \d{3}/.test(source)) return 'Regulation';
-  if (/draft/i.test(source)) return 'Draft guidance';
-  if (/Organization|Internal/i.test(source)) return 'Internal conservative policy';
-  if (/FDA-|Guidance|guidance|QMSR|MDCG|IEC|ISO/.test(source)) return 'Final guidance';
-  return 'Best practice';
-}
+const classifySourceInline = classifySource;

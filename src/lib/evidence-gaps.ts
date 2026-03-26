@@ -5,15 +5,9 @@
 
 import type { Answers } from './assessment-engine';
 import { Answer, AuthPathway } from './assessment-engine';
+import type { SourceClass } from './source-classification';
 
 export type GapSeverity = 'critical' | 'important' | 'advisory';
-
-export type SourceClass =
-  | 'Regulation'
-  | 'Final guidance'
-  | 'Draft guidance'
-  | 'Internal conservative policy'
-  | 'Best practice';
 
 export interface EvidenceGap {
   id: string;
@@ -125,11 +119,23 @@ export function computeEvidenceGaps(answers: Answers, determination: any): Evide
 
   // --- Subgroup / Equity gaps ---
 
-  if (answers.E1 === Answer.Yes || answers.E3 === Answer.Yes) {
+  if (answers.E1 === Answer.No || answers.E1 === Answer.Uncertain) {
+    gaps.push({
+      id: 'GAP-TRAINING-REPR',
+      category: 'Bias & Equity',
+      description: 'Training, validation, or test data may not adequately represent the intended patient population',
+      severity: 'important',
+      sourceClass: 'Draft guidance',
+      source: 'FDA-LIFECYCLE-2025 §IV.B',
+      remediation: 'Assess dataset representativeness against the authorized intended population. Document demographic composition, coverage gaps, and any compensating controls or mitigation plan.',
+    });
+  }
+
+  if (answers.E2 === Answer.No) {
     gaps.push({
       id: 'GAP-SUBGROUP',
       category: 'Bias & Equity',
-      description: 'Subgroup/population performance evidence may be missing — equity impact indicated',
+      description: 'Subgroup performance evidence is missing or incomplete for relevant demographic groups',
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
@@ -137,15 +143,39 @@ export function computeEvidenceGaps(answers: Answers, determination: any): Evide
     });
   }
 
-  if (answers.E2 === Answer.Yes || answers.E2 === Answer.Uncertain) {
+  if (answers.E3 === Answer.Yes || answers.E3 === Answer.Uncertain) {
     gaps.push({
-      id: 'GAP-TRAINING-REPR',
+      id: 'GAP-POPULATION-SCOPE',
       category: 'Bias & Equity',
-      description: 'Training data representativeness concern — may not adequately represent affected populations',
+      description: 'New demographic populations may have been introduced relative to the authorized baseline',
+      severity: 'important',
+      sourceClass: 'Regulation',
+      source: '21 CFR 807.81(a)(3); FDA-LIFECYCLE-2025 §IV.B',
+      remediation: 'Confirm whether the newly introduced population remains within the authorized intended population and update subgroup performance evidence accordingly.',
+    });
+  }
+
+  if (answers.E4 === Answer.No) {
+    gaps.push({
+      id: 'GAP-BIAS-ASSESSMENT-UPDATE',
+      category: 'Bias & Equity',
+      description: 'Bias assessment from the original submission has not been updated for the current change',
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B',
-      remediation: 'Assess training data demographic composition against the authorized intended population. Document any gaps and compensating measures.',
+      remediation: 'Update the bias and equity assessment to reflect the modified model, data, workflow, and affected populations.',
+    });
+  }
+
+  if (answers.E5 === Answer.Yes || answers.E5 === Answer.Uncertain) {
+    gaps.push({
+      id: 'GAP-BIAS-MITIGATION',
+      category: 'Bias & Equity',
+      description: 'A bias mitigation strategy may have been changed, weakened, or removed',
+      severity: 'important',
+      sourceClass: 'Draft guidance',
+      source: 'FDA-LIFECYCLE-2025 §IV.B; ISO 14971:2019',
+      remediation: 'Review whether the modified bias mitigation remains effective, whether it functions as a risk control, and whether additional validation or risk analysis is required.',
     });
   }
 

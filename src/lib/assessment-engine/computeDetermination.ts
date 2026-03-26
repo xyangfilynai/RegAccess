@@ -17,7 +17,7 @@ export const computeDetermination = (ans: Answers) => {
     (ans.C0_DN1 === Answer.Uncertain || ans.C0_DN2 === Answer.Uncertain);
 
   const _baselineMissing = !ans.A1b || !ans.A1c || !ans.A1d;
-  const _baselineIncomplete = _baselineMissing && !_isIntendedUseChange;
+  const _baselineIncomplete = _baselineMissing;
 
   const sigAnswers = [ans.C3, ans.C4, ans.C5, ans.C6];
   const _baseSignificant = !_isPMA && !_isIntendedUseUncertain && (
@@ -113,7 +113,7 @@ export const computeDetermination = (ans: Answers) => {
       _consistencyIssues.push("A monitoring threshold change was reported, but the PMA safety/effectiveness question was marked NO. If the change weakens monitoring sensitivity, it may affect safety or effectiveness. Reassess C_PMA1.");
     }
   }
-  if (_baselineIncomplete && !_isCyberOnly && !_isBugFix) {
+  if (_baselineIncomplete) {
     _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
   }
   if (_hasUncertainSignificance && _baseSignificant && !_isIntendedUseChange && !_isIntendedUseUncertain) {
@@ -122,25 +122,41 @@ export const computeDetermination = (ans: Answers) => {
   if (_isPMA && ans.C_PMA1 === Answer.Uncertain) {
     _consistencyIssues.push("The PMA safety/effectiveness question was answered 'Uncertain.' This tool's internal conservative policy treats unresolved PMA uncertainty as requiring a supplement — this is NOT a direct regulatory mandate but a risk-based escalation. Resolve the uncertainty before treating the pathway as final.");
   }
+  if (_isPMA && ans.C_PMA2 === Answer.Yes && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A PMA labeling change was reported while safety/effectiveness impact was marked NO. Confirm the labeling change is purely editorial or otherwise does not affect safety or effectiveness; otherwise a PMA supplement may still be required under 21 CFR 814.39(a).");
+  }
+  if (_isPMA && ans.C_PMA3 === Answer.Yes && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A PMA manufacturing or facility change was reported while safety/effectiveness impact was marked NO. Confirm the change is periodic-reportable under 21 CFR 814.39(b) or eligible for a 30-day notice under 21 CFR 814.39(f); otherwise a PMA supplement may still be required.");
+  }
+  if (!_isPMA && ans.E5 === Answer.Yes && ans.C5 === Answer.No) {
+    _consistencyIssues.push("A bias mitigation strategy was changed or removed, but the risk-control significance question was marked NO. If the mitigation functions as a safety or performance control, reassess C5.");
+  }
+  if (_isPMA && ans.E5 === Answer.Yes && ans.C_PMA1 === Answer.No) {
+    _consistencyIssues.push("A bias mitigation strategy was changed or removed, but the PMA safety/effectiveness question was marked NO. If the mitigation affects safety, effectiveness, or clinically relevant performance across populations, reassess C_PMA1.");
+  }
   const _isSignificant = _baseSignificant || _seNotSupportable;
 
-  const _pmaQuestionsAnswered = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && (
-    [Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C_PMA1) &&
-    [Answer.Yes, Answer.No].includes(ans.C_PMA2) &&
-    [Answer.Yes, Answer.No].includes(ans.C_PMA3)
-  );
+  const _pmaQuestionsAnswered = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain &&
+    [Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C_PMA1);
   const _pmaIncomplete = _isPMA && !_isIntendedUseChange && !_isIntendedUseUncertain && !_pmaQuestionsAnswered;
   const _pmaRequiresSupplement = _isPMA && (
-    _isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain ||
-    ans.C_PMA2 === Answer.Yes || ans.C_PMA3 === Answer.Yes
+    _isIntendedUseChange || ans.C_PMA1 === Answer.Yes || ans.C_PMA1 === Answer.Uncertain
   );
 
-  const _p5Applicable = _hasPCCP && ans.P1 === Answer.Yes && ans.P2 !== Answer.No && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes;
+  const _p3Applicable = _hasPCCP && ans.P1 === Answer.Yes && ans.P2 === Answer.Yes;
+  const _p4Applicable = _p3Applicable && ans.P3 === Answer.Yes;
+  const _p5Applicable = _p4Applicable && ans.P4 === Answer.Yes;
   // Gate on _hasPCCP to prevent stale P-block answers from triggering false verification
   const _pccpScopeVerified = _hasPCCP && ans.P1 === Answer.Yes && ans.P2 === Answer.Yes && ans.P3 === Answer.Yes && ans.P4 === Answer.Yes &&
     (!_p5Applicable || ans.P5 === Answer.Yes);
   const _pccpScopeFailed = _hasPCCP && !_isIntendedUseChange && !_isIntendedUseUncertain &&
-    (ans.P1 === Answer.No || ans.P2 === Answer.No || ans.P3 === Answer.No || ans.P4 === Answer.No || ans.P5 === Answer.No);
+    (
+      ans.P1 === Answer.No ||
+      (ans.P1 === Answer.Yes && ans.P2 === Answer.No) ||
+      (_p3Applicable && ans.P3 === Answer.No) ||
+      (_p4Applicable && ans.P4 === Answer.No) ||
+      (_p5Applicable && ans.P5 === Answer.No)
+    );
   // PCCP verification is only relevant when the change would otherwise require a submission.
   // For PMA: only when _pmaRequiresSupplement is true (otherwise it's PMAAnnualReport — no PCCP needed).
   // For non-PMA: only when _isSignificant is true (otherwise it's Letter to File — no PCCP needed).
@@ -150,16 +166,18 @@ export const computeDetermination = (ans: Answers) => {
 
   let pathway;
   if (_isPMA) {
-    if (_pmaIncomplete) pathway = Pathway.AssessmentIncomplete;
-    else if (_isIntendedUseChange) pathway = Pathway.PMASupplementRequired;
+    if (_isIntendedUseChange) pathway = _baselineIncomplete ? Pathway.AssessmentIncomplete : Pathway.PMASupplementRequired;
     else if (_isIntendedUseUncertain) pathway = Pathway.AssessmentIncomplete;
+    else if (_baselineIncomplete) pathway = Pathway.AssessmentIncomplete;
+    else if (_pmaIncomplete) pathway = Pathway.AssessmentIncomplete;
     else if (_hasPCCP && _pccpScopeVerified && _pmaRequiresSupplement) pathway = Pathway.ImplementPCCP;
     else if (_hasPCCP && _pccpIncomplete && _pmaRequiresSupplement) pathway = Pathway.AssessmentIncomplete;
     else if (_pmaRequiresSupplement) pathway = Pathway.PMASupplementRequired;
     else pathway = Pathway.PMAAnnualReport;
   } else {
-    if (_isIntendedUseChange) pathway = Pathway.NewSubmission;
+    if (_isIntendedUseChange) pathway = _baselineIncomplete ? Pathway.AssessmentIncomplete : Pathway.NewSubmission;
     else if (_isIntendedUseUncertain) pathway = Pathway.AssessmentIncomplete;
+    else if (_baselineIncomplete) pathway = Pathway.AssessmentIncomplete;
     else if (_deNovoDeviceTypeFitFailed) pathway = Pathway.NewSubmission;
     else if (_isCyberOnly) pathway = Pathway.LetterToFile;
     else if (_isBugFix) pathway = Pathway.LetterToFile;

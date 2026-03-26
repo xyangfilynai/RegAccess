@@ -128,32 +128,31 @@ describe('PCCP question visibility', () => {
     expect(isVisible('P', { ...pccpBase, P1: Answer.Yes }, 'P2')).toBe(true);
   });
 
-  it('P3 is hidden unless P1 === Yes and P2 !== No', () => {
+  it('P3 is hidden unless P1 === Yes and P2 === Yes', () => {
     const pccpBase = base510k({ A2: Answer.Yes, P1: Answer.Yes });
-    // P2 not answered yet → skip is true (P2 === undefined !== Answer.No → skip condition is P2 === No)
-    // Actually: skip: answers.P1 !== Answer.Yes || answers.P2 === Answer.No
-    // P1=Yes, P2=undefined → skip = false (P2 !== No) → visible
-    expect(isVisible('P', pccpBase, 'P3')).toBe(true);
+    expect(isHidden('P', pccpBase, 'P3')).toBe(true);
     expect(isHidden('P', { ...pccpBase, P2: Answer.No }, 'P3')).toBe(true);
     expect(isVisible('P', { ...pccpBase, P2: Answer.Yes }, 'P3')).toBe(true);
-    expect(isVisible('P', { ...pccpBase, P2: Answer.Uncertain }, 'P3')).toBe(true);
+    expect(isHidden('P', { ...pccpBase, P2: Answer.Uncertain }, 'P3')).toBe(true);
   });
 
-  it('P4 is hidden unless P1 === Yes, P2 !== No, and P3 === Yes', () => {
+  it('P4 is hidden unless P1 === Yes, P2 === Yes, and P3 === Yes', () => {
     const pccpBase = base510k({ A2: Answer.Yes, P1: Answer.Yes, P2: Answer.Yes });
     expect(isHidden('P', pccpBase, 'P4')).toBe(true); // P3 not Yes yet
     expect(isVisible('P', { ...pccpBase, P3: Answer.Yes }, 'P4')).toBe(true);
     expect(isHidden('P', { ...pccpBase, P3: Answer.No }, 'P4')).toBe(true);
+    expect(isHidden('P', { ...base510k({ A2: Answer.Yes, P1: Answer.Yes, P2: Answer.Uncertain }), P3: Answer.Yes }, 'P4')).toBe(true);
   });
 
-  it('P5 is hidden unless P1 === Yes, P2 !== No, P3 === Yes, and P4 === Yes', () => {
+  it('P5 is hidden unless P1 === Yes, P2 === Yes, P3 === Yes, and P4 === Yes', () => {
     const pccpBase = base510k({ A2: Answer.Yes, P1: Answer.Yes, P2: Answer.Yes, P3: Answer.Yes });
     expect(isHidden('P', pccpBase, 'P5')).toBe(true); // P4 not Yes yet
     expect(isVisible('P', { ...pccpBase, P4: Answer.Yes }, 'P5')).toBe(true);
     expect(isHidden('P', { ...pccpBase, P4: Answer.No }, 'P5')).toBe(true);
+    expect(isHidden('P', { ...base510k({ A2: Answer.Yes, P1: Answer.Yes, P2: Answer.Uncertain, P3: Answer.Yes, P4: Answer.Yes }) }, 'P5')).toBe(true);
   });
 
-  it('P6 is hidden unless P1 === Yes, P2 !== No, and P3 === Yes', () => {
+  it('P6 is hidden unless P1 === Yes, P2 === Yes, and P3 === Yes', () => {
     const pccpBase = base510k({ A2: Answer.Yes, P1: Answer.Yes, P2: Answer.Yes });
     expect(isHidden('P', pccpBase, 'P6')).toBe(true); // P3 not Yes yet
     expect(isVisible('P', { ...pccpBase, P3: Answer.Yes }, 'P6')).toBe(true);
@@ -251,10 +250,9 @@ describe('PMA-only significance question visibility', () => {
     expect(isVisible('C', basePMA({ C_PMA1: Answer.Yes }), 'C_PMA4')).toBe(true);
     // C_PMA1=Uncertain → supplement triggered → visible
     expect(isVisible('C', basePMA({ C_PMA1: Answer.Uncertain }), 'C_PMA4')).toBe(true);
-    // C_PMA2=Yes → supplement triggered → visible
-    expect(isVisible('C', basePMA({ C_PMA2: Answer.Yes }), 'C_PMA4')).toBe(true);
-    // C_PMA3=Yes → supplement triggered → visible
-    expect(isVisible('C', basePMA({ C_PMA3: Answer.Yes }), 'C_PMA4')).toBe(true);
+    // Labeling/manufacturing category flags alone do not independently trigger supplement visibility
+    expect(isHidden('C', basePMA({ C_PMA2: Answer.Yes }), 'C_PMA4')).toBe(true);
+    expect(isHidden('C', basePMA({ C_PMA3: Answer.Yes }), 'C_PMA4')).toBe(true);
     // B3=Yes → supplement triggered → visible
     expect(isVisible('C', basePMA({ B3: Answer.Yes }), 'C_PMA4')).toBe(true);
   });

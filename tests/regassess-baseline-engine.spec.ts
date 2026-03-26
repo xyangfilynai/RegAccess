@@ -143,6 +143,22 @@ describe('computeDetermination — 510(k) / De Novo', () => {
     expect(det.pccpIncomplete).toBe(true);
   });
 
+  it('does not let stale downstream PCCP failures override an unresolved earlier PCCP gate', () => {
+    const det = computeDetermination(
+      base510k({
+        A2: Answer.Yes,
+        C3: Answer.Yes,
+        P1: Answer.Yes,
+        P2: Answer.Uncertain,
+        P5: Answer.No,
+      }),
+    );
+
+    expect(det.pccpScopeFailed).toBe(false);
+    expect(det.pccpIncomplete).toBe(true);
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
+  });
+
   it('escalates cumulative drift plus unsupported substantial equivalence to New Submission Required', () => {
     const det = computeDetermination(
       base510k({
@@ -203,7 +219,7 @@ describe('computeDetermination — 510(k) / De Novo', () => {
       }),
     );
 
-    expect(det.pathway).toBe(Pathway.LetterToFile);
+    expect(det.pathway).toBe(Pathway.AssessmentIncomplete);
     expect(det.baselineIncomplete).toBe(true);
     expect(det.consistencyIssues.join(' ')).toContain('baseline fields');
   });
@@ -282,6 +298,43 @@ describe('computeDetermination — PMA', () => {
 
     expect(det.pathway).toBe(Pathway.PMASupplementRequired);
     expect(det.pmaRequiresSupplement).toBe(true);
+  });
+
+  it('does not require a PMA supplement for a labeling-only change when safety/effectiveness impact is answered No', () => {
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA2: Answer.Yes,
+      }),
+    );
+
+    expect(det.pathway).toBe(Pathway.PMAAnnualReport);
+    expect(det.pmaRequiresSupplement).toBe(false);
+    expect(det.consistencyIssues.join(' ')).toContain('labeling change');
+  });
+
+  it('does not require a PMA supplement for a manufacturing-only change when safety/effectiveness impact is answered No', () => {
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.No,
+        C_PMA3: Answer.Yes,
+      }),
+    );
+
+    expect(det.pathway).toBe(Pathway.PMAAnnualReport);
+    expect(det.pmaRequiresSupplement).toBe(false);
+    expect(det.consistencyIssues.join(' ')).toContain('manufacturing or facility change');
+  });
+
+  it('does not mark a PMA safety/effectiveness-impact change incomplete just because labeling/manufacturing detail questions are unanswered', () => {
+    const det = computeDetermination(
+      basePMA({
+        C_PMA1: Answer.Yes,
+      }),
+    );
+
+    expect(det.pathway).toBe(Pathway.PMASupplementRequired);
+    expect(det.pmaIncomplete).toBe(false);
   });
 
   it('routes PMA supplement-triggering changes under verified PCCP scope to Implement Under Authorized PCCP', () => {
