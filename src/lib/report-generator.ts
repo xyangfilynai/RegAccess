@@ -149,7 +149,7 @@ export function generateAssessmentArtifact(
   if (determination.isIntendedUseUncertain) {
     unresolvedQuestions.push('Intended use impact cannot be determined — requires expert review or FDA Pre-Submission.');
   }
-  if (determination.hasUncertainSignificance) {
+  if (determination.hasUncertainSignificance && !determination.isIntendedUseChange) {
     unresolvedQuestions.push('One or more significance questions remain uncertain — treated conservatively as significant.');
   }
   if (determination.seUncertain) {

@@ -230,22 +230,29 @@ export function computeEvidenceGaps(answers: Answers, determination: any): Evide
       });
     }
 
-    if (answers.D4 === Answer.Yes && answers.C5 !== Answer.Yes) {
-      gaps.push({
-        id: 'GAP-GENAI-GUARDRAIL',
-        category: 'GenAI',
-        description: 'Guardrail/safety filter change detected but risk control impact may not be fully assessed',
-        severity: 'important',
-        sourceClass: 'Final guidance',
-        source: 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
-        remediation: 'Review the risk management file for impacts of the guardrail change on all identified hazardous situations.',
-      });
+    if (answers.D4 === Answer.Yes) {
+      // For PMA devices, check C_PMA1 (safety/effectiveness) instead of C5 (risk control — not shown for PMA)
+      const guardrailImpactNotAssessed = isPMA
+        ? answers.C_PMA1 !== Answer.Yes
+        : answers.C5 !== Answer.Yes;
+      if (guardrailImpactNotAssessed) {
+        gaps.push({
+          id: 'GAP-GENAI-GUARDRAIL',
+          category: 'GenAI',
+          description: 'Guardrail/safety filter change detected but risk control impact may not be fully assessed',
+          severity: 'important',
+          sourceClass: 'Final guidance',
+          source: isPMA ? '21 CFR 814.39; ISO 14971:2019' : 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
+          remediation: 'Review the risk management file for impacts of the guardrail change on all identified hazardous situations.',
+        });
+      }
     }
   }
 
   // --- Cybersecurity gaps ---
 
-  if (answers.C1 === Answer.Uncertain) {
+  // C1 cybersecurity exemption is a 510(k)/De Novo concept — not applicable to PMA devices
+  if (!isPMA && answers.C1 === Answer.Uncertain) {
     gaps.push({
       id: 'GAP-CYBER-EXEMPT',
       category: 'Cybersecurity',
