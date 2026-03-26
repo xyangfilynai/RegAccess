@@ -146,8 +146,6 @@ interface ReviewPanelProps {
   answers: Answers;
   blocks: Block[];
   getQuestionsForBlock: (blockId: string) => Question[];
-  onEditBlock: (blockIndex: number) => void;
-  onFeedback?: () => void;
   onHandoff?: () => void;
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
@@ -354,35 +352,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     });
   }, [evidenceGapItems, expertReviewItems]);
 
-  const advisoryItems = useMemo(
-    () => evidenceGapItems.filter((item) => item.severity === 'advisory'),
-    [evidenceGapItems],
-  );
-
-
-
-  const snapshotItems = useMemo(() => ([
-    {
-      label: 'Authorization',
-      value: answers.A1 ? `${String(answers.A1)}${answers.A1b ? ` · ${String(answers.A1b)}` : ''}` : 'Not provided',
-    },
-    {
-      label: 'Authorized baseline',
-      value: answers.A1c ? String(answers.A1c) : 'Not provided',
-    },
-    {
-      label: 'Change type',
-      value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not classified',
-    },
-    {
-      label: 'PCCP status',
-      value: answers.A2 === Answer.Yes
-        ? 'Authorized PCCP on file'
-        : answers.A2 === Answer.No
-          ? 'No authorized PCCP'
-          : 'Not specified',
-    },
-  ]), [answers.A1, answers.A1b, answers.A1c, answers.A2, answers.B1, answers.B2]);
 
   const whyThisRouteItems = useMemo(() => {
     const items: string[] = [];

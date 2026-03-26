@@ -188,65 +188,6 @@ export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({
   );
 };
 
-/* ── ConfBadge ── */
-
-interface ConfBadgeProps {
-  level: 'HIGH' | 'MODERATE' | 'LOW';
-  size?: 'md' | 'lg';
-}
-
-const confBadgeLabels: Record<string, string> = {
-  HIGH: 'CONSISTENT',
-  MODERATE: 'REVIEW NEEDED',
-  LOW: 'INCOMPLETE',
-};
-
-export const ConfBadge: React.FC<ConfBadgeProps> = ({
-  level,
-  size = 'md',
-}) => {
-  const colors: Record<string, { bg: string; color: string; border: string }> =
-    {
-      HIGH: { bg: '#d1fae5', color: 'var(--color-success)', border: '#C6E7D4' },
-      MODERATE: { bg: 'var(--color-warning-border)', color: 'var(--color-warning)', border: '#F5E6B8' },
-      LOW: { bg: 'var(--color-danger-border)', color: 'var(--color-danger)', border: '#F5CACA' },
-    };
-  const c = colors[level] || colors.MODERATE;
-  const s =
-    size === 'lg'
-      ? { px: 16, py: 8, fs: 14 }
-      : { px: 10, py: 4, fs: 11 };
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 5,
-        padding: `${s.py}px ${s.px}px`,
-        background: c.bg,
-        color: c.color,
-        borderRadius: 6,
-        fontSize: s.fs,
-        fontWeight: 700,
-        letterSpacing: '.6px',
-        border: `1px solid ${c.border}`,
-        lineHeight: 1,
-      }}
-    >
-      <span
-        style={{
-          width: 7,
-          height: 7,
-          borderRadius: '50%',
-          background: c.color,
-          flexShrink: 0,
-        }}
-      />{' '}
-      {confBadgeLabels[level] || level}
-    </span>
-  );
-};
-
 /* ── AuthorityTag ── */
 
 interface AuthorityTagProps {

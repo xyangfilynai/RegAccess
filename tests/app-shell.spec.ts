@@ -118,9 +118,9 @@ describe('App Shell: SAMPLE_CASE', () => {
 });
 
 describe('App Shell: Screen flow contract', () => {
-  it('gate -> dashboard -> assess is the expected navigation order', () => {
+  it('dashboard -> assess is the expected navigation order', () => {
     // This is a structural contract test — the actual navigation is tested in browser
-    const screens = ['gate', 'dashboard', 'assess'] as const;
-    expect(screens).toEqual(['gate', 'dashboard', 'assess']);
+    const screens = ['dashboard', 'assess'] as const;
+    expect(screens).toEqual(['dashboard', 'assess']);
   });
 });

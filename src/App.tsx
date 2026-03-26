@@ -28,6 +28,29 @@ const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
 type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
 
+const bannerStyle = {
+  warning: {
+    marginBottom: 16,
+    padding: '12px 16px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--color-warning-bg)',
+    border: '1px solid var(--color-warning-border)',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+  } as React.CSSProperties,
+  danger: {
+    marginBottom: 16,
+    padding: '12px 16px',
+    borderRadius: 'var(--radius-md)',
+    background: 'var(--color-danger-bg)',
+    border: '1px solid var(--color-danger-border)',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+  } as React.CSSProperties,
+};
+
 // Load saved answers from localStorage
 const loadSavedAnswers = (): Answers => {
   try {
@@ -459,7 +482,6 @@ export const App: React.FC = () => {
           answers={answers}
           blocks={blocks}
           getQuestionsForBlock={getQuestionsForBlock}
-          onFeedback={() => setScreen('feedback')}
           onHandoff={() => setScreen('handoff')}
           reviewerNotes={currentReviewerNotes}
           onAddNote={currentAssessmentId ? handleAddNote : undefined}
@@ -475,16 +497,7 @@ export const App: React.FC = () => {
       <div>
         {/* Block-level contextual banners */}
         {!currentBlockComplete && (
-          <div style={{
-            marginBottom: 16,
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-warning-bg)',
-            border: '1px solid var(--color-warning-border)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-          }}>
+          <div style={bannerStyle.warning}>
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
@@ -498,16 +511,7 @@ export const App: React.FC = () => {
         )}
 
         {blockId === 'C' && answers.B3 === Answer.Yes && (
-          <div style={{
-            marginBottom: 16,
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-warning-bg)',
-            border: '1px solid var(--color-warning-border)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-          }}>
+          <div style={bannerStyle.warning}>
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
@@ -524,16 +528,7 @@ export const App: React.FC = () => {
         )}
 
         {blockId === 'C' && answers.B3 === Answer.Uncertain && (
-          <div style={{
-            marginBottom: 16,
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-warning-bg)',
-            border: '1px solid var(--color-warning-border)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 10,
-          }}>
+          <div style={bannerStyle.warning}>
             <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
             <div>
               <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
@@ -550,16 +545,7 @@ export const App: React.FC = () => {
         {blockId === 'C' && derivedState.isDeNovo && !derivedState.isPMA && answers.B3 !== Answer.Yes && (
           (answers.C0_DN1 === Answer.No || answers.C0_DN1 === Answer.Uncertain ||
            answers.C0_DN2 === Answer.No || answers.C0_DN2 === Answer.Uncertain) ? (
-            <div style={{
-              marginBottom: 16,
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-danger-bg)',
-              border: '1px solid var(--color-danger-border)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-            }}>
+            <div style={bannerStyle.danger}>
               <Icon name="alertCircle" size={15} color="var(--color-danger)" style={{ marginTop: 1 }} />
               <div>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-danger)' }}>

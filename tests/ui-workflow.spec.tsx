@@ -182,20 +182,14 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
-    expect(screen.getByText('Case Snapshot')).toBeInTheDocument();
-    expect(screen.getByText('Current Route')).toBeInTheDocument();
-    expect(screen.getByText('Next Step')).toBeInTheDocument();
-    expect(screen.getByText('What Still Needs Resolution')).toBeInTheDocument();
-    expect(screen.getByText('No authorized PCCP')).toBeInTheDocument();
+    expect(screen.getByText('Why This Route')).toBeInTheDocument();
+    expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.getAllByText(/New or modified cause of harm: Uncertain/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Clinical performance impact: Yes/i).length).toBeGreaterThan(0);
-    expect(screen.getByText('Detailed Rationale')).toBeInTheDocument();
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
     expect(screen.getByText('Print Assessment Summary')).toBeInTheDocument();
-    expect(screen.queryByText('This summary captures the current route, the immediate next step, and any strategic follow-up to consider before preparing the next package.')).not.toBeInTheDocument();
   });
 
   it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {
@@ -235,8 +229,8 @@ describe('UI workflow', () => {
     expect(
       screen.getAllByText(/creates a new or modified cause of harm/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('What Still Needs Resolution')).toBeInTheDocument();
-    expect(screen.getByText('Detailed Rationale')).toBeInTheDocument();
+    expect(screen.getByText('Why This Route')).toBeInTheDocument();
+    expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.queryByText('Package Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Regulatory Glossary')).not.toBeInTheDocument();
