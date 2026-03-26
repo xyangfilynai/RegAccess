@@ -178,7 +178,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q4 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>How would you use a tool like this?</legend>
+          <legend style={legendStyle}>How would you use RegAccess?</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {Q4_OPTIONS.map(option => (
               <label key={option} style={radioLabel}>
@@ -201,7 +201,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
             <textarea
               value={form.q4b_other}
               onChange={e => update('q4b_other', e.target.value)}
-              placeholder="Describe how you'd use this tool..."
+              placeholder="Describe how you'd use RegAccess..."
               style={textareaStyle}
               rows={2}
             />
@@ -283,7 +283,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
         {/* Q8 — conditional referral */}
         {showQ8 && (
           <fieldset style={fieldsetStyle} data-testid="q8-section">
-            <legend style={legendStyle}>Know someone who might benefit from this tool?</legend>
+            <legend style={legendStyle}>Know someone who might benefit from RegAccess?</legend>
             <textarea
               value={form.q8_referral}
               onChange={e => update('q8_referral', e.target.value)}

@@ -11,6 +11,8 @@ import { Pathway } from '../lib/assessment-engine';
 import type { Answers, Block, Question } from '../lib/assessment-engine';
 import {
   docRequirements,
+  findGuidanceLink,
+  getSourceBadge,
   ruleReasoningLibrary,
   questionReasoningLibrary,
 } from '../lib/content';
@@ -71,6 +73,28 @@ const sourceClassToLevel: Record<string, string> = {
   'Standard': 'standard',
   'Internal conservative policy': 'internal_policy',
   'Best practice': 'best_practice',
+};
+
+const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
+  const link = findGuidanceLink(code);
+  const sourceMeta = getSourceBadge(code);
+
+  if (link) {
+    return <GuidanceRef code={code} />;
+  }
+
+  return (
+    <span
+      style={{
+        fontSize: 12,
+        color: '#475569',
+        lineHeight: 1.5,
+      }}
+      title={sourceMeta.full}
+    >
+      {sourceMeta.full}
+    </span>
+  );
 };
 
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
@@ -695,6 +719,31 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 }}>
                   <strong>Action:</strong> {gap.remediation}
                 </div>
+                <div style={{
+                  fontSize: 12,
+                  color: '#6b7280',
+                  lineHeight: 1.5,
+                  marginTop: 6,
+                }}>
+                  <strong>Source documents:</strong>
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                    marginTop: 4,
+                  }}>
+                    {gap.source
+                      .split(';')
+                      .map((ref) => ref.trim())
+                      .filter(Boolean)
+                      .map((ref) => (
+                        <div key={`${gap.id}-${ref}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                          <span style={{ color: '#9ca3af', lineHeight: 1.4 }}>•</span>
+                          <EvidenceGapSourceRef code={ref} />
+                        </div>
+                      ))}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -939,90 +988,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             )}
           </CollapsibleSection>
         )}
-
-        {/* Determination Flags */}
-        <CollapsibleSection id="flags" title="Determination Factors">
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {determination.isIntendedUseChange && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#fef2f2',
-                color: '#991b1b',
-              }}>
-                Intended Use Change
-              </span>
-            )}
-            {determination.isSignificant && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#fffbeb',
-                color: '#92400e',
-              }}>
-                Significant Change
-              </span>
-            )}
-            {determination.pccpScopeVerified && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#f0fdf4',
-                color: '#166534',
-              }}>
-                PCCP Verified
-              </span>
-            )}
-            {determination.isCyberOnly && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#eff6ff',
-                color: '#1e40af',
-              }}>
-                Cybersecurity Only
-              </span>
-            )}
-            {determination.isBugFix && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#eff6ff',
-                color: '#1e40af',
-              }}>
-                Bug Fix
-              </span>
-            )}
-            {determination.genAIHighImpactChange && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#fffbeb',
-                color: '#92400e',
-              }}>
-                GenAI High Impact
-              </span>
-            )}
-            {!determination.isIntendedUseChange && !determination.isSignificant && !determination.pccpScopeVerified &&
-             !determination.isCyberOnly && !determination.isBugFix && !determination.genAIHighImpactChange && (
-              <span style={{
-                fontSize: 12,
-                padding: '6px 12px',
-                borderRadius: 4,
-                background: '#f9fafb',
-                color: '#6b7280',
-              }}>
-                No additional determination factors identified
-              </span>
-            )}
-          </div>
-        </CollapsibleSection>
 
         {/* Glossary */}
         <CollapsibleSection id="glossary" title="Regulatory Glossary">

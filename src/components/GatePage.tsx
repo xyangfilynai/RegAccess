@@ -55,7 +55,7 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
             }}>
               <img
                 src="/logo.png"
-                alt="RegAssess"
+                alt="RegAccess"
                 style={{
                   width: 42,
                   height: 42,
@@ -75,7 +75,7 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
                     color: '#0f172a',
                     letterSpacing: '-0.02em',
                   }}>
-                    RegAssess
+                    RegAccess
                   </span>
                   <span style={{
                     fontSize: 10,
@@ -185,7 +185,7 @@ export const GatePage: React.FC<GatePageProps> = ({ onEnter }) => {
           }}>
             <Icon name="lock" size={15} color="#0891b2" />
             <span style={{ fontSize: 12, fontWeight: 700, color: '#0891b2', letterSpacing: '0.03em', textTransform: 'uppercase' }}>
-              Access RegAssess
+              Access RegAccess
             </span>
           </div>
 

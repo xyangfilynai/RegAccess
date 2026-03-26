@@ -246,7 +246,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push('');
   lines.push(`Status: ${artifact.meta.assessmentStatus}`);
   lines.push(`Generated: ${new Date(artifact.meta.generatedAt).toLocaleString()}`);
-  lines.push(`Tool Version: ${artifact.meta.toolVersion}`);
+  lines.push(`RegAccess Version: ${artifact.meta.toolVersion}`);
   if (assessmentName) lines.push(`Assessment: ${assessmentName}`);
   lines.push('');
 
@@ -347,7 +347,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push('DISCLAIMER');
   lines.push(hr);
   lines.push('Decision support only — not a final regulatory conclusion.');
-  lines.push('This tool supports internal change-control planning and submission strategy discussions.');
+  lines.push('RegAccess supports internal change-control planning and submission strategy discussions.');
   lines.push('All outputs require review by qualified regulatory and clinical professionals before action.');
   lines.push('');
 

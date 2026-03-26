@@ -194,6 +194,7 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/PCCP application/i)).toBeInTheDocument();
     expect(screen.getByText(/this submission is the right opportunity/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deciding When to Submit a 510\(k\) for a Software Change to an Existing Device/i)).toBeInTheDocument();
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();

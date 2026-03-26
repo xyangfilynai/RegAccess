@@ -117,10 +117,10 @@ export const computeDetermination = (ans: Answers) => {
     _consistencyIssues.push("One or more baseline fields (authorization identifier, baseline version, or authorized IFU statement) are missing. The determination may be unreliable without a defined authorized baseline for comparison. This is flagged as 'Evidence Missing / Expert Judgment Required.'");
   }
   if (_hasUncertainSignificance && _baseSignificant && !_isIntendedUseChange && !_isIntendedUseUncertain) {
-    _consistencyIssues.push("One or more significance questions were answered 'Uncertain.' This tool's internal conservative policy treats unresolved significance uncertainty as requiring a submission — this is NOT a direct regulatory requirement but a risk-based escalation rule. Resolve the uncertainty through additional evidence, expert review, or FDA Pre-Submission before treating the pathway as final.");
+    _consistencyIssues.push("One or more significance questions were answered 'Uncertain.' RegAccess's internal conservative policy treats unresolved significance uncertainty as requiring a submission — this is NOT a direct regulatory requirement but a risk-based escalation rule. Resolve the uncertainty through additional evidence, expert review, or FDA Pre-Submission before treating the pathway as final.");
   }
   if (_isPMA && ans.C_PMA1 === Answer.Uncertain) {
-    _consistencyIssues.push("The PMA safety/effectiveness question was answered 'Uncertain.' This tool's internal conservative policy treats unresolved PMA uncertainty as requiring a supplement — this is NOT a direct regulatory mandate but a risk-based escalation. Resolve the uncertainty before treating the pathway as final.");
+    _consistencyIssues.push("The PMA safety/effectiveness question was answered 'Uncertain.' RegAccess's internal conservative policy treats unresolved PMA uncertainty as requiring a supplement — this is NOT a direct regulatory mandate but a risk-based escalation. Resolve the uncertainty before treating the pathway as final.");
   }
   if (_isPMA && ans.C_PMA2 === Answer.Yes && ans.C_PMA1 === Answer.No) {
     _consistencyIssues.push("A PMA labeling change was reported while safety/effectiveness impact was marked NO. Confirm the labeling change is purely editorial or otherwise does not affect safety or effectiveness; otherwise a PMA supplement may still be required under 21 CFR 814.39(a).");

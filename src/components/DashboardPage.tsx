@@ -54,9 +54,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         background: '#ffffff',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/logo.png" alt="RegAssess" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="RegAccess" style={{ width: 32, height: 32, objectFit: 'contain' }} />
           <span style={{ fontSize: 17, fontWeight: 600, color: '#111827', letterSpacing: '-0.01em' }}>
-            RegAssess
+            RegAccess
           </span>
           <span style={{
             fontSize: 10,
@@ -71,7 +71,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </span>
         </div>
         <div style={{ fontSize: 13, color: '#6b7280' }}>
-          Change Assessment Tool
+          RegAccess Workspace
         </div>
       </header>
 
@@ -532,7 +532,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   margin: 0,
                   lineHeight: 1.55,
                 }}>
-                  Open a pre-filled example to inspect the workflow, reasoning, and final review output before using the tool on a live case.
+                  Open a pre-filled example to inspect the workflow, reasoning, and final review output before using RegAccess on a live case.
                 </p>
                 <p style={{
                   fontSize: 12,
@@ -565,7 +565,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             lineHeight: 1.6,
           }}>
             <strong style={{ color: '#374151', fontWeight: 600 }}>Decision support only — not a regulatory determination.</strong>{' '}
-            This tool supports internal change-control planning and regulatory strategy discussions.
+            RegAccess supports internal change-control planning and regulatory strategy discussions.
             It does not replace expert regulatory judgment, legal advice, or formal submission decisions.
             All outputs require review by qualified regulatory and clinical professionals before action.
           </p>

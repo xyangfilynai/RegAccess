@@ -132,7 +132,7 @@ export const Layout: React.FC<LayoutProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
             <img 
               src="/logo.png" 
-              alt="RegAssess Logo" 
+              alt="RegAccess Logo" 
               style={{
                 width: 36,
                 height: 36,
@@ -145,7 +145,7 @@ export const Layout: React.FC<LayoutProps> = ({
               color: 'var(--color-text)',
               letterSpacing: '-0.02em',
             }}>
-              RegAssess
+              RegAccess
             </span>
             <span style={{
               fontSize: 11,

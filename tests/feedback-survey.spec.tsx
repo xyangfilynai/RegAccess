@@ -23,7 +23,7 @@ describe('FeedbackSurvey', () => {
     expect(screen.getByText(/Did the assessment reach the conclusion/)).toBeInTheDocument();
     expect(screen.getByText(/reasoning you would push back on/)).toBeInTheDocument();
     expect(screen.getByText(/improve your confidence/)).toBeInTheDocument();
-    expect(screen.getByText(/How would you use a tool like this/)).toBeInTheDocument();
+    expect(screen.getByText(/How would you use RegAccess/)).toBeInTheDocument();
     expect(screen.getByText(/most helpful — or least helpful/)).toBeInTheDocument();
     expect(screen.getByText(/Would you be interested/)).toBeInTheDocument();
   });
