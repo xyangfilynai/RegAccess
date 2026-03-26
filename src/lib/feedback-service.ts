@@ -15,7 +15,7 @@ export interface FeedbackSubmitter {
  * Placeholder submitter that persists to localStorage.
  * Replace with an API-backed implementation when ready.
  */
-export const localStorageSubmitter: FeedbackSubmitter = {
+const localStorageSubmitter: FeedbackSubmitter = {
   async submit(payload) {
     try {
       const key = 'regassess-feedback';

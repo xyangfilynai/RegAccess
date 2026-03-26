@@ -4,7 +4,7 @@
  */
 
 import type { Answers, Block, DeterminationResult, Question } from './assessment-engine';
-import { Pathway } from './assessment-engine';
+import { Pathway, pathwayToDocKey } from './assessment-engine';
 import { docRequirements } from './content';
 import { getSourceBadge } from './content';
 import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';
@@ -50,15 +50,6 @@ export interface AssessmentArtifact {
     recommended: Array<{ doc: string; source: string; sourceClass: SourceClass }>;
   };
 }
-
-const pathwayToDocKey: Record<string, string> = {
-  [Pathway.LetterToFile]: "Letter to File",
-  [Pathway.ImplementPCCP]: "Implement Under Authorized PCCP",
-  [Pathway.NewSubmission]: "New Submission Required",
-  [Pathway.PMASupplementRequired]: "PMA Supplement Required",
-  [Pathway.PMAAnnualReport]: "PMA Annual Report / Letter to File",
-  [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
-};
 
 export function generateAssessmentArtifact(
   answers: Answers,

@@ -6,7 +6,7 @@ import {
   ConfBadge,
   AuthorityTag,
 } from './ui';
-import { Pathway } from '../lib/assessment-engine';
+import { Answer, Pathway, pathwayToDocKey } from '../lib/assessment-engine';
 import type { Answers, Block, DeterminationResult, Question } from '../lib/assessment-engine';
 import {
   docRequirements,
@@ -29,23 +29,12 @@ interface ReviewPanelProps {
   answers: Answers;
   blocks: Block[];
   getQuestionsForBlock: (blockId: string) => Question[];
-  onEditBlock: (blockIndex: number) => void;
   onFeedback?: () => void;
   onHandoff?: () => void;
   reviewerNotes?: ReviewerNote[];
   onAddNote?: (author: string, text: string) => void;
   onRemoveNote?: (noteId: string) => void;
 }
-
-// Map pathway names to docRequirements keys
-const pathwayToDocKey: Record<string, string> = {
-  [Pathway.LetterToFile]: "Letter to File",
-  [Pathway.ImplementPCCP]: "Implement Under Authorized PCCP",
-  [Pathway.NewSubmission]: "New Submission Required",
-  [Pathway.PMASupplementRequired]: "PMA Supplement Required",
-  [Pathway.PMAAnnualReport]: "PMA Annual Report / Letter to File",
-  [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
-};
 
 // Source class to AuthorityTag level mapping
 const sourceClassToLevel: Record<string, string> = {
@@ -200,7 +189,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   const isIncomplete = determination.isIncomplete;
 
   // PCCP recommendation logic
-  const hasPCCP = answers.A2 === 'Yes';
+  const hasPCCP = answers.A2 === Answer.Yes;
   const isNewSub = determination.isNewSub;
   const selectedChangeType = (answers.B1 && answers.B2)
     ? changeTaxonomy[answers.B1 as string]?.types?.find((t) => t.name === answers.B2)

@@ -15,6 +15,7 @@ import {
   computeDetermination,
   changeTaxonomy,
   Answer,
+  isAnsweredValue,
   type Answers,
   type Question,
 } from './lib/assessment-engine';
@@ -27,12 +28,6 @@ const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
 type Screen = 'gate' | 'dashboard' | 'assess' | 'feedback' | 'handoff';
-
-const isAnsweredValue = (value: unknown): boolean => {
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === 'string') return value.trim() !== '';
-  return value !== undefined && value !== null;
-};
 
 // Load saved answers from localStorage
 const loadSavedAnswers = (): Answers => {
@@ -470,7 +465,6 @@ export const App: React.FC = () => {
           answers={answers}
           blocks={blocks}
           getQuestionsForBlock={getQuestionsForBlock}
-          onEditBlock={handleBlockSelect}
           onFeedback={() => setScreen('feedback')}
           onHandoff={() => setScreen('handoff')}
           reviewerNotes={currentReviewerNotes}

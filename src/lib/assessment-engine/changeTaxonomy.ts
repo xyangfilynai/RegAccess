@@ -10,7 +10,7 @@
  * CONDITIONAL = may be suitable depending on scope and risk; UNLIKELY = rarely suitable;
  * NO = outside PCCP scope per guidance; EXEMPT = cybersecurity exemption pathway.
  */
-export type PCCPEligibility = 'TYPICAL' | 'CONDITIONAL' | 'UNLIKELY' | 'NO' | 'EXEMPT';
+type PCCPEligibility = 'TYPICAL' | 'CONDITIONAL' | 'UNLIKELY' | 'NO' | 'EXEMPT';
 
 export interface ChangeTypeDefinition {
   name: string;

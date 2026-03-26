@@ -3,6 +3,7 @@ import {
   AuthPathway,
   Pathway,
   changeTaxonomy,
+  isAnsweredValue,
   type Answers,
   type Block,
   type DeterminationResult,
@@ -28,12 +29,6 @@ interface SelectedChangeContext {
   description: string | null;
   pccpNote: string | null;
 }
-
-const isAnsweredValue = (value: unknown): boolean => {
-  if (Array.isArray(value)) return value.length > 0;
-  if (typeof value === 'string') return value.trim() !== '';
-  return value !== undefined && value !== null;
-};
 
 const pushUnique = (items: string[], value: string | null | undefined) => {
   if (!value) return;
@@ -245,7 +240,7 @@ const getRouteChangeConditionForQuestion = (
   }
 };
 
-export const getRuleKey = (determination: DeterminationResult): string | null => {
+const getRuleKey = (determination: DeterminationResult): string | null => {
   if (determination.isIntendedUseChange) return 'SCREEN-01-Yes';
   if (determination.isIntendedUseUncertain) return 'SCREEN-01-Uncertain';
   if (determination.pathway === Pathway.PMASupplementRequired) return 'PMA-Supplement';

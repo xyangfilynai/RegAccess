@@ -177,7 +177,6 @@ describe('UI workflow', () => {
         answers={answers}
         blocks={[]}
         getQuestionsForBlock={() => []}
-        onEditBlock={() => {}}
       />
     );
 
@@ -231,7 +230,6 @@ describe('UI workflow', () => {
         answers={answers}
         blocks={[]}
         getQuestionsForBlock={() => []}
-        onEditBlock={() => {}}
       />
     );
 

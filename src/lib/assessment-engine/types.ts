@@ -20,3 +20,18 @@ export const Pathway = Object.freeze({
 });
 
 export type Answers = Record<string, any>;
+
+export const isAnsweredValue = (value: unknown): boolean => {
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === 'string') return value.trim() !== '';
+  return value !== undefined && value !== null;
+};
+
+export const pathwayToDocKey: Record<string, string> = {
+  [Pathway.LetterToFile]: "Letter to File",
+  [Pathway.ImplementPCCP]: "Implement Under Authorized PCCP",
+  [Pathway.NewSubmission]: "New Submission Required",
+  [Pathway.PMASupplementRequired]: "PMA Supplement Required",
+  [Pathway.PMAAnnualReport]: "PMA Annual Report / Letter to File",
+  [Pathway.AssessmentIncomplete]: "Assessment Incomplete",
+};
