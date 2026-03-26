@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Icon } from './Icon';
 import type { Block } from '../lib/assessment-engine';
 
@@ -32,6 +32,12 @@ export const Layout: React.FC<LayoutProps> = ({
   saveNotice,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Scroll main content to top when block changes
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
   const progress = blocks.length > 0 
@@ -414,7 +420,7 @@ export const Layout: React.FC<LayoutProps> = ({
         </aside>
 
         {/* Main content */}
-        <main style={{
+        <main ref={mainRef} style={{
           flex: 1,
           overflow: 'auto',
           display: 'flex',
