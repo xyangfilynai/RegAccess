@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Layout } from './components/Layout';
-import { GatePage } from './components/GatePage';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
 import { ReviewPanel } from './components/ReviewPanel';
@@ -27,7 +26,7 @@ import {
 const STORAGE_KEY = 'regassess-answers';
 const BLOCK_STORAGE_KEY = 'regassess-block-index';
 
-type Screen = 'gate' | 'dashboard' | 'assess' | 'feedback' | 'handoff';
+type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
 
 // Load saved answers from localStorage
 const loadSavedAnswers = (): Answers => {
@@ -63,7 +62,7 @@ const hasSavedAnswers = (): boolean => {
 };
 
 export const App: React.FC = () => {
-  const [screen, setScreen] = useState<Screen>('gate');
+  const [screen, setScreen] = useState<Screen>('dashboard');
   const [answers, setAnswers] = useState<Answers>(loadSavedAnswers);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(loadSavedBlockIndex);
 
@@ -403,11 +402,6 @@ export const App: React.FC = () => {
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
-
-  // --- Gate page ---
-  if (screen === 'gate') {
-    return <GatePage onEnter={() => setScreen('dashboard')} />;
-  }
 
   // --- Dashboard page ---
   if (screen === 'dashboard') {
