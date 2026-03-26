@@ -204,22 +204,22 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
 
   if (artifact.rationale.assessmentBasis.length > 0) {
     lines.push(hr);
-    lines.push('WHAT THIS DECISION WAS BASED ON');
+    lines.push('ASSESSMENT BASIS');
     lines.push(hr);
     artifact.rationale.assessmentBasis.forEach((item, i) => lines.push(`  ${i + 1}. ${item}`));
   lines.push('');
   }
 
   lines.push(hr);
-  lines.push('CASE-SPECIFIC REASONING');
+  lines.push('DECISION RATIONALE');
   lines.push(hr);
   if (artifact.rationale.decisionPath.length > 0) {
-    lines.push('Case-Specific Decision Path:');
+    lines.push('Decision Path:');
     artifact.rationale.decisionPath.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
   }
   if (artifact.rationale.verificationSteps.length > 0) {
     lines.push('');
-    lines.push(`${artifact.rationale.verificationTitle || 'Case-Specific Verification Focus'}:`);
+    lines.push(`${artifact.rationale.verificationTitle || 'Verification Focus'}:`);
     artifact.rationale.verificationSteps.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
   }
   if (artifact.rationale.counterConsiderations.length > 0) {
@@ -241,7 +241,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     artifact.expertReviewItems.forEach((item, i) => {
       lines.push(`${i + 1}. ${item.title}`);
       lines.push(`   ${item.meta}`);
-      lines.push(`   Why this matters here: ${item.whyThisMatters}`);
+      lines.push(`   Why it matters: ${item.whyThisMatters}`);
       lines.push(`   ${item.actionLabel}: ${item.actionText}`);
       if (item.sourceRefs.length > 0) {
         lines.push(`   Basis: ${item.sourceRefs.map(formatSourceRef).join('; ')}`);
@@ -257,7 +257,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     artifact.evidenceGapItems.forEach((item, i) => {
       lines.push(`${i + 1}. ${item.title}`);
       lines.push(`   ${item.meta}`);
-      lines.push(`   Why this matters here: ${item.whyThisMatters}`);
+      lines.push(`   Why it matters: ${item.whyThisMatters}`);
       lines.push(`   ${item.actionLabel}: ${item.actionText}`);
       if (item.sourceRefs.length > 0) {
         lines.push(`   Source documents: ${item.sourceRefs.map(formatSourceRef).join('; ')}`);
@@ -268,7 +268,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
 
   if (immediateWork.length > 0) {
     lines.push(hr);
-    lines.push('IMMEDIATE WORK');
+    lines.push('NEXT STEPS');
     lines.push(hr);
     immediateWork.forEach((a, i) => lines.push(`${i + 1}. ${a}`));
     lines.push('');

@@ -107,12 +107,12 @@ export const buildAssessmentBasis = (
       );
     } else {
       items.push(
-        'An authorized PCCP was on file, so PCCP scope still had to be checked even though it did not control the final route.',
+        'An authorized PCCP was on file and was checked against the change, though it did not control the final route.',
       );
     }
   } else if (answers.A2 === Answer.No) {
     items.push(
-      'No authorized PCCP was on file, so there was no pre-authorized PCCP implementation path available for this case.',
+      'No authorized PCCP was on file, so no pre-authorized implementation path was available.',
     );
   }
 

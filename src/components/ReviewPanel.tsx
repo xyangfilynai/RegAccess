@@ -177,8 +177,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
       ? 'PCCP application recommended in the upcoming submission'
       : 'PCCP application may be worth requesting in the upcoming submission',
     summary: pccpEligibility === 'TYPICAL'
-      ? `${(answers.B2 as string) || 'This change type'} is generally suitable for future PCCP authorization. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right time to seek pre-authorization for similar future changes within explicit bounds.`
-      : `${(answers.B2 as string) || 'This change type'} can sometimes be authorized in a PCCP, but only when future modifications can be tightly bounded and prospectively validated. Because this case already routes to a new submission and no PCCP is currently authorized, this submission is the right opportunity to evaluate that option.`,
+      ? 'This change type is generally suitable for future PCCP authorization. Because this assessment already routes to a new submission and no PCCP is currently authorized, this submission is the right time to seek pre-authorization for similar future changes within explicit bounds.'
+      : 'This change type can sometimes be authorized in a PCCP, but only when future modifications can be tightly bounded and prospectively validated. Because this assessment already routes to a new submission and no PCCP is currently authorized, this submission is the right opportunity to evaluate that option.',
     detail: selectedChangeType?.pccpNote || null,
   } : null;
 
@@ -647,8 +647,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               lineHeight: 1.55,
             }}>
               {mergedBlockers.length > 0
-                ? 'These are the highest-priority issues that still need to be resolved before this route should be used for action.'
-                : 'No open issues are surfaced from the current record.'}
+                ? 'Highest-priority issues to resolve before acting on this route.'
+                : 'No open issues identified in the current record.'}
             </div>
           </div>
           {remainingBlockerCount > 0 && (
@@ -727,7 +727,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             color: '#166534',
             lineHeight: 1.6,
           }}>
-            The current record does not surface unresolved open issues in the report summary.
+            No unresolved issues identified in the current record.
           </div>
         )}
       </div>
@@ -819,7 +819,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       lineHeight: 1.6,
                       marginBottom: 8,
                     }}>
-                      <strong>Why this matters:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
+                      <strong>Why it matters:</strong> <HelpTextWithLinks text={item.whyThisMatters} />
                     </div>
                     <div style={{
                       fontSize: 12.5,
@@ -929,7 +929,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                   letterSpacing: '0.04em',
                   marginBottom: 10,
                 }}>
-                  What This Decision Was Based On
+                  Assessment Basis
                 </div>
                 <ul style={{
                   margin: 0,
@@ -1029,7 +1029,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                       letterSpacing: '0.04em',
                       marginBottom: 10,
                     }}>
-                      {caseReasoning.verificationTitle || 'Case-Specific Verification Focus'}
+                      {caseReasoning.verificationTitle || 'Verification Focus'}
                     </div>
                     <ul style={{
                       margin: 0,
