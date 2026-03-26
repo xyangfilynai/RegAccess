@@ -249,7 +249,14 @@ describe('Review insight specificity fixes', () => {
     );
     const text = formatArtifactAsText(artifact);
 
+    expect(text).toContain('SUMMARY');
+    expect(text).toContain('CASE-SPECIFIC REASONING');
+    expect(text).toContain('IMMEDIATE WORK');
+    expect(text).toContain('PACKAGE MUST INCLUDE');
     expect(text).toContain('Deciding When to Submit a 510(k) for a Software Change to an Existing Device');
     expect(text).toContain('AI-Enabled Device Software Functions: Lifecycle Management and Marketing Submission Recommendations');
+    expect(text).not.toContain('ASSUMPTIONS');
+    expect(text).not.toContain('UNRESOLVED QUESTIONS');
+    expect(text).not.toContain('KEY INPUTS');
   });
 });

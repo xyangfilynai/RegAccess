@@ -206,6 +206,7 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
     expect(screen.getByText('Print Assessment Summary')).toBeInTheDocument();
+    expect(screen.queryByText('This summary captures the current route, the immediate next step, and any strategic follow-up to consider before preparing the next package.')).not.toBeInTheDocument();
   });
 
   it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {
@@ -248,5 +249,9 @@ describe('UI workflow', () => {
     expect(
       screen.getAllByText(/C3 \(new or modified cause of harm\) is still unresolved for Additional data — new clinical sites/i).length,
     ).toBeGreaterThan(0);
+    expect(screen.getByText('Package Requirements')).toBeInTheDocument();
+    expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();
+    expect(screen.queryByText('Regulatory Glossary')).not.toBeInTheDocument();
+    expect(screen.queryByText('Response Details')).not.toBeInTheDocument();
   });
 });

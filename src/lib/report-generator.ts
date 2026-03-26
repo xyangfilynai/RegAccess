@@ -243,6 +243,9 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   const lines: string[] = [];
   const hr = '─'.repeat(60);
   const formatSourceRef = (sourceRef: string): string => getSourceBadge(sourceRef).full || sourceRef;
+  const immediateWork = artifact.nextActions.filter(
+    (action) => !/consistency issues flagged below/i.test(action),
+  );
 
   lines.push(hr);
   lines.push('REGULATORY CHANGE ASSESSMENT REPORT');
@@ -265,13 +268,14 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(`RECOMMENDED PATH: ${artifact.outcome.pathway}`);
   lines.push(`Confidence: ${artifact.outcome.confidenceLevel}`);
   lines.push('');
+  lines.push('SUMMARY');
+  lines.push(artifact.rationale.primaryReason);
+  lines.push('');
 
   lines.push(hr);
-  lines.push('RATIONALE');
+  lines.push('CASE-SPECIFIC REASONING');
   lines.push(hr);
-  lines.push(artifact.rationale.primaryReason);
   if (artifact.rationale.decisionPath.length > 0) {
-    lines.push('');
     lines.push('Case-Specific Decision Path:');
     artifact.rationale.decisionPath.forEach((step, i) => lines.push(`  ${i + 1}. ${step}`));
   }
@@ -288,23 +292,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   if (artifact.rationale.sources.length > 0) {
     lines.push('');
     lines.push('Authorities Relied On:');
-    artifact.rationale.sources.forEach((source, i) => lines.push(`  ${i + 1}. ${source}`));
-  }
-  lines.push('');
-
-  if (artifact.assumptions.length > 0) {
-    lines.push(hr);
-    lines.push('ASSUMPTIONS');
-    lines.push(hr);
-    artifact.assumptions.forEach((a, i) => lines.push(`${i + 1}. ${a}`));
-    lines.push('');
-  }
-
-  if (artifact.unresolvedQuestions.length > 0) {
-    lines.push(hr);
-    lines.push('UNRESOLVED QUESTIONS');
-    lines.push(hr);
-    artifact.unresolvedQuestions.forEach((q, i) => lines.push(`${i + 1}. ${q}`));
+    artifact.rationale.sources.forEach((source, i) => lines.push(`  ${i + 1}. ${formatSourceRef(source)}`));
     lines.push('');
   }
 
@@ -340,39 +328,26 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     lines.push('');
   }
 
-  lines.push(hr);
-  lines.push('NEXT ACTIONS');
-  lines.push(hr);
-  artifact.nextActions.forEach((a, i) => lines.push(`${i + 1}. ${a}`));
-  lines.push('');
+  if (immediateWork.length > 0) {
+    lines.push(hr);
+    lines.push('IMMEDIATE WORK');
+    lines.push(hr);
+    immediateWork.forEach((a, i) => lines.push(`${i + 1}. ${a}`));
+    lines.push('');
+  }
 
   lines.push(hr);
-  lines.push('KEY INPUTS');
-  lines.push(hr);
-  artifact.keyInputs
-    .filter(ki => ki.isPathwayCritical)
-    .forEach(ki => {
-      lines.push(`[${ki.id}] ${ki.question}`);
-      lines.push(`  → ${ki.answer}`);
-    });
-  lines.push('');
-
-  lines.push(hr);
-  lines.push('DOCUMENTATION REQUIREMENTS');
+  lines.push('PACKAGE MUST INCLUDE');
   lines.push(hr);
   if (artifact.documentationRequirements.required.length > 0) {
-    lines.push('Required:');
     artifact.documentationRequirements.required.forEach((d, i) => {
-      lines.push(`  ${i + 1}. ${d.doc}`);
-      lines.push(`     Source: ${d.source} [${d.sourceClass}]`);
+      lines.push(`${i + 1}. ${d.doc}`);
+      lines.push(`   Basis: ${formatSourceRef(d.source)} [${d.sourceClass}]`);
     });
   }
   if (artifact.documentationRequirements.recommended.length > 0) {
-    lines.push('Recommended:');
-    artifact.documentationRequirements.recommended.forEach((d, i) => {
-      lines.push(`  ${i + 1}. ${d.doc}`);
-      lines.push(`     Source: ${d.source} [${d.sourceClass}]`);
-    });
+    lines.push('');
+    lines.push('Additional recommended materials are available in the route-specific preparation checklist.');
   }
   lines.push('');
 

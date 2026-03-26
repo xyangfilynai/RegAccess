@@ -5,7 +5,6 @@ import {
   HelpTextWithLinks,
   ConfBadge,
   AuthorityTag,
-  GlossaryPanel,
 } from './ui';
 import { Pathway } from '../lib/assessment-engine';
 import type { Answers, Block, Question } from '../lib/assessment-engine';
@@ -13,10 +12,9 @@ import {
   docRequirements,
   findGuidanceLink,
   getSourceBadge,
-  questionReasoningLibrary,
 } from '../lib/content';
 import { changeTaxonomy } from '../lib/assessment-engine';
-import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
+import { computeEvidenceGaps } from '../lib/evidence-gaps';
 import type { ReviewerNote } from '../lib/assessment-store';
 import {
   buildEvidenceGapInsightItems,
@@ -88,7 +86,6 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   answers,
   blocks,
   getQuestionsForBlock,
-  onEditBlock,
   onFeedback,
   onHandoff,
   reviewerNotes,
@@ -130,6 +127,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     () => buildCaseSpecificReasoning(answers, determination, blocks, getQuestionsForBlock),
     [answers, determination, blocks, getQuestionsForBlock],
   );
+  const heroReason = caseReasoning?.narrative?.[0] || '';
+  const reasoningDetailParagraphs = caseReasoning?.narrative?.slice(1) || [];
 
   // Pathway styling
   const getPathwayConfig = () => {
@@ -456,7 +455,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         }}>
           {isIncomplete
             ? 'Critical questions remain unresolved, so this output should not be used for regulatory decision-making.'
-            : 'This summary captures the current route, the immediate next step, and any strategic follow-up to consider before preparing the next package.'}
+            : heroReason || 'This review summarizes the current route, what supports it, and what must happen before the team relies on it.'}
         </p>
 
         {/* Primary next action */}
@@ -808,24 +807,26 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {/* Regulatory Reasoning */}
         {caseReasoning && (
           <CollapsibleSection id="reasoning" title="Regulatory Reasoning">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {caseReasoning.narrative.map((paragraph, index) => (
-                <div
-                  key={`reasoning-paragraph-${index}`}
-                  style={{
-                    fontSize: 14,
-                    color: '#374151',
-                    lineHeight: 1.7,
-                  }}
-                >
-                  <HelpTextWithLinks text={paragraph} />
-                </div>
-              ))}
-            </div>
+            {reasoningDetailParagraphs.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {reasoningDetailParagraphs.map((paragraph, index) => (
+                  <div
+                    key={`reasoning-paragraph-${index}`}
+                    style={{
+                      fontSize: 14,
+                      color: '#374151',
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    <HelpTextWithLinks text={paragraph} />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {caseReasoning.decisionPath.length > 0 && (
               <div style={{
-                marginTop: 16,
+                marginTop: reasoningDetailParagraphs.length > 0 ? 16 : 0,
                 padding: '14px 16px',
                 background: '#f8fafc',
                 border: '1px solid #e2e8f0',
@@ -987,7 +988,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {docs && (
           <CollapsibleSection
             id="documentation"
-            title="Documentation Requirements"
+            title="Package Requirements"
             badge={
               docs.required?.length ? (
                 <span style={{
@@ -1003,10 +1004,18 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               ) : undefined
             }
           >
+            <div style={{
+              fontSize: 12.5,
+              color: '#6b7280',
+              lineHeight: 1.6,
+              marginBottom: docs.required?.length ? 16 : 0,
+            }}>
+              This section lists the materials the next package should contain. It complements the preparation checklist rather than repeating the full assessment record.
+            </div>
             {docs.required && docs.required.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: docs.scopeNote ? 16 : 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#dc2626', marginBottom: 10 }}>
-                  Required Documentation
+                  Package Must Include
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {docs.required.map((item: { doc: string; source: string }, i: number) => (
@@ -1042,65 +1051,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               </div>
             )}
 
-            {docs.recommended && docs.recommended.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#2563eb', marginBottom: 10 }}>
-                  Recommended
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {docs.recommended.map((item: { doc: string; source: string }, i: number) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '8px 12px',
-                      background: '#eff6ff',
-                      borderRadius: 4,
-                    }}>
-                      <Icon name="check" size={14} color="#3b82f6" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, color: '#111827', lineHeight: 1.4 }}>{item.doc}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <AuthorityTag level={sourceClassToLevel[classifySourceInline(item.source)] || 'draft_guidance'} compact />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {docs.orgSpecific && docs.orgSpecific.length > 0 && (
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', marginBottom: 10 }}>
-                  Organization-Specific
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {docs.orgSpecific.map((item: { doc: string; source: string }, i: number) => (
-                    <div key={i} style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: 10,
-                      padding: '8px 12px',
-                      background: '#f9fafb',
-                      borderRadius: 4,
-                    }}>
-                      <Icon name="info" size={14} color="#9ca3af" style={{ marginTop: 2, flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.4 }}>{item.doc}</div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>
-                          <AuthorityTag level="internal_policy" compact />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {docs.scopeNote && (
               <div style={{
-                marginTop: 16,
                 padding: '10px 12px',
                 background: '#fffbeb',
                 border: '1px solid #fde68a',
@@ -1113,121 +1065,19 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 <HelpTextWithLinks text={docs.scopeNote} />
               </div>
             )}
+
+            {((docs.recommended && docs.recommended.length > 0) || (docs.orgSpecific && docs.orgSpecific.length > 0)) && (
+              <div style={{
+                marginTop: 14,
+                fontSize: 12,
+                color: '#6b7280',
+                lineHeight: 1.6,
+              }}>
+                Additional recommended and organization-specific materials are available in the preparation checklist for this route.
+              </div>
+            )}
           </CollapsibleSection>
         )}
-
-        {/* Glossary */}
-        <CollapsibleSection id="glossary" title="Regulatory Glossary">
-          <GlossaryPanel />
-        </CollapsibleSection>
-      </div>
-
-      {/* ============================================
-          SECTION 4: DETAILED RESPONSES (COLLAPSED)
-          ============================================ */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: 8,
-        padding: '0 28px',
-        marginBottom: 24,
-      }}>
-        <div style={{
-          padding: '16px 0',
-          borderBottom: '1px solid #e5e7eb',
-        }}>
-          <span style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: '#374151',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}>
-            Response Details
-          </span>
-        </div>
-
-        {blocks.filter(b => b.id !== 'review').map((block, blockIndex) => {
-          const questions = getQuestionsForBlock(block.id);
-          const answeredQuestions = questions.filter(q =>
-            !q.sectionDivider && !q.skip && answers[q.id] !== undefined && answers[q.id] !== ''
-          );
-
-          if (answeredQuestions.length === 0) return null;
-
-          return (
-            <CollapsibleSection
-              key={block.id}
-              id={`block-${block.id}`}
-              title={block.shortLabel}
-              badge={
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEditBlock(blockIndex);
-                  }}
-                  style={{
-                    fontSize: 11,
-                    padding: '4px 10px',
-                    borderRadius: 4,
-                    background: '#f3f4f6',
-                    color: '#4b5563',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Edit
-                </button>
-              }
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {answeredQuestions.map((q) => {
-                  const qReasoning = questionReasoningLibrary[q.id];
-                  return (
-                    <div key={q.id} style={{
-                      display: 'flex',
-                      gap: 12,
-                      padding: '10px 0',
-                      borderBottom: '1px solid #f3f4f6',
-                    }}>
-                      <span style={{
-                        fontSize: 10,
-                        fontWeight: 600,
-                        fontFamily: 'monospace',
-                        color: '#9ca3af',
-                        padding: '2px 6px',
-                        background: '#f9fafb',
-                        borderRadius: 4,
-                        height: 'fit-content',
-                      }}>
-                        {q.id}
-                      </span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{
-                          fontSize: 13,
-                          color: '#6b7280',
-                          lineHeight: 1.5,
-                          marginBottom: 4,
-                        }}>
-                          {q.q}
-                        </div>
-                        <div style={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: '#111827',
-                        }}>
-                          {Array.isArray(answers[q.id])
-                            ? answers[q.id].join(', ')
-                            : String(answers[q.id])}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CollapsibleSection>
-          );
-        })}
       </div>
 
       {/* ============================================
