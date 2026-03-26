@@ -17,7 +17,7 @@ export const SAMPLE_CASE: Answers = {
   B1: "Training Data",
   B2: "Additional data \u2014 new clinical sites",
   B3: "No",
-  B4: "The manufacturer retrained the cleared lung-nodule detection model using 18,000 additional adult chest CT studies from four community hospitals not included in the original clearance. The intended use, adult population (\u226518), output format, and model architecture (ResNet-based CNN) remain unchanged. The new sites use GE Revolution and Canon Aquilion scanners not represented in the original training set (which used only Siemens SOMATOM). Internal validation on a held-out test set shows aggregate AUC improved slightly (0.94 \u2192 0.95) and overall sensitivity is stable at the cleared operating threshold. However, subgroup analysis reveals a meaningful sensitivity drop for 4\u20138 mm nodules on Canon scanners (78% vs. 91% on Siemens at the cleared threshold) and a 40% higher false-positive rate in patients \u226575 with chronic lung disease. No labeling change is proposed. The team initially assessed this as a routine performance refresh suitable for documentation only.",
+  B4: "Training dataset expanded with additional chest CT studies from new hospital sites.",
   // Block C — Regulatory Significance
   C1: "No",
   C2: "No",
