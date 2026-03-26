@@ -26,7 +26,6 @@ const base510k = (overrides: Answers = {}): Answers => ({
   A1c: 'v1.0',
   A1d: 'Authorized IFU statement',
   A2: Answer.No,
-  A3: ['US'],
   A6: ['Traditional ML (e.g., random forest, SVM)'],
   B3: Answer.No,
   C1: Answer.No,
@@ -47,7 +46,6 @@ const basePMA = (overrides: Answers = {}): Answers => ({
   A1c: 'v1.0',
   A1d: 'Authorized IFU statement',
   A2: Answer.No,
-  A3: ['US'],
   A6: ['Traditional ML (e.g., random forest, SVM)'],
   B3: Answer.No,
   ...overrides,
@@ -395,42 +393,43 @@ describe('computeDetermination — PMA', () => {
 });
 
 describe('computeDerivedState', () => {
-  it('detects generative/foundation AI and market rollups correctly', () => {
+  it('detects generative/foundation AI and core routing flags correctly', () => {
     const state = computeDerivedState({
       A1: AuthPathway.FiveOneZeroK,
       A2: Answer.Yes,
-      A3: ['US', 'EU', 'UK'],
-      A5: Answer.Yes,
-      A5b: Answer.No,
       A6: ['LLM / Foundation Model', 'Generative AI'],
-      B1: 'Foundation Model / Generative AI',
+      B1: 'Intended Use / Indications for Use',
     });
 
     expect(state.hasGenAI).toBe(true);
-    expect(state.hasEU).toBe(true);
-    expect(state.hasUK).toBe(true);
-    expect(state.hasNonUSMarket).toBe(true);
-    expect(state.isMultiMarket).toBe(true);
-    expect(state.euHighRisk).toBe(true);
+    expect(state.isCatIntendedUse).toBe(true);
     expect(state.hasPCCP).toBe(true);
-    expect(state.is510k).toBe(true);
+    expect(state.isPMA).toBe(false);
+    expect(state.isDeNovo).toBe(false);
   });
 
-  it('does not mark EU high-risk without EU market presence', () => {
-    const state = computeDerivedState({
+  it('distinguishes PMA and De Novo records without GenAI', () => {
+    const pmaState = computeDerivedState({
+      A1: AuthPathway.PMA,
+      A2: Answer.No,
+      A6: ['Deep Learning (e.g., CNN, RNN)'],
+      B1: 'Training Data',
+    });
+    const deNovoState = computeDerivedState({
       A1: AuthPathway.DeNovo,
       A2: Answer.No,
-      A3: ['US', 'Canada'],
-      A5: Answer.Yes,
       A6: ['Deep Learning (e.g., CNN, RNN)'],
       B1: 'Training Data',
     });
 
-    expect(state.hasEU).toBe(false);
-    expect(state.euHighRisk).toBe(false);
-    expect(state.hasCanada).toBe(true);
-    expect(state.isDeNovo).toBe(true);
-    expect(state.hasGenAI).toBe(false);
+    expect(pmaState.isPMA).toBe(true);
+    expect(pmaState.isDeNovo).toBe(false);
+    expect(pmaState.hasGenAI).toBe(false);
+    expect(pmaState.isCatIntendedUse).toBe(false);
+    expect(deNovoState.isPMA).toBe(false);
+    expect(deNovoState.isDeNovo).toBe(true);
+    expect(deNovoState.hasGenAI).toBe(false);
+    expect(deNovoState.isCatIntendedUse).toBe(false);
   });
 });
 

@@ -22,7 +22,6 @@ const base510k = (overrides: Answers = {}): Answers => ({
   A1c: 'v1.0',
   A1d: 'Authorized IFU statement',
   A2: Answer.No,
-  A3: ['US'],
   A6: ['Traditional ML (e.g., random forest, SVM)'],
   B3: Answer.No,
   C1: Answer.No,

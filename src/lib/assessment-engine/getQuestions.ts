@@ -7,21 +7,10 @@ import { changeTaxonomy } from './changeTaxonomy';
  */
 export interface DerivedState {
   hasGenAI: boolean;
-  markets: string[];
-  isMultiMarket: boolean;
-  hasEU: boolean;
-  hasUK: boolean;
-  hasCanada: boolean;
-  hasJapan: boolean;
-  hasNonUSMarket: boolean;
   isCatIntendedUse: boolean;
-  isCatGenAI: boolean;
   hasPCCP: boolean;
   isPMA: boolean;
   isDeNovo: boolean;
-  is510k: boolean;
-  euHighRisk: boolean;
-  isIVD: boolean;
 }
 
 export interface Question {
@@ -63,13 +52,12 @@ export interface Block {
  */
 export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   const b: Block[] = [
-    { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield", description: "Anchor the assessment to the authorized device, baseline, intended use, and markets before any change analysis." },
+    { id: "A", label: "What device are we assessing?", shortLabel: "Device Profile", icon: "shield", description: "Anchor the assessment to the authorized device, baseline, intended use, and change-control context before any change analysis." },
     { id: "B", label: "What changed?", shortLabel: "Change Classification", icon: "layers", description: "Describe the modification precisely so downstream pathway logic evaluates the right change category and intended use impact." },
     { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory Significance", icon: "alert", description: "Assess whether the change affects safety, effectiveness, substantial equivalence, or submission obligations." },
   ];
   if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP Scope", icon: "checkCircle", description: "Verify whether the proposed change remains inside the authorized PCCP boundaries, validation plan, and cumulative limits." });
   if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI Supplemental", icon: "cpu", description: "Review base model, prompt, RAG, guardrails, and GenAI-specific behavior changes that can alter clinical performance or controls." });
-  if (ds.hasNonUSMarket) b.push({ id: "F", label: "Non-U.S. follow-up", shortLabel: "Jurisdictions", icon: "globe", description: "Flag jurisdiction-specific follow-up needs for authorized markets outside the U.S. primary analysis." });
   b.push({ id: "E", label: "Population impact check", shortLabel: "Bias & Equity", icon: "scale", description: "Check whether performance, bias controls, validation evidence, or affected populations require additional expert review." });
   b.push({ id: "review", label: "Final review", shortLabel: "Review", icon: "check", description: "Review the routing logic, evidence gaps, documentation needs, and expert-review notes before relying on the assessment." });
   return b;
@@ -83,8 +71,7 @@ export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
  * answers and derivedState as explicit parameters instead.
  */
 export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState): Question[] => {
-  const { hasGenAI, hasEU, hasUK, hasCanada, hasJapan, hasNonUSMarket,
-    isCatIntendedUse, hasPCCP, isPMA, isDeNovo, euHighRisk, markets } = ds;
+  const { hasGenAI, isCatIntendedUse, isPMA } = ds;
 
   switch (blockId) {
     case "A": return [
@@ -105,49 +92,13 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
       { id: "A2", q: "Does the device have an FDA-authorized Predetermined Change Control Plan (PCCP)?", type: "yesno",
         pathwayCritical: true,
         help: "An authorized PCCP allows pre-approved modifications without a new submission — but only for changes within the PCCP's scope. Per FDORA §515C and FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025)." },
-      { id: "A3", q: "In which markets is the device currently authorized?", type: "multi",
-        options: ["US", "EU", "UK", "Canada", "Japan", "China", "Other"],
-        pathwayCritical: true,
-        help: "Each jurisdiction has its own change assessment requirements. RegAccess provides a U.S.-primary determination plus jurisdiction-specific follow-up actions and escalation cues; local RA review is still required for each market." },
       { id: "A6", q: "What type of AI/ML technology does the device use?", type: "multi",
         options: ["Traditional ML (e.g., random forest, SVM)", "Deep Learning (e.g., CNN, RNN)", "Transformer / Attention-Based", "LLM / Foundation Model", "Generative AI", "Ensemble / Multi-Model", "Federated Learning"],
         pathwayCritical: true,
         infoNote: hasGenAI ? "Generative AI / LLM / Foundation Model detected — a dedicated Generative AI Supplemental assessment block will appear after the Regulatory Significance step. This covers base model changes, prompt modifications, RAG knowledge base, guardrails, hallucination testing, and adversarial testing." : null,
         help: "Selecting LLM / Foundation Model or Generative AI will add a dedicated 'Generative AI Supplemental' assessment block (Block D) later in the assessment flow, covering base model changes, prompt engineering, RAG, guardrails, hallucination testing, and explainability." },
-      { id: "A_SEC2", sectionDivider: true, label: "Recommended for completeness", sublabel: "Improves assessment quality. Skipping reduces confidence but does not block the determination.", icon: "layers" },
-      { id: "A1e", q: "What is the current marketed version / build identifier?", type: "text",
-        help: "The marketed version may differ from the authorized baseline if post-market changes have been implemented. Identifying both helps assess cumulative drift." },
-      { id: "A1f", q: "What are the relevant special controls or device-type constraints for this device?", type: "text",
-        skip: answers.A1 !== AuthPathway.DeNovo,
-        help: "De Novo classifications establish a new device type with specific special controls. Any change that moves the device outside these special controls may require a new De Novo request or a 510(k) to a different predicate. Enter the De Novo classification regulation number and key special controls." },
-      { id: "A2b", q: "Briefly describe the authorized PCCP scope (change types and modification boundaries covered).", type: "text",
-        skip: answers.A2 !== Answer.Yes,
-        help: "Critical for verifying whether the current change falls within PCCP coverage." },
-      { id: "A2c", q: "Is the PCCP implementation documentation current (PMA Annual Report per 21 CFR 814.84 for PMA devices; QMS records for 510(k)/De Novo devices)?", type: "yesno",
-        skip: answers.A2 !== Answer.Yes,
-        help: "Per FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025) §V.C: PMA devices must report PCCP-implemented changes in PMA Annual Reports (21 CFR 814.84). For 510(k) and De Novo devices, FDA does not mandate a separate 'PCCP Annual Report' — maintain implementation documentation per your QMS. Address any outstanding reporting or documentation obligations promptly." },
-      { id: "A4", q: "What is the EU MDR risk classification?", type: "single",
-        skip: !hasEU,
-        options: ["Class I", "Class IIa", "Class IIb", "Class III"],
-        help: "EU MDR classification determines Notified Body involvement and potential EU AI Act obligations." },
-      { id: "A5", q: "Is the device subject to third-party conformity assessment under MDR/IVDR?", type: "yesno",
-        skip: !hasEU,
-        help: "Under EU AI Act Article 6(1), AI systems that are safety components of — or are themselves — products covered by Annex I Union harmonisation legislation (including MDR 2017/745 and IVDR 2017/746) are classified as high-risk when that legislation requires third-party conformity assessment for placing on the market or putting into service. Obligations for Annex I medical devices apply from Aug 2, 2027 (note: subject to possible delay under pending EU Digital Omnibus proposal — verify current timeline)." },
-      { id: "A5b", q: "Is this device an In Vitro Diagnostic (IVD)?", type: "yesno",
-        skip: !hasEU,
-        help: "IVD devices fall under EU IVDR 2017/746 instead of MDR 2017/745. The change assessment framework, classification, and Notified Body requirements differ. For IVDs, MDCG 2022-6 applies for IVDR Article 110(3) transitional provisions instead of MDCG 2020-3." },
-      { id: "A6b", q: "What is the IEC 62304 software safety classification?", type: "single",
-        options: ["Class A — No injury or damage to health possible", "Class B — Non-serious injury possible", "Class C — Death or serious injury possible"],
-        help: "Software safety class determines documentation depth for the software lifecycle. A change that shifts the safety class has cascading implications." },
-      { id: "A6c", q: "What is the SaMD risk category (IMDRF)?", type: "single",
-        options: ["Category I (Inform — Non-serious)", "Category II (Inform — Serious / Drive — Non-serious)", "Category III (Treat/Diagnose — Non-serious / Drive — Serious)", "Category IV (Treat/Diagnose — Serious/Critical)", "Not applicable (not SaMD)"],
-        help: "IMDRF SaMD risk categorization based on significance of information × state of healthcare situation. Used by multiple international regulators." },
-      { id: "A7", q: "Does the device depend on any third-party models, APIs, or external AI services?", type: "yesno",
-        help: "Third-party dependencies introduce change risks outside your direct control." },
-      { id: "A7b", q: "Has the upstream provider notified you of any pending or recent model/API changes?", type: "yesnouncertain",
-        skip: answers.A7 !== Answer.Yes,
-        help: "Upstream provider changes (e.g., model version swap, API deprecation) are one of the highest-risk scenarios for AI/ML devices, especially GenAI." },
       { id: "A8", q: "How many changes have been implemented since the last regulatory submission?", type: "numeric",
+        pathwayCritical: true,
         help: "Cumulative change count informs drift assessment. A high number of changes warrants closer review of whether the device's overall behavior has shifted from its cleared specification." },
     ];
 
@@ -170,13 +121,8 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         consequencePreview: null,
         mlguidance: "Pull up the clearance letter and Indications for Use statement. Compare word-by-word: does the change expand the patient population, clinical setting, anatomical region, severity scope, or diagnostic capability? For GenAI: does expanded prompting ability or RAG content broaden effective clinical scope even if the stated IFU hasn't changed?",
         help: "The most consequential question in the assessment. Compare the proposed change against the exact authorized indications for use / intended purpose, labeling claims, population, clinical context, and outputs. PCCPs are intended to be focused and bounded within the originally reviewed device scope; RegAccess therefore treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented." },
-      { id: "B3b", q: "Does this change affect the IEC 62304 software safety classification?", type: "yesnouncertain",
-        help: "A safety class change (e.g., B → C) triggers additional software lifecycle documentation requirements and may affect the regulatory submission pathway." },
       { id: "B4", q: "Describe the change in detail.", type: "text",
         help: "Provide a clear description: what is changing, the scope, data sources affected, and components modified. This becomes part of your assessment record." },
-      { id: "B5", q: "What is the trigger for this change?", type: "single",
-        options: ["Manufacturer-initiated (planned improvement)", "Corrective action (CAPA)", "Preventive action (CAPA)", "Field safety corrective action / recall", "External dependency change (upstream provider)", "Regulatory requirement or commitment"],
-        help: "CAPA-driven and recall-driven changes are flagged for expedited review. External dependency changes trigger third-party risk assessment." },
     ];
 
     case "C": {
@@ -196,15 +142,6 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
             skip: answers.B3 !== Answer.Yes && answers.C_PMA1 !== Answer.Yes && answers.C_PMA1 !== Answer.Uncertain,
             options: ["Panel-Track Supplement (major change / typically substantial clinical evidence)", "180-Day Supplement (§814.39(a) — change affecting safety/effectiveness not requiring panel-track)", "Real-Time Supplement (minor change reviewed in real time; see FDA Real-Time PMA Supplements guidance)", "Special PMA Supplement — Changes Being Effected (§814.39(d) — certain safety-enhancing labeling or manufacturing changes)", "30-Day PMA Supplement (§814.39(e) — only when FDA has specifically advised this alternate submission)", "30-Day Notice (§814.39(f) — qualifying manufacturing procedure/method changes only)"],
             help: "Supplement type depends on the nature and scope of the change:\n• Panel-Track: Major changes, often including new indications for use or other changes typically needing substantial clinical evidence.\n• 180-Day: Changes affecting safety or effectiveness that do not fit a more specific alternative.\n• Real-Time: Certain minor changes that FDA agrees to review through the real-time process.\n• Special — Changes Being Effected: Certain safety-enhancing labeling or manufacturing changes under §814.39(d).\n• 30-Day PMA Supplement: An alternate submission under §814.39(e), only when FDA has specifically advised that this route is permitted.\n• 30-Day Notice: Certain manufacturing procedure or method changes under §814.39(f). If the notice is not adequate, FDA may require a 135-day PMA supplement.\nMinor changes that do not affect safety or effectiveness may instead be reportable in the PMA annual/periodic report under §814.39(b) and §814.84." },
-          { id: "C_PMA5", q: "Is this a significant change under EU MDR? (Note: MDCG 2020-3 applies to legacy devices under Article 120. For fully MDR-certified devices, assess under applicable conformity assessment procedures.)", type: "yesnouncertain",
-            skip: !hasEU || answers.B3 === Answer.Yes,
-            help: "EU MDR defines 'significant change' separately from FDA criteria. MDCG 2020-3 Rev.1 applies specifically to legacy devices transitioning under Article 120. For fully MDR-certified devices, the change assessment follows applicable conformity assessment procedures. For IVDs, see MDCG 2022-6." },
-          { id: "C_PMA6", q: "Does this modification meet the EU AI Act definition of 'substantial modification'?", type: "yesnouncertain",
-            skip: !euHighRisk || answers.B3 === Answer.Yes,
-            help: "Under the EU AI Act Article 43(4), substantial modifications to high-risk AI systems may require a new conformity assessment. Note: pre-determined changes that were foreseen, assessed, and documented at initial conformity assessment do not constitute 'substantial modifications' under Article 3(23) (MDCG 2025-6)." },
-          { id: "C_PMA6b", q: "Was this change type pre-determined and assessed during the initial EU conformity assessment?", type: "yesno",
-            skip: !euHighRisk || answers.C_PMA6 !== Answer.Yes,
-            help: "Per MDCG 2025-6 / AIB 2025-1 (June 2025): changes pre-determined by the manufacturer and documented in Annex IV technical documentation do NOT constitute a substantial modification under the AI Act." },
         ];
       }
 
@@ -238,22 +175,6 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
           skip: answers.B3 === Answer.Yes || answers.C1 === Answer.Yes || answers.C2 === Answer.Yes || answers.C3 === Answer.Yes || answers.C4 === Answer.Yes || answers.C5 === Answer.Yes, pathwayCritical: true,
           mlguidance: "Compare performance metrics before and after on your holdout test set. If sensitivity, specificity, or any key metric changes beyond the predefined acceptance range, answer 'Yes.'",
           help: "Changes that significantly affect clinical functionality or performance specifications require a new submission. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 4 — could the change significantly affect clinical functionality or performance specifications." },
-        { id: "C8", q: "Is this a significant change under EU MDR? (Note: MDCG 2020-3 applies to legacy devices under Article 120 transitional provisions. For fully MDR-certified devices, assess under applicable conformity assessment procedures.)", type: "yesnouncertain",
-          skip: !hasEU || answers.B3 === Answer.Yes,
-          mlguidance: "EU 'significant change' criteria differ from FDA. Check: does this change affect the device's intended purpose, design or manufacturing specifications, or its conformity with general safety and performance requirements? Does it require new clinical data? Consult your EU technical documentation and Declaration of Conformity.",
-          help: "EU MDR defines 'significant change' separately from FDA criteria. MDCG 2020-3 Rev.1, Section 3 addresses legacy devices transitioning under Article 120 of MDR 2017/745; for fully MDR-certified devices, the change assessment follows applicable conformity assessment procedures. For IVDs, see MDCG 2022-6 under IVDR 2017/746, Article 110(3). Consider: does it affect intended purpose, design/specifications, or require new clinical data?" },
-        { id: "C8b", q: "Specifically, does this change affect the intended purpose as defined in the EU Declaration of Conformity?", type: "yesno",
-          skip: !hasEU || answers.B3 === Answer.Yes || answers.C8 !== Answer.Uncertain,
-          help: "When the overall MDR significant change assessment is uncertain, decomposing into specific MDCG 2020-3 criteria helps resolve ambiguity." },
-        { id: "C8c", q: "Does this change require new or additional clinical evidence beyond existing data?", type: "yesnouncertain",
-          skip: !hasEU || answers.B3 === Answer.Yes || answers.C8 === Answer.No,
-          help: "If new clinical evidence is needed, Notified Body notification is almost certainly required regardless of other factors." },
-        { id: "C9", q: "Does this modification meet the EU AI Act definition of 'substantial modification'?", type: "yesnouncertain",
-          skip: !euHighRisk || answers.B3 === Answer.Yes,
-          help: "Under EU AI Act (Regulation 2024/1689), Article 43(4), substantial modifications to high-risk AI systems may require a new conformity assessment. The definition of 'substantial modification' is in Article 3(23): a change not foreseen or planned by the provider that affects compliance or modifies the intended purpose. Pre-determined changes properly assessed and documented at initial conformity assessment do not meet this definition. Note: obligations for Annex I medical devices apply from Aug 2, 2027 (subject to possible delay under pending EU Digital Omnibus proposal — verify current timeline). See MDCG 2025-6 / AIB 2025-1 for MDR/AI Act interplay." },
-        { id: "C9b", q: "Was this change type pre-determined and assessed during the initial EU conformity assessment?", type: "yesno",
-          skip: !euHighRisk || answers.C9 !== Answer.Yes,
-          help: "Per MDCG 2025-6 / AIB 2025-1 (June 2025), Q&A 4.3: pre-determined changes documented in EU AI Act Annex IV, point 2(f) technical documentation do NOT constitute a substantial modification under Article 3(23)." },
         { id: "C10", q: "Considering all changes since last submission, has the device's overall behavior materially drifted from its cleared specification?", type: "yesnouncertain",
           skip: !answers.A8 || parseInt(answers.A8) === 0,
           help: "Even if each individual change was non-significant, the cumulative effect may have shifted the device from its cleared state." },
@@ -278,18 +199,12 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
       { id: "P5", q: "Considering all previous PCCP-implemented changes, does this additional change still fall within the cumulative impact boundaries of the PCCP?", type: "yesnouncertain",
         skip: answers.P1 !== Answer.Yes || answers.P2 !== Answer.Yes || answers.P3 !== Answer.Yes || answers.P4 !== Answer.Yes,
         help: "The PCCP Impact Assessment must evaluate risks 'individually and in combination' per FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section VIII — Impact Assessment. Even if this change is within scope, the cumulative effect of all PCCP-implemented changes must still be within boundaries. If no prior PCCP-implemented changes exist, answer 'Yes' and document that this is the first implementation under the PCCP." },
-      { id: "P6", q: "Does the device labeling require updating to reflect this PCCP-implemented change?", type: "yesno",
-        skip: answers.P1 !== Answer.Yes || answers.P2 !== Answer.Yes || answers.P3 !== Answer.Yes,
-        help: "FDA may require labeling updates for PCCP-implemented changes, including summaries of the change, supporting evidence, impacted inputs/outputs, and version history." },
     ];
 
     case "D": return [
       { id: "D1", q: "Is the foundation or base model being changed (e.g., model version swap, provider change)?", type: "yesno",
         mlguidance: "Evidence to gather: model version identifiers (before/after), upstream release notes, embedding dimension changes, tokenizer changes. Run your full evaluation suite on the new base model BEFORE fine-tuning to measure baseline drift. Document upstream provider's change log if available.",
         help: "A base model swap is one of the highest-risk generative-AI changes. It should trigger a rigorous intended-use, risk, and performance reassessment, and many such changes will require a new submission unless they are appropriately bounded and authorized (for example, under an authorized PCCP)." },
-      { id: "D1b", q: "Is this base model change initiated by the upstream provider (not by the device manufacturer)?", type: "yesno",
-        skip: answers.D1 !== Answer.Yes,
-        help: "Upstream-initiated changes are particularly high-risk because the manufacturer may not have full visibility into what changed in the model." },
       { id: "D2", q: "Are system instructions, reasoning templates, or other controlled prompt/configuration elements being modified?", type: "yesno",
         help: "For generative AI medical devices, prompt configurations function as part of the device design specification under general design control principles. FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section VI discusses describing modifications in the PCCP, which logically extends to prompt/configuration elements. Version control and validation of these elements is strongly recommended best practice for maintaining PCCP eligibility and design traceability." },
       { id: "D3", q: "Is the retrieval-augmented generation (RAG) knowledge base or retrieval system changing?", type: "yesno",
@@ -301,45 +216,6 @@ export const getQuestions = (blockId: string, answers: Answers, ds: DerivedState
         draftRef: true,
         mlguidance: "Evidence expected: a structured hallucination test suite with domain-specific queries, factual accuracy scoring, and comparison against a reference corpus. Document hallucination rate (before/after), types of hallucinations observed, and whether any are clinically dangerous.",
         help: "Hallucination testing is a critical best practice for generative AI medical devices. While not explicitly mandated by FDA as a named requirement, it is strongly recommended for demonstrating safety. A 'No' will generate a risk flag as a testing gap." },
-      { id: "D6", q: "Has adversarial (red-team) testing been performed on the modified system?", type: "yesno",
-        draftRef: true,
-        help: "Adversarial/red-team testing probes for failure modes and malicious inputs. Recommended best practice per industry consensus; not explicitly enumerated as an FDA requirement. A 'No' will generate a risk flag as a testing gap." },
-      { id: "D7", q: "Are all prompts, templates, and LLM configurations under version control as controlled documents in the QMS?", type: "yesno",
-        help: "Version control of prompts and configurations is strongly recommended best practice for generative AI devices. Under general design control principles (QMSR / ISO 13485), elements that affect device output should be controlled documents. FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025) §VI discusses describing modifications, which logically encompasses prompt elements — but FDA has not issued a separate, explicit requirement naming prompt version control. Lack of version control undermines PCCP scope verification and design traceability." },
-      { id: "D8", q: "Does the change affect the explainability or interpretability of the model's outputs to clinicians?", type: "yesnouncertain",
-        draftRef: true,
-        help: "The FDA AI-DSF Lifecycle Guidance (Jan 2025 draft — not yet finalized; verify current status at fda.gov) emphasizes clinically relevant explanations appropriate for intended users. Changes that reduce explainability may affect safety. Note: this recommendation derives from draft guidance, which does not establish legally enforceable requirements." },
-      { id: "D9", q: "For EU-market devices: does the change affect compliance with EU AI Act transparency requirements (Article 13)?", type: "yesnouncertain",
-        skip: !hasEU,
-        help: "The EU AI Act requires high-risk AI systems to be designed to ensure appropriate transparency, including user instructions. Changes to explainability may trigger re-assessment." },
-    ];
-
-    case "F": return [
-      { id: "F1", q: "Is this device an In Vitro Diagnostic (IVD)?", type: "yesno",
-        help: "IVD devices fall under EU IVDR 2017/746 instead of MDR 2017/745, and may have different PMDA/Health Canada classification." },
-      { id: "F2", q: "Is the device authorized in Canada?", type: "yesno",
-        skip: !hasCanada, help: "Health Canada's MLMD guidance addresses AI/ML device changes, including recommendations for bias and equity analysis proportionate to device risk." },
-      { id: "F3", q: "What is the Health Canada device license class?", type: "single",
-        skip: answers.F2 !== Answer.Yes, options: ["Class II", "Class III", "Class IV"],
-        help: "Class III/IV devices require a license amendment for significant changes under the Medical Devices Regulations SOR/98-282." },
-      { id: "F4", q: "Is the device authorized in Japan?", type: "yesno",
-        skip: !hasJapan, help: "PMDA classification determines the partial change approval pathway." },
-      { id: "F5", q: "What is the PMDA device classification?", type: "single",
-        skip: answers.F4 !== Answer.Yes, options: ["Class I", "Class II", "Class III", "Class IV"],
-        help: "Class III/IV devices require PMDA approval for partial changes." },
-      { id: "F7", q: "Is the device authorized in the UK (MHRA)?", type: "yesno",
-        skip: !hasUK, help: "The UK MHRA is developing its own AI/ML device framework post-Brexit." },
-      { id: "F7b", q: "Is the current UK authorization based on CE marking under the recognition route?", type: "yesno",
-        skip: answers.F7 !== Answer.Yes,
-        help: "If the UK authorization relies on EU CE marking, changes to the EU conformity status may cascade to UK market access." },
-      { id: "F8", q: "Is the device authorized in China (NMPA)?", type: "yesno",
-        skip: !markets.includes("China"), help: "NMPA has its own AI/ML classification and significant change requirements." },
-      { id: "F8b", q: "What is the NMPA device classification?", type: "single",
-        skip: answers.F8 !== Answer.Yes, options: ["Class I", "Class II", "Class III"],
-        help: "NMPA Class II/III devices require registration change or supplemental approval for significant changes." },
-      { id: "F6", q: "Has a jurisdiction conflict analysis been performed across all authorized markets?", type: "single",
-        options: ["Yes — no conflicts identified", "Yes — conflicts identified (describe in notes)", "No — not yet performed"],
-        help: "Multi-jurisdiction devices may face conflicting regulatory requirements (e.g., EU requires Notified Body notification while US determines Letter to File)." },
     ];
 
     case "E": return [

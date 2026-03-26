@@ -9,29 +9,19 @@ import {
 } from '../src/lib/assessment-engine';
 
 describe('App Shell: SAMPLE_CASE', () => {
-  it('SAMPLE_CASE has all expected keys from original HTML', () => {
+  it('SAMPLE_CASE has the expected keys for the lean assessment flow', () => {
     // Block A
     expect(SAMPLE_CASE.A1).toBe('510(k)');
     expect(SAMPLE_CASE.A2).toBe('No');
-    expect(SAMPLE_CASE.A3).toEqual(['US', 'EU']);
-    expect(SAMPLE_CASE.A4).toBe('Class IIb');
-    expect(SAMPLE_CASE.A5).toBe('Yes');
-    expect(SAMPLE_CASE.A5b).toBe('No');
     expect(SAMPLE_CASE.A6).toEqual(['Deep Learning (e.g., CNN, RNN)']);
-    expect(SAMPLE_CASE.A7).toBe('No');
     expect(SAMPLE_CASE.A8).toBe('3');
     // Block B
     expect(SAMPLE_CASE.B1).toBe('Training Data');
     expect(SAMPLE_CASE.B3).toBe('No');
-    expect(SAMPLE_CASE.B5).toBe('Manufacturer-initiated (planned improvement)');
     // Block C
     expect(SAMPLE_CASE.C1).toBe('No');
     expect(SAMPLE_CASE.C3).toBe('Uncertain');
     expect(SAMPLE_CASE.C6).toBe('Yes');
-    expect(SAMPLE_CASE.C8).toBe('Uncertain');
-    expect(SAMPLE_CASE.C8b).toBe('No');
-    expect(SAMPLE_CASE.C8c).toBe('Uncertain');
-    expect(SAMPLE_CASE.C9).toBe('Uncertain');
     expect(SAMPLE_CASE.C10).toBe('No');
     // Block E
     expect(SAMPLE_CASE.E1).toBe('Uncertain');

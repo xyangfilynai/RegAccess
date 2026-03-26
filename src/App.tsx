@@ -193,7 +193,7 @@ export const App: React.FC = () => {
     setAnswers(prev => {
       const next: Answers = { ...prev, [questionId]: value };
 
-      // A1 change -> clear all downstream (B, C, P, D, E, F)
+      // A1 change -> clear all downstream blocks, including any legacy hidden answers.
       if (questionId === 'A1' && prev.A1 !== value) {
         Object.keys(prev).filter(k =>
           k.startsWith('B') || k.startsWith('C') || k.startsWith('P') ||
@@ -201,24 +201,7 @@ export const App: React.FC = () => {
         ).forEach(k => { next[k] = undefined; });
       }
 
-      // A3 change -> clear EU-specific and F-block keys
-      if (questionId === 'A3') {
-        const prevMarkets = (prev.A3 as string[]) || [];
-        const nextMarkets = (value as string[]) || [];
-        if (prevMarkets.includes('EU') && !nextMarkets.includes('EU')) {
-          ['A4', 'A5', 'C8', 'C8b', 'C8c', 'C9', 'C9b',
-           'C_PMA5', 'C_PMA6', 'C_PMA6b', 'D9', 'F1',
-          ].forEach(k => { next[k] = undefined; });
-        }
-        if (
-          prevMarkets.length !== nextMarkets.length ||
-          !prevMarkets.every((m: string) => nextMarkets.includes(m))
-        ) {
-          Object.keys(prev).filter(k => k.startsWith('F')).forEach(k => { next[k] = undefined; });
-        }
-      }
-
-      // B1 change -> clear B2 + all downstream (C, P, D, E, F)
+      // B1 change -> clear B2 + all downstream blocks, including any legacy hidden answers.
       if (questionId === 'B1' && prev.B1 !== value) {
         next.B2 = undefined;
         Object.keys(prev).filter(k =>
