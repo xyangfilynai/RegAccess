@@ -6,14 +6,16 @@ import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
 import { Answer, computeDetermination, type Block, type AssessmentField } from '../src/lib/assessment-engine';
+import { SAMPLE_CASES } from '../src/sample-cases';
 
 describe('UI workflow', () => {
   it('prioritizes continuing existing work ahead of starting a new assessment', () => {
     render(
       <DashboardPage
-        onQuickReview={() => {}}
         onFullAssessment={() => {}}
         onResume={() => {}}
+        sampleCases={SAMPLE_CASES}
+        onOpenSampleCase={() => {}}
         hasSavedSession
         savedAssessments={[
           {
@@ -35,14 +37,12 @@ describe('UI workflow', () => {
     const resumeButton = screen.getByTestId('resume-btn');
     const fullAssessmentButton = screen.getByTestId('full-assessment-btn');
 
-    expect(screen.getByText('Resume or open')).toBeInTheDocument();
-    expect(screen.getByText('New assessment')).toBeInTheDocument();
-    expect(screen.getByText('Default path')).toBeInTheDocument();
-    expect(screen.getByText('Traceability')).toBeInTheDocument();
-    expect(screen.queryByText('Assessment Workflow')).not.toBeInTheDocument();
-    expect(screen.queryByText('Assessment record')).not.toBeInTheDocument();
-    expect(screen.queryByText(/JSON artifact/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Decision support only — not a regulatory determination\./i)).toBeInTheDocument();
+    expect(screen.getByText('Resume current assessment')).toBeInTheDocument();
+    expect(screen.getByText('Start full assessment')).toBeInTheDocument();
+    expect(screen.getByText('Sample library')).toBeInTheDocument();
+    expect(screen.getByText(SAMPLE_CASES[0].title)).toBeInTheDocument();
+    expect(screen.getByTestId(`sample-case-open-${SAMPLE_CASES[0].id}`)).toBeInTheDocument();
+    expect(screen.getByText(/structured internal assessment/i)).toBeInTheDocument();
     expect(
       resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();

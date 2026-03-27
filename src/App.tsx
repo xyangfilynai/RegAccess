@@ -7,7 +7,7 @@ import { FeedbackSurvey } from './components/FeedbackSurvey';
 import { HandoffPage } from './components/HandoffPage';
 import { Icon } from './components/Icon';
 import { BlockBanners } from './components/BlockBanners';
-import { SAMPLE_CASE } from './sampleCase';
+import { SAMPLE_CASES, SAMPLE_CASES_BY_ID } from './sample-cases';
 import {
   getBlocks,
   getBlockFields,
@@ -326,9 +326,11 @@ export const App: React.FC = () => {
 
   // --- Dashboard actions ---
 
-  const handleQuickReview = useCallback(() => {
-    // Clear session, load SAMPLE_CASE (without meta keys), navigate to assess
-    setAnswers({ ...SAMPLE_CASE });
+  const handleOpenSampleCase = useCallback((sampleCaseId: string) => {
+    const sampleCase = SAMPLE_CASES_BY_ID[sampleCaseId];
+    if (!sampleCase) return;
+
+    setAnswers({ ...sampleCase.answers });
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
@@ -356,10 +358,11 @@ export const App: React.FC = () => {
   if (screen === 'dashboard') {
     return (
       <DashboardPage
-        onQuickReview={handleQuickReview}
         onFullAssessment={handleFullAssessment}
         onResume={handleResume}
         hasSavedSession={storage.hasSavedAnswers()}
+        sampleCases={SAMPLE_CASES}
+        onOpenSampleCase={handleOpenSampleCase}
         savedAssessments={savedAssessments}
         onLoadAssessment={handleLoadAssessment}
         onDuplicateAssessment={handleDuplicateAssessment}

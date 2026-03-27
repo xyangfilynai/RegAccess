@@ -23,7 +23,7 @@ describe('FeedbackSurvey', () => {
     expect(screen.getByText(/determined pathway match your expectation/i)).toBeInTheDocument();
     expect(screen.getByText(/challenge or refine/i)).toBeInTheDocument();
     expect(screen.getByText(/increase your confidence/i)).toBeInTheDocument();
-    expect(screen.getByText(/How would you use RegAccess/i)).toBeInTheDocument();
+    expect(screen.getByText(/How would you use ChangePath/i)).toBeInTheDocument();
     expect(screen.getByText(/most and least helpful/i)).toBeInTheDocument();
     expect(screen.getByText(/Follow-up interest/i)).toBeInTheDocument();
   });

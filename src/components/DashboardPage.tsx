@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
 import type { SavedAssessment } from '../lib/assessment-store';
+import type { SampleCaseDefinition } from '../sample-cases';
 
 interface DashboardPageProps {
-  onQuickReview: () => void;
   onFullAssessment: () => void;
   onResume: () => void;
+  sampleCases: SampleCaseDefinition[];
+  onOpenSampleCase: (id: string) => void;
   hasSavedSession: boolean;
   savedAssessments?: SavedAssessment[];
   onLoadAssessment?: (id: string) => void;
@@ -14,9 +16,10 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
-  onQuickReview,
   onFullAssessment,
   onResume,
+  sampleCases,
+  onOpenSampleCase,
   hasSavedSession,
   savedAssessments = [],
   onLoadAssessment,
@@ -232,69 +235,157 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </div>
             </button>
 
-            {/* Explore Sample Workflow Card */}
-            <button
-              onClick={onQuickReview}
-              data-testid="quick-review-btn"
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 16,
-                width: '100%',
-                padding: '20px 24px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg-elevated)',
-                border: '1px solid var(--color-border)',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-primary)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-border)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-bg-hover)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <Icon name="zap" size={18} color="var(--color-text-tertiary)" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>
-                  Explore sample workflow
+          </div>
+        </section>
+
+        <section style={{ marginBottom: 72 }}>
+          <h2 style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--color-text-tertiary)',
+            margin: '0 0 12px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            Sample library
+          </h2>
+          <p style={{
+            fontSize: 14,
+            color: 'var(--color-text-secondary)',
+            lineHeight: 1.6,
+            margin: '0 0 24px',
+            maxWidth: 720,
+          }}>
+            Open one of the nine source-controlled AI/ML change cases to inspect the live branching logic, pathway determination, and PCCP recommendation behavior before starting a live assessment.
+          </p>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+            gap: 16,
+          }}>
+            {sampleCases.map((sampleCase) => (
+              <article
+                key={sampleCase.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 14,
+                  padding: 20,
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                }}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '4px 8px',
+                      borderRadius: 999,
+                      background: 'var(--color-info-bg)',
+                      border: '1px solid var(--color-info-border)',
+                      color: 'var(--color-primary)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}>
+                      {sampleCase.authPathway}
+                    </span>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '4px 8px',
+                      borderRadius: 999,
+                      background: 'var(--color-bg-hover)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-tertiary)',
+                      fontSize: 11,
+                      fontWeight: 600,
+                    }}>
+                      {sampleCase.expectedPathway}
+                    </span>
+                  </div>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--color-text-muted)',
+                    letterSpacing: '0.04em',
+                  }}>
+                    {sampleCase.id}
+                  </span>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                  Open an example assessment to review the flow, outputs, and final review structure before using the prototype on a live case.
-                </p>
-              </div>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 10px',
-                background: 'var(--color-bg-hover)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 4,
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--color-text-tertiary)',
-                marginTop: 4,
-                flexShrink: 0,
-              }}>
-                Example
-              </div>
-            </button>
+
+                <div>
+                  <h3 style={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: 'var(--color-text)',
+                    margin: '0 0 8px',
+                    lineHeight: 1.35,
+                  }}>
+                    {sampleCase.title}
+                  </h3>
+                  <p style={{
+                    fontSize: 13,
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.55,
+                    margin: '0 0 10px',
+                  }}>
+                    {sampleCase.shortScenario}
+                  </p>
+                  <p style={{
+                    fontSize: 12,
+                    color: 'var(--color-text-tertiary)',
+                    lineHeight: 1.55,
+                    margin: 0,
+                  }}>
+                    <strong>Key ambiguity:</strong> {sampleCase.keyAmbiguity}
+                  </p>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  marginTop: 'auto',
+                }}>
+                  <span style={{
+                    fontSize: 12,
+                    color: sampleCase.expectedPccpRecommendation ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                    fontWeight: 500,
+                  }}>
+                    {sampleCase.expectedPccpRecommendation ? 'Engine recommends PCCP' : 'No PCCP recommendation'}
+                  </span>
+                  <button
+                    onClick={() => onOpenSampleCase(sampleCase.id)}
+                    data-testid={`sample-case-open-${sampleCase.id}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      background: 'var(--color-primary)',
+                      border: 'none',
+                      color: '#fff',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Open sample
+                    <Icon name="arrow" size={14} color="#fff" />
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
 
