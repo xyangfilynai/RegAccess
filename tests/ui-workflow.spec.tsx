@@ -214,7 +214,8 @@ describe('UI workflow', () => {
 
     expect(screen.getByText(/Consider a PCCP|Evaluate PCCP/i)).toBeInTheDocument();
     expect(screen.getByText(/next submission to assess whether PCCP is viable/i)).toBeInTheDocument();
-    expect(screen.getByText('Why this pathway')).toBeInTheDocument();
+    expect(screen.getByText('Assessment Basis')).toBeInTheDocument();
+    expect(screen.getByText('Decision Trace')).toBeInTheDocument();
     expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.getAllByText(/New or modified cause of harm: Uncertain/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
@@ -261,7 +262,8 @@ describe('UI workflow', () => {
     expect(
       screen.getAllByText(/creates a new or modified cause of harm/i).length,
     ).toBeGreaterThan(0);
-    expect(screen.getByText('Why this pathway')).toBeInTheDocument();
+    expect(screen.getByText('Assessment Basis')).toBeInTheDocument();
+    expect(screen.getByText('Decision Trace')).toBeInTheDocument();
     expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.queryByText('Package Requirements')).not.toBeInTheDocument();
     expect(screen.queryByText('Documentation Requirements')).not.toBeInTheDocument();
