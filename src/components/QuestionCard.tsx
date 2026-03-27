@@ -386,7 +386,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Field header */}
       <div style={{
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         gap: 'var(--space-md)',
         marginBottom: 'var(--space-md)',
       }}>
@@ -425,30 +425,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         <div style={{ flex: 1 }}>
+          {/* Question text + tags inline */}
           <div style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'baseline',
+            flexWrap: 'wrap',
             gap: 'var(--space-sm)',
-            flexWrap: 'wrap',
-            marginBottom: 'var(--space-xs)',
           }}>
-            {field.disabled && (
-              <span style={{
-                fontSize: 10,
-                color: 'var(--color-text-muted)',
-              }}>
-                Set by earlier answers
-              </span>
-            )}
-          </div>
+            <h4 style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: 'var(--color-text)',
+              margin: 0,
+              lineHeight: 1.5,
+            }}>
+              {field.q}
+            </h4>
 
-          {/* Tags */}
-          <div style={{
-            display: 'flex',
-            gap: 'var(--space-xs)',
-            marginBottom: 'var(--space-sm)',
-            flexWrap: 'wrap',
-          }}>
+            {/* Tags — after the question text */}
             {field.pathwayCritical && (
               <span style={{
                 fontSize: 10,
@@ -460,6 +454,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-danger-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
               }}>
                 Required
               </span>
@@ -475,6 +470,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-warning-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
               }}>
                 Critical
               </span>
@@ -490,6 +486,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-info-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
               }}>
                 Draft Guidance
               </span>
@@ -508,6 +505,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
+                whiteSpace: 'nowrap',
               }}>
                 <Icon name="layers" size={10} />
                 Conditional
@@ -524,6 +522,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 border: '1px solid var(--color-border)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.03em',
+                whiteSpace: 'nowrap',
               }}>
                 Locked
               </span>
@@ -542,23 +541,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 4,
+                whiteSpace: 'nowrap',
               }}>
                 <Icon name="check" size={10} />
                 Auto-set
               </span>
             )}
           </div>
-
-          {/* Primary prompt */}
-          <h4 style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: 'var(--color-text)',
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
-            {field.q}
-          </h4>
         </div>
 
       </div>
