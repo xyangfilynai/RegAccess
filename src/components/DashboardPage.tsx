@@ -29,21 +29,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   return (
     <div style={{
       minHeight: '100vh',
-      background: '#fafbfc',
+      background: 'var(--color-bg)',
     }}>
       {/* Header */}
       <header style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 40px',
+        padding: '0 var(--space-lg)',
         height: 64,
-        borderBottom: '1px solid #e2e8f0',
-        background: '#ffffff',
+        borderBottom: '1px solid var(--color-border)',
+        background: 'var(--color-bg-elevated)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <img src="/logo.png" alt="RegAssess" style={{ width: 32, height: 32, objectFit: 'contain' }} />
-          <span style={{ fontSize: 16, fontWeight: 600, color: '#0f172a', letterSpacing: '-0.01em' }}>
+          <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
             RegAssess
           </span>
         </div>
@@ -60,7 +60,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <div style={{
             fontSize: 12,
             fontWeight: 600,
-            color: '#64748b',
+            color: 'var(--color-primary)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             marginBottom: 16,
@@ -70,7 +70,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h1 style={{
             fontSize: 32,
             fontWeight: 700,
-            color: '#0f172a',
+            color: 'var(--color-text)',
             margin: '0 0 20px',
             letterSpacing: '-0.02em',
             lineHeight: 1.25,
@@ -79,7 +79,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </h1>
           <p style={{
             fontSize: 15,
-            color: '#475569',
+            color: 'var(--color-text-secondary)',
             lineHeight: 1.65,
             maxWidth: 720,
             margin: 0,
@@ -90,12 +90,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             display: 'inline-block',
             marginTop: 20,
             padding: '6px 12px',
-            background: '#f1f5f9',
-            border: '1px solid #cbd5e1',
+            background: 'var(--color-info-bg)',
+            border: '1px solid var(--color-info-border)',
             borderRadius: 6,
             fontSize: 11,
             fontWeight: 600,
-            color: '#475569',
+            color: 'var(--color-info)',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}>
@@ -108,7 +108,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h2 style={{
             fontSize: 14,
             fontWeight: 600,
-            color: '#64748b',
+            color: 'var(--color-text-tertiary)',
             margin: '0 0 24px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -128,39 +128,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   gap: 16,
                   width: '100%',
                   padding: '20px 24px',
-                  borderRadius: 8,
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-warning-bg)',
+                  border: '1px solid var(--color-warning-border)',
                   textAlign: 'left',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
+                  transition: 'all var(--transition-fast)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#94a3b8';
-                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = '#cbd5e1';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 <div style={{
                   width: 40,
                   height: 40,
-                  borderRadius: 8,
-                  background: '#f1f5f9',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-warning-border)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
                 }}>
-                  <Icon name="clock" size={18} color="#64748b" />
+                  <Icon name="clock" size={18} color="var(--color-warning)" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>
                     Resume current assessment
                   </div>
-                  <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                  <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
                     Continue the in-progress assessment stored in this browser.
                   </p>
                 </div>
@@ -169,12 +167,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   alignItems: 'center',
                   gap: 6,
                   padding: '4px 10px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--color-warning-border)',
+                  border: 'none',
                   borderRadius: 4,
                   fontSize: 11,
                   fontWeight: 600,
-                  color: '#64748b',
+                  color: 'var(--color-warning)',
                   marginTop: 4,
                   flexShrink: 0,
                 }}>
@@ -193,39 +191,37 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 gap: 16,
                 width: '100%',
                 padding: '20px 24px',
-                borderRadius: 8,
-                background: '#ffffff',
-                border: '2px solid #cbd5e1',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-info-bg)',
+                border: '2px solid var(--color-info-border)',
                 textAlign: 'left',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all var(--transition-fast)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#94a3b8';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.06)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#cbd5e1';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
               <div style={{
                 width: 40,
                 height: 40,
-                borderRadius: 8,
-                background: '#f1f5f9',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-info-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon name="fileText" size={18} color="#64748b" />
+                <Icon name="fileText" size={18} color="var(--color-primary)" />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>
                   Start full assessment
                 </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   Begin a new assessment from device profile through change classification, significance review, pathway assessment, and final review.
                 </p>
               </div>
@@ -234,12 +230,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 10px',
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
+                background: 'var(--color-info-border)',
+                border: 'none',
                 borderRadius: 4,
                 fontSize: 11,
                 fontWeight: 600,
-                color: '#64748b',
+                color: 'var(--color-primary)',
                 marginTop: 4,
                 flexShrink: 0,
               }}>
@@ -257,39 +253,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 gap: 16,
                 width: '100%',
                 padding: '20px 24px',
-                borderRadius: 8,
-                background: '#ffffff',
-                border: '1px solid #cbd5e1',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-elevated)',
+                border: '1px solid var(--color-border)',
                 textAlign: 'left',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
+                transition: 'all var(--transition-fast)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#94a3b8';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#cbd5e1';
+                e.currentTarget.style.borderColor = 'var(--color-border)';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
               <div style={{
                 width: 40,
                 height: 40,
-                borderRadius: 8,
-                background: '#f1f5f9',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--color-bg-hover)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
               }}>
-                <Icon name="zap" size={18} color="#64748b" />
+                <Icon name="zap" size={18} color="var(--color-text-tertiary)" />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#0f172a', marginBottom: 4 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', marginBottom: 4 }}>
                   Explore sample workflow
                 </div>
-                <p style={{ fontSize: 13, color: '#64748b', lineHeight: 1.5, margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   Open an example assessment to review the flow, outputs, and final review structure before using the prototype on a live case.
                 </p>
               </div>
@@ -298,12 +294,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 alignItems: 'center',
                 gap: 6,
                 padding: '4px 10px',
-                background: '#f1f5f9',
-                border: '1px solid #cbd5e1',
+                background: 'var(--color-bg-hover)',
+                border: '1px solid var(--color-border)',
                 borderRadius: 4,
                 fontSize: 11,
                 fontWeight: 600,
-                color: '#64748b',
+                color: 'var(--color-text-tertiary)',
                 marginTop: 4,
                 flexShrink: 0,
               }}>
@@ -318,7 +314,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h2 style={{
             fontSize: 14,
             fontWeight: 600,
-            color: '#64748b',
+            color: 'var(--color-text-tertiary)',
             margin: '0 0 24px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -328,9 +324,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           <div style={{
             padding: 24,
-            background: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: 8,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
           }}>
             <ol style={{
               display: 'grid',
@@ -351,7 +347,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               ].map((step, index) => (
                 <li key={step} style={{
                   fontSize: 13,
-                  color: '#0f172a',
+                  color: 'var(--color-text)',
                   lineHeight: 1.5,
                   listStyleType: 'decimal',
                 }}>
@@ -359,17 +355,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </li>
               ))}
             </ol>
-
-            <p style={{
-              fontSize: 13,
-              color: '#64748b',
-              lineHeight: 1.65,
-              margin: '20px 0 0',
-              paddingTop: 20,
-              borderTop: '1px solid #cbd5e1',
-            }}>
-              The final review may include a proposed pathway, rationale, assessment basis, open issues or evidence gaps, and supporting source documents.
-            </p>
           </div>
         </section>
 
@@ -379,7 +364,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <h2 style={{
               fontSize: 14,
               fontWeight: 600,
-              color: '#64748b',
+              color: 'var(--color-text-tertiary)',
               margin: '0 0 24px',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
@@ -400,10 +385,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         alignItems: 'center',
                         gap: 12,
                         padding: '14px 16px',
-                        borderRadius: 6,
-                        background: '#ffffff',
-                        border: '1px solid #cbd5e1',
-                        transition: 'border-color 0.15s ease',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--color-bg-elevated)',
+                        border: '1px solid var(--color-border)',
+                        transition: 'border-color var(--transition-fast)',
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -411,7 +396,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           <span style={{
                             fontSize: 13,
                             fontWeight: 600,
-                            color: '#0f172a',
+                            color: 'var(--color-text)',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -419,7 +404,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             {assessment.name}
                           </span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: '#64748b' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: 'var(--color-text-tertiary)' }}>
                           {assessment.lastPathway && (
                             <span>{assessment.lastPathway}</span>
                           )}
@@ -437,16 +422,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             style={{
                               padding: '6px 12px',
                               borderRadius: 4,
-                              background: '#0f172a',
+                              background: 'var(--color-primary)',
                               border: 'none',
                               color: '#fff',
                               fontSize: 11,
                               fontWeight: 600,
                               cursor: 'pointer',
-                              transition: 'background 0.15s ease',
+                              transition: 'background var(--transition-fast)',
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#1e293b'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = '#0f172a'}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-primary-hover)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-primary)'}
                           >
                             Open
                           </button>
@@ -458,12 +443,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                             style={{
                               padding: '6px 10px',
                               borderRadius: 4,
-                              background: '#f1f5f9',
-                              border: '1px solid #cbd5e1',
-                              color: '#64748b',
+                              background: 'var(--color-bg-hover)',
+                              border: '1px solid var(--color-border)',
+                              color: 'var(--color-text-tertiary)',
                               fontSize: 11,
                               cursor: 'pointer',
-                              transition: 'all 0.15s ease',
+                              transition: 'all var(--transition-fast)',
                             }}
                           >
                             Duplicate
@@ -480,13 +465,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                 style={{
                                   padding: '6px 10px',
                                   borderRadius: 4,
-                                  background: '#fee2e2',
-                                  border: '1px solid #fca5a5',
-                                  color: '#dc2626',
+                                  background: 'var(--color-danger-bg)',
+                                  border: '1px solid var(--color-danger-border)',
+                                  color: 'var(--color-danger)',
                                   fontSize: 11,
                                   fontWeight: 600,
                                   cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
+                                  transition: 'all var(--transition-fast)',
                                 }}
                               >
                                 Confirm
@@ -496,12 +481,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                                 style={{
                                   padding: '6px 10px',
                                   borderRadius: 4,
-                                  background: '#f1f5f9',
-                                  border: '1px solid #cbd5e1',
-                                  color: '#64748b',
+                                  background: 'var(--color-bg-hover)',
+                                  border: '1px solid var(--color-border)',
+                                  color: 'var(--color-text-tertiary)',
                                   fontSize: 11,
                                   cursor: 'pointer',
-                                  transition: 'all 0.15s ease',
+                                  transition: 'all var(--transition-fast)',
                                 }}
                               >
                                 Cancel
@@ -514,12 +499,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                               style={{
                                 padding: '6px 10px',
                                 borderRadius: 4,
-                                background: '#f1f5f9',
-                                border: '1px solid #cbd5e1',
-                                color: '#94a3b8',
+                                background: 'var(--color-bg-hover)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-muted)',
                                 fontSize: 11,
                                 cursor: 'pointer',
-                                transition: 'all 0.15s ease',
+                                transition: 'all var(--transition-fast)',
                               }}
                             >
                               Delete
@@ -540,7 +525,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           <h2 style={{
             fontSize: 14,
             fontWeight: 600,
-            color: '#64748b',
+            color: 'var(--color-text-tertiary)',
             margin: '0 0 24px',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
@@ -550,13 +535,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
           <div style={{
             padding: 24,
-            background: '#ffffff',
-            border: '1px solid #cbd5e1',
-            borderRadius: 8,
+            background: 'var(--color-bg-elevated)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-md)',
           }}>
             <p style={{
               fontSize: 13,
-              color: '#475569',
+              color: 'var(--color-text-secondary)',
               lineHeight: 1.65,
               margin: 0,
             }}>
