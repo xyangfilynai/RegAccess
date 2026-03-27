@@ -432,17 +432,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             flexWrap: 'wrap',
             marginBottom: 'var(--space-xs)',
           }}>
-            <span style={{
-              fontSize: 10,
-              fontWeight: 700,
-              padding: '2px 7px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--color-bg-hover)',
-              color: 'var(--color-text-muted)',
-              letterSpacing: '0.04em',
-            }}>
-              {field.id}
-            </span>
             {field.disabled && (
               <span style={{
                 fontSize: 10,
