@@ -563,6 +563,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       </div>
 
+      <div style={{ paddingLeft: 'calc(28px + var(--space-md))' }}>
+
       {hasValidationError && (
         <div style={{
           padding: 'var(--space-sm) var(--space-md)',
@@ -853,6 +855,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           )}
         </div>
       )}
+
+      </div>
     </div>
   );
 };
