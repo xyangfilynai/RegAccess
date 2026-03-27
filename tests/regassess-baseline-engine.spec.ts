@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 /**
- * Baseline tests for the RegAssess decision engine.
+ * Baseline tests for the ChangePath decision engine.
  *
  * Adjust the import path after extraction. The target module should export:
  * - Answer

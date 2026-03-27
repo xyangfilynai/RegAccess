@@ -164,7 +164,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q3 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>What would increase your confidence in this tool&apos;s output?</legend>
+          <legend style={legendStyle}>What would increase your confidence in ChangePath&apos;s output?</legend>
           <textarea
             value={form.q3_confidence}
             onChange={e => update('q3_confidence', e.target.value)}
@@ -176,7 +176,7 @@ export const FeedbackSurvey: React.FC<FeedbackSurveyProps> = ({ onBack }) => {
 
         {/* Q4 */}
         <fieldset style={fieldsetStyle}>
-          <legend style={legendStyle}>How would you use RegAccess? (select all that apply)</legend>
+          <legend style={legendStyle}>How would you use ChangePath? (select all that apply)</legend>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
             {Q4_OPTIONS.map(option => (
               <label key={option} style={radioLabel}>

@@ -42,9 +42,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         background: 'var(--color-bg-elevated)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <img src="/logo.png" alt="RegAssess" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+          <img src="/logo.png" alt="ChangePath" style={{ width: 32, height: 32, objectFit: 'contain' }} />
           <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--color-text)', letterSpacing: '-0.01em' }}>
-            RegAssess
+            ChangePath
           </span>
         </div>
       </header>
@@ -65,7 +65,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             letterSpacing: '0.05em',
             marginBottom: 16,
           }}>
-            RegAssess
+            ChangePath
           </div>
           <h1 style={{
             fontSize: 32,
@@ -523,7 +523,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               lineHeight: 1.65,
               margin: 0,
             }}>
-              RegAssess is an early prototype intended to support structured internal assessment. It does not provide a regulatory determination and does not replace qualified regulatory, legal, clinical, quality, or engineering judgment. Outputs should be reviewed before reliance or action.
+              ChangePath is an early prototype intended to support structured internal assessment. It does not provide a regulatory determination and does not replace qualified regulatory, legal, clinical, quality, or engineering judgment. Outputs should be reviewed before reliance or action.
             </p>
           </div>
         </section>
