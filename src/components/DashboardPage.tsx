@@ -87,7 +87,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             maxWidth: 720,
             margin: 0,
           }}>
-            An early prototype for structured assessment of AI-related medical device changes. Review the authorized baseline, work through change classification and significance, and document a proposed pathway with supporting rationale and open issues.
+            An early prototype for structured assessment of AI-enabled medical device changes. Review the authorized baseline, work through change classification and significance, and document a proposed pathway with supporting rationale and open issues.
           </p>
           <div style={{
             display: 'inline-block',
@@ -437,55 +437,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </div>
               </article>
             ))}
-          </div>
-        </section>
-
-        {/* Workflow Preview Section */}
-        <section style={{ marginBottom: 72 }}>
-          <h2 style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: 'var(--color-text-tertiary)',
-            margin: '0 0 24px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}>
-            Workflow overview
-          </h2>
-
-          <div style={{
-            padding: 24,
-            background: 'var(--color-bg-elevated)',
-            border: '1px solid var(--color-border)',
-            borderRadius: 'var(--radius-md)',
-          }}>
-            <ol style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-              gap: 16,
-              margin: 0,
-              paddingLeft: 0,
-              listStylePosition: 'inside',
-            }}>
-              {[
-                'Device profile',
-                'Change classification',
-                'Regulatory significance',
-                'PCCP scope, when relevant',
-                'GenAI checks, when relevant',
-                'Population impact',
-                'Final review',
-              ].map((step, index) => (
-                <li key={step} style={{
-                  fontSize: 13,
-                  color: 'var(--color-text)',
-                  lineHeight: 1.5,
-                  listStyleType: 'decimal',
-                }}>
-                  {step}
-                </li>
-              ))}
-            </ol>
           </div>
         </section>
 
