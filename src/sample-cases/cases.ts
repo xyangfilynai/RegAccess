@@ -4,10 +4,11 @@ import type { SampleCaseDefinition } from './types';
 export const SAMPLE_CASES: SampleCaseDefinition[] = [
   {
     id: 'SC-01',
-    title: 'Chest CT calibration refit',
+    title: 'Chest CT malignancy score recalibration',
     authPathway: AuthPathway.FiveOneZeroK,
-    shortScenario: 'Probability recalibration without retraining or threshold movement.',
-    keyAmbiguity: 'Calibration changes can be mistaken for threshold or broader clinical-output changes.',
+    shortScenario: 'Recalibrates the malignancy score on chest CT without retraining the model or moving the clinical cutoff.',
+    keyAmbiguity: 'A score recalibration can look modest, but it still touches the model output clinicians rely on.',
+    tags: ['Chest CT', 'Calibration', 'Deep learning'],
     expectedPathway: Pathway.LetterToFile,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -44,10 +45,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-02',
-    title: 'Retinal normalization harmonization',
+    title: 'Retinal image normalization update',
     authPathway: AuthPathway.DeNovo,
-    shortScenario: 'Input normalization updated to reduce cleared-camera firmware drift.',
-    keyAmbiguity: 'The change can look like a new acquisition-parameter problem even though it stays inside the cleared device type.',
+    shortScenario: 'Adjusts retinal image normalization to handle firmware-related shifts on already-cleared camera families.',
+    keyAmbiguity: 'It addresses image drift on cleared cameras, but can be misread as a new acquisition change or device-type shift.',
+    tags: ['Retina', 'Preprocessing', 'Drift handling'],
     expectedPathway: Pathway.LetterToFile,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -85,10 +87,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-03',
-    title: 'Sepsis alert operating-point retune inside PCCP',
+    title: 'Sepsis alert threshold update under PCCP',
     authPathway: AuthPathway.FiveOneZeroK,
-    shortScenario: 'Alert threshold retuned within an already-authorized PCCP envelope.',
-    keyAmbiguity: 'A bounded threshold change still shifts sensitivity and workflow burden, so it cannot be treated as automatically documentation-only.',
+    shortScenario: 'Raises the sepsis alert threshold within an authorized PCCP range after false-alert burden rises in oncology care.',
+    keyAmbiguity: 'The change stays inside a preauthorized range, yet it still changes sensitivity and alert burden in practice.',
+    tags: ['Hospital alerting', 'Threshold change', 'Authorized PCCP'],
     expectedPathway: Pathway.ImplementPCCP,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -131,10 +134,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-04',
-    title: 'PMA GenAI prompt/guardrail update inside PCCP',
+    title: 'PMA GenAI safety-prompt update under PCCP',
     authPathway: AuthPathway.PMA,
-    shortScenario: 'Prompt and guardrail tightening for a PMA GenAI drafting device, executed under an authorized PCCP.',
-    keyAmbiguity: 'These are configuration changes, but they still affect PMA safety/effectiveness and GenAI behavior.',
+    shortScenario: 'Tightens LLM instructions and safety filters for a PMA drafting tool within an authorized PCCP.',
+    keyAmbiguity: 'Prompt and guardrail edits sound operational, but they still change PMA GenAI behavior.',
+    tags: ['GenAI', 'Guardrails', 'Authorized PCCP'],
     expectedPathway: Pathway.ImplementPCCP,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -180,10 +184,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-05',
-    title: 'PMA quantization for hardware refresh',
+    title: 'PMA model quantization for hardware refresh',
     authPathway: AuthPathway.PMA,
-    shortScenario: 'Quantize a PMA CNN to support a processor refresh without changing the clinical function.',
-    keyAmbiguity: 'Optimization work can still affect edge-case numerics, so it needs explicit PMA safety/effectiveness review.',
+    shortScenario: 'Quantizes a PMA arrhythmia model so it runs on refreshed bedside hardware without changing its clinical role.',
+    keyAmbiguity: 'Quantization is often framed as a runtime optimization, but edge-case numerics can still move.',
+    tags: ['Arrhythmia', 'Quantization', 'Hardware refresh'],
     expectedPathway: Pathway.PMAAnnualReport,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -216,10 +221,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-06',
-    title: 'PMA backbone deepening outside PCCP',
+    title: 'PMA echo model architecture expansion',
     authPathway: AuthPathway.PMA,
-    shortScenario: 'Deepen a PMA model within the same architecture family, but beyond the authorized PCCP boundary.',
-    keyAmbiguity: 'It looks like a bounded same-family revision, yet the existing PCCP does not actually authorize this architecture step.',
+    shortScenario: 'Adds depth and attention to a PMA echo model to improve hard views, but the current PCCP does not cover it.',
+    keyAmbiguity: 'It remains within the same broad model family, but the authorized PCCP stops short of this architecture step.',
+    tags: ['Echocardiography', 'Architecture change', 'Outside PCCP'],
     expectedPathway: Pathway.PMASupplementRequired,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [
@@ -256,10 +262,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-07',
-    title: 'Oncology RAG refresh with behavior shift',
+    title: 'Oncology assistant knowledge refresh',
     authPathway: AuthPathway.FiveOneZeroK,
-    shortScenario: 'Refresh the RAG corpus and retrieval instructions for a clinician-facing oncology GenAI system.',
-    keyAmbiguity: 'There is no base-model swap, but the retrieved knowledge still changes clinical behavior.',
+    shortScenario: 'Refreshes the knowledge base and retrieval behavior for an oncology GenAI assistant, changing how supportive-care advice is surfaced.',
+    keyAmbiguity: 'There is no base-model swap, but the updated knowledge base still changes clinically relevant behavior.',
+    tags: ['GenAI', 'RAG', 'Oncology'],
     expectedPathway: Pathway.NewSubmission,
     expectedPccpRecommendation: true,
     visibleQuestionIds: [
@@ -302,10 +309,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-08',
-    title: 'Pathology drift-correction retraining',
+    title: 'Pathology retraining for lab drift',
     authPathway: AuthPathway.DeNovo,
-    shortScenario: 'Retrain a De Novo pathology model to correct post-market drift after staining and lab-mix shifts.',
-    keyAmbiguity: 'The team can frame it as maintenance, but it is not a pure restore-to-spec fix and it materially changes model behavior.',
+    shortScenario: 'Retrains a pathology triage model after staining and lab-mix drift reduce performance on inflammatory mimics.',
+    keyAmbiguity: 'The team can call it maintenance, but it materially changes model weights and failure patterns.',
+    tags: ['Pathology', 'Retraining', 'Drift correction'],
     expectedPathway: Pathway.NewSubmission,
     expectedPccpRecommendation: true,
     visibleQuestionIds: [
@@ -340,10 +348,11 @@ export const SAMPLE_CASES: SampleCaseDefinition[] = [
   },
   {
     id: 'SC-09',
-    title: 'Prompt change with unresolved cumulative PCCP fit',
+    title: 'Medication summarizer prompt update with unclear PCCP fit',
     authPathway: AuthPathway.FiveOneZeroK,
-    shortScenario: 'Prompt rewrite plus guardrail relaxation after several prior PCCP prompt changes.',
-    keyAmbiguity: 'The individual modification can look PCCP-shaped, but cumulative impact remains unresolved.',
+    shortScenario: 'Rewrites the prompt and relaxes a refusal rule for a medication-summary LLM after several earlier PCCP prompt updates.',
+    keyAmbiguity: 'Each prompt edit can look individually manageable, but the cumulative effect of repeated changes is unresolved.',
+    tags: ['GenAI', 'Prompting', 'Cumulative change'],
     expectedPathway: Pathway.AssessmentIncomplete,
     expectedPccpRecommendation: false,
     visibleQuestionIds: [

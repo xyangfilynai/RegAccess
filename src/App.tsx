@@ -30,10 +30,12 @@ export const App: React.FC = () => {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [answers, setAnswers] = useState<Answers>(storage.loadAnswers);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(storage.loadBlockIndex);
+  const [activeSampleCaseId, setActiveSampleCaseId] = useState<string | null>(null);
 
   // Assessment management state
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
+  const isViewingSample = activeSampleCaseId !== null;
 
   // Refresh saved assessments list
   const refreshSavedAssessments = useCallback(() => {
@@ -42,13 +44,15 @@ export const App: React.FC = () => {
 
   // Persist answers to localStorage
   useEffect(() => {
+    if (isViewingSample) return;
     storage.saveAnswers(answers);
-  }, [answers]);
+  }, [answers, isViewingSample]);
 
   // Persist block index to localStorage
   useEffect(() => {
+    if (isViewingSample) return;
     storage.saveBlockIndex(currentBlockIndex);
-  }, [currentBlockIndex]);
+  }, [currentBlockIndex, isViewingSample]);
 
   // Compute derived state from answers
   const derivedState = useMemo(() => computeDerivedState(answers), [answers]);
@@ -189,13 +193,19 @@ export const App: React.FC = () => {
 
   // Reset assessment and return to dashboard
   const handleReset = useCallback(() => {
-    setAnswers({});
-    setCurrentBlockIndex(0);
+    if (isViewingSample) {
+      setAnswers(storage.loadAnswers());
+      setCurrentBlockIndex(storage.loadBlockIndex());
+    } else {
+      setAnswers({});
+      setCurrentBlockIndex(0);
+      storage.clearSession();
+    }
     setCurrentAssessmentId(null);
-    storage.clearSession();
+    setActiveSampleCaseId(null);
     setScreen('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [isViewingSample]);
 
   // Check if current block has required pathway fields answered
   const currentBlockComplete = useMemo(() => {
@@ -282,6 +292,7 @@ export const App: React.FC = () => {
     setAnswers(assessment.answers);
     setCurrentBlockIndex(assessment.blockIndex);
     setCurrentAssessmentId(assessment.id);
+    setActiveSampleCaseId(null);
     setValidationErrors({});
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -334,6 +345,7 @@ export const App: React.FC = () => {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
+    setActiveSampleCaseId(sampleCaseId);
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
@@ -343,13 +355,16 @@ export const App: React.FC = () => {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
+    setActiveSampleCaseId(null);
     storage.clearSession();
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleResume = useCallback(() => {
-    // Answers and block index are already loaded from localStorage
+    setAnswers(storage.loadAnswers());
+    setCurrentBlockIndex(storage.loadBlockIndex());
+    setActiveSampleCaseId(null);
     setScreen('assess');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);

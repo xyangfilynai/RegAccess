@@ -256,7 +256,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             margin: '0 0 24px',
             maxWidth: 720,
           }}>
-            Open one of the nine source-controlled AI/ML change cases to inspect the live branching logic, pathway determination, and PCCP recommendation behavior before starting a live assessment.
+            Browse nine realistic AI/ML change-review scenarios to see how the current workflow routes them. Samples open from source-controlled answers and do not replace the in-progress draft saved in this browser.
           </p>
 
           <div style={{
@@ -297,19 +297,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     }}>
                       {sampleCase.authPathway}
                     </span>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      padding: '4px 8px',
-                      borderRadius: 999,
-                      background: 'var(--color-bg-hover)',
-                      border: '1px solid var(--color-border)',
-                      color: 'var(--color-text-tertiary)',
-                      fontSize: 11,
-                      fontWeight: 600,
-                    }}>
-                      {sampleCase.expectedPathway}
-                    </span>
                   </div>
                   <span style={{
                     fontSize: 11,
@@ -335,34 +322,98 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     fontSize: 13,
                     color: 'var(--color-text-secondary)',
                     lineHeight: 1.55,
-                    margin: '0 0 10px',
-                  }}>
-                    {sampleCase.shortScenario}
-                  </p>
-                  <p style={{
-                    fontSize: 12,
-                    color: 'var(--color-text-tertiary)',
-                    lineHeight: 1.55,
                     margin: 0,
                   }}>
-                    <strong>Key ambiguity:</strong> {sampleCase.keyAmbiguity}
+                    {sampleCase.shortScenario}
                   </p>
                 </div>
 
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
+                  display: 'grid',
                   gap: 12,
+                }}>
+                  <div>
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: 'var(--color-text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: 6,
+                    }}>
+                      Expected outcome
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 8px',
+                        borderRadius: 999,
+                        background: 'var(--color-bg-hover)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-tertiary)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                      }}>
+                        {sampleCase.expectedPathway}
+                      </span>
+                      {sampleCase.expectedPccpRecommendation && (
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '4px 8px',
+                          borderRadius: 999,
+                          background: 'var(--color-info-bg)',
+                          border: '1px solid var(--color-info-border)',
+                          color: 'var(--color-primary)',
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}>
+                          Recommends PCCP
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: 'var(--color-text-muted)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      marginBottom: 6,
+                    }}>
+                      Tags
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {sampleCase.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '4px 8px',
+                            borderRadius: 999,
+                            background: 'var(--color-bg)',
+                            border: '1px solid var(--color-border)',
+                            color: 'var(--color-text-secondary)',
+                            fontSize: 11,
+                            fontWeight: 500,
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
                   marginTop: 'auto',
                 }}>
-                  <span style={{
-                    fontSize: 12,
-                    color: sampleCase.expectedPccpRecommendation ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                    fontWeight: 500,
-                  }}>
-                    {sampleCase.expectedPccpRecommendation ? 'Engine recommends PCCP' : 'No PCCP recommendation'}
-                  </span>
                   <button
                     onClick={() => onOpenSampleCase(sampleCase.id)}
                     data-testid={`sample-case-open-${sampleCase.id}`}

@@ -1,14 +1,24 @@
 import React from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DashboardPage } from '../src/components/DashboardPage';
 import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
+import { App } from '../src/App';
 import { Answer, computeDetermination, type Block, type AssessmentField } from '../src/lib/assessment-engine';
+import { storage } from '../src/lib/storage';
 import { SAMPLE_CASES } from '../src/sample-cases';
 
 describe('UI workflow', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    Object.defineProperty(window, 'scrollTo', {
+      value: vi.fn(),
+      writable: true,
+    });
+  });
+
   it('prioritizes continuing existing work ahead of starting a new assessment', () => {
     render(
       <DashboardPage
@@ -42,10 +52,32 @@ describe('UI workflow', () => {
     expect(screen.getByText('Sample library')).toBeInTheDocument();
     expect(screen.getByText(SAMPLE_CASES[0].title)).toBeInTheDocument();
     expect(screen.getByTestId(`sample-case-open-${SAMPLE_CASES[0].id}`)).toBeInTheDocument();
-    expect(screen.getByText(/structured internal assessment/i)).toBeInTheDocument();
+    expect(screen.getByText(/browse nine realistic ai\/ml change-review scenarios/i)).toBeInTheDocument();
+    expect(screen.getAllByText('Expected outcome').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Tags').length).toBeGreaterThan(0);
+    expect(screen.getByText(SAMPLE_CASES[0].tags[0])).toBeInTheDocument();
     expect(
       resumeButton.compareDocumentPosition(fullAssessmentButton) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('preserves the resumable browser draft when a sample is opened', () => {
+    const savedAnswers = {
+      A1: '510(k)',
+      A1b: 'K009999',
+      A1c: 'Saved live draft',
+      A2: 'No',
+    };
+
+    storage.saveAnswers(savedAnswers);
+    storage.saveBlockIndex(2);
+
+    render(<App />);
+
+    fireEvent.click(screen.getByTestId(`sample-case-open-${SAMPLE_CASES[0].id}`));
+
+    expect(storage.loadAnswers()).toEqual(savedAnswers);
+    expect(storage.loadBlockIndex()).toBe(2);
   });
 
   it('keeps supporting field context collapsed until the user asks for it', () => {

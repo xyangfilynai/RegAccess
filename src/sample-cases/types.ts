@@ -9,6 +9,7 @@ export interface SampleCaseDefinition {
   authPathway: AuthPathwayValue;
   shortScenario: string;
   keyAmbiguity: string;
+  tags: string[];
   expectedPathway: PathwayValue;
   expectedPccpRecommendation: boolean;
   visibleQuestionIds: string[];

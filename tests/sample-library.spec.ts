@@ -30,6 +30,15 @@ describe('source-controlled sample library', () => {
     expect(SAMPLE_CASES).toHaveLength(9);
   });
 
+  it('stores polished metadata for every sample', () => {
+    for (const sampleCase of SAMPLE_CASES) {
+      expect(sampleCase.title.trim().length).toBeGreaterThan(0);
+      expect(sampleCase.shortScenario.trim().length).toBeGreaterThan(0);
+      expect(sampleCase.tags.length).toBeGreaterThan(0);
+      expect(sampleCase.tags.every((tag) => tag.trim().length > 0)).toBe(true);
+    }
+  });
+
   it('covers all 6 pathway outcomes', () => {
     const coveredPathways = new Set(SAMPLE_CASES.map((sampleCase) => sampleCase.expectedPathway));
     expect(coveredPathways).toEqual(
