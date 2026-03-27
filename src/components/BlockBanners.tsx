@@ -52,10 +52,10 @@ export const BlockBanners: React.FC<BlockBannersProps> = ({
           <Icon name="alertCircle" size={15} color="var(--color-warning)" style={{ marginTop: 1 }} />
           <div>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-warning)' }}>
-              {currentMissingRequired} required field{currentMissingRequired === 1 ? '' : 's'} incomplete in this section
+              {currentMissingRequired} pathway-critical field{currentMissingRequired === 1 ? '' : 's'} incomplete in this section
             </span>
             <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-              Complete items marked <strong>Required</strong> to continue. Optional fields add context for review and records.
+              Complete items marked <strong>Pathway-critical</strong> to continue. Optional fields add context for review and records.
             </div>
           </div>
         </div>
@@ -138,7 +138,7 @@ export const BlockBanners: React.FC<BlockBannersProps> = ({
           color: 'var(--color-text-secondary)',
           lineHeight: 1.55,
         }}>
-          {'Answers of "Uncertain" are treated as significant for pathway determination. Complete the remaining fields and document the rationale in your change record.'}
+          {'One or more significance fields are marked "Uncertain." As a conservative policy, ChangePath treats unresolved uncertainty as significant for pathway purposes. Resolve through evidence or expert review where possible, and document the rationale in your change record.'}
         </div>
       )}
 
@@ -171,13 +171,26 @@ export const BlockBanners: React.FC<BlockBannersProps> = ({
                 fontSize: 13,
                 fontWeight: 600,
                 color: isEligible ? 'var(--color-success)' : isConditional ? 'var(--color-warning)' : 'var(--color-danger)',
+                display: 'block',
+                marginBottom: 4,
               }}>
-                PCCP suitability (change type only) for {`"${answers.B2 as string}"`}:{' '}
-                {pccpStatus === 'TYPICAL' ? 'Often compatible with PCCP if the change is pre-described, bounded, and validated prospectively'
-                  : pccpStatus === 'EXEMPT' ? 'PCCP is typically not the primary mechanism for documentation-only cybersecurity or restore-to-spec pathways'
-                  : pccpStatus === 'CONDITIONAL' ? 'May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized'
-                  : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit a PCCP without a new authorization scope'
-                  : 'Outside typical PCCP scope under current FDA PCCP policy for this change pattern'}
+                PCCP suitability for {`"${answers.B2 as string}"`}:{' '}
+                {pccpStatus === 'TYPICAL' ? 'Often compatible'
+                  : pccpStatus === 'EXEMPT' ? 'Not the primary mechanism'
+                  : pccpStatus === 'CONDITIONAL' ? 'Conditional'
+                  : pccpStatus === 'UNLIKELY' ? 'Unlikely'
+                  : 'Outside typical scope'}
+              </span>
+              <span style={{
+                fontSize: 12.5,
+                fontWeight: 400,
+                color: 'var(--color-text-secondary)',
+              }}>
+                {pccpStatus === 'TYPICAL' ? 'This change type is often compatible with PCCP when the change is pre-described, bounded, and validated prospectively.'
+                  : pccpStatus === 'EXEMPT' ? 'PCCP is typically not the primary mechanism for documentation-only cybersecurity or restore-to-specification pathways.'
+                  : pccpStatus === 'CONDITIONAL' ? 'May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized.'
+                  : pccpStatus === 'UNLIKELY' ? 'Unlikely to fit a PCCP without a new authorization scope.'
+                  : 'Outside typical PCCP scope under current FDA PCCP policy for this change pattern.'}
               </span>
               {pccpNote && (
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>

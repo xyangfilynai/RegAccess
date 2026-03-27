@@ -119,9 +119,9 @@ const getSections = (
           'Draft LTF with change description and rationale',
           `Document regulatory basis (${
             isCyberOnly
-              ? 'Cybersecurity Exemption — no functional impact'
+              ? 'cybersecurity-only change per FDA SW Change Guidance Q1 — no functional impact'
               : isBugFix
-                ? 'Restore-to-Spec Exemption — restore to cleared specification'
+                ? 'restore to cleared specification per FDA SW Change Guidance Q2'
                 : 'non-significant per regulatory significance assessment'
           })`,
           'Update SBOM',
@@ -366,7 +366,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             lineHeight: 1.6,
             marginBottom: 20,
           }}>
-            Required fields are still open. Return to the assessment and complete them before using the preparation checklist.
+            Pathway-critical fields are still open. Return to the assessment and complete them before using the preparation checklist.
           </p>
           <button
             onClick={onBackToAssessment}
@@ -634,7 +634,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                   <strong>Authorization ID:</strong> {answers.A1b as string || 'Not specified'}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-                  <strong>PCCP status:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP on file' : answers.A2 === Answer.No ? 'No authorized PCCP' : 'Not specified'}
+                  <strong>PCCP:</strong> {answers.A2 === Answer.Yes ? 'Authorized PCCP on file' : answers.A2 === Answer.No ? 'No authorized PCCP' : 'Not specified'}
                 </div>
               </div>
             </div>

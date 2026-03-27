@@ -149,7 +149,7 @@ describe('UI workflow', () => {
       </Layout>
     );
 
-    expect(screen.getByText('Required fields')).toBeInTheDocument();
+    expect(screen.getByText('Pathway-critical')).toBeInTheDocument();
     expect(screen.getAllByText('2/4').length).toBeGreaterThan(0);
     expect(screen.queryByText('Authorization')).not.toBeInTheDocument();
 
@@ -178,7 +178,7 @@ describe('UI workflow', () => {
     );
 
     expect(screen.getByText('Authorization')).toBeInTheDocument();
-    expect(screen.getByText('All required fields complete')).toBeInTheDocument();
+    expect(screen.getByText('All pathway-critical fields complete')).toBeInTheDocument();
     expect(screen.queryByPlaceholderText(/working title/i)).not.toBeInTheDocument();
   });
 

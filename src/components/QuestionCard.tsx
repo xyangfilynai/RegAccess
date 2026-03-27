@@ -319,7 +319,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             value={localText}
             onChange={(e) => setLocalText(e.target.value)}
             onBlur={commitText}
-            placeholder="Numeric value"
+            placeholder={field.id === 'A8' ? 'e.g., 0, 5, 12' : 'Enter a number'}
             style={{
               width: 160,
               padding: 'var(--space-md)',
@@ -380,7 +380,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           color: 'var(--color-text-muted)',
         }}>
           <Icon name="alert" size={12} />
-          Not applicable based on earlier answers
+          Skipped — not applicable based on earlier answers
         </div>
       )}
       {/* Field header */}
@@ -452,7 +452,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 verticalAlign: 'middle',
                 whiteSpace: 'nowrap',
               }}>
-                Required
+                Pathway-critical
               </span>
             )}
             {field.critical && !field.pathwayCritical && (
@@ -568,7 +568,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           fontSize: 12,
           fontWeight: 500,
         }}>
-          This required field must be completed before you can continue.
+          This pathway-critical field must be completed before you can continue.
         </div>
       )}
 

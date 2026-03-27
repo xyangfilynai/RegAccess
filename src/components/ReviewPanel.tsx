@@ -419,7 +419,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
     if (isIncomplete) {
       return {
         label: 'Not ready yet',
-        detail: 'Required or threshold items are still open, so the pathway should not be treated as final.',
+        detail: 'Pathway-critical fields are still open, so the pathway should not be treated as final.',
         bg: '#fff7ed',
         border: '#fdba74',
         text: '#9a3412',
