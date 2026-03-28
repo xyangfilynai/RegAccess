@@ -3,8 +3,6 @@
  *
  * Converts a PdfReportDocument model into a professional .docx file
  * suitable for enterprise medical-device compliance documentation.
- * Uses the docx library which handles pagination, typography, and
- * layout natively — producing cleaner output than manual PDF layout.
  */
 
 import {
@@ -17,56 +15,106 @@ import {
   WidthType,
   AlignmentType,
   BorderStyle,
-  HeadingLevel,
   ShadingType,
   Header,
   Footer,
   PageNumber,
-  NumberFormat,
+  LevelFormat,
   TabStopPosition,
   TabStopType,
   TableLayoutType,
-  convertInchesToTwip,
   Packer,
 } from 'docx';
 import type {
   PdfReportDocument,
   PdfOpenIssue,
   PdfSourceCitation,
-  PdfAssessmentBasisFact,
 } from './pdf-report-model';
+
+/* ------------------------------------------------------------------ */
+/*  Layout constants (DXA: 1440 = 1 inch)                              */
+/* ------------------------------------------------------------------ */
+
+const PAGE_WIDTH = 12240;   // 8.5" US Letter
+const PAGE_HEIGHT = 15840;  // 11"
+const MARGIN = 1440;        // 1" margins
+const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2; // 9360 DXA
+
+const FONT = 'Calibri';
+
+/* Column width presets (DXA, must sum to CONTENT_WIDTH) */
+const COL = {
+  titleLabel: 1870,   // ~20%
+  titleValue: CONTENT_WIDTH - 1870,
+  mainLabel: 2620,    // ~28%
+  mainValue: CONTENT_WIDTH - 2620,
+  factLabel: 3000,    // ~32%
+  factValue: CONTENT_WIDTH - 3000,
+  issueLabel: 2060,   // ~22%
+  issueValue: CONTENT_WIDTH - 2060,
+  closingLabel: 2060,
+  closingValue: CONTENT_WIDTH - 2060,
+};
 
 /* ------------------------------------------------------------------ */
 /*  Style constants                                                    */
 /* ------------------------------------------------------------------ */
 
-const COLORS = {
+const C = {
   text: '212529',
-  textSecondary: '6C757D',
-  textMuted: '939BA4',
+  secondary: '6C757D',
+  muted: '939BA4',
   accent: '343A40',
   border: 'C8CCD2',
   lightBg: 'F6F8FA',
   tagBg: 'E8ECF0',
   white: 'FFFFFF',
-  missingText: 'AFAFAF',
+  missing: 'AFAFAF',
 };
 
-const FONT_FAMILY = 'Calibri';
+const CELL_PAD = { top: 40, bottom: 40, left: 100, right: 100 };
+const CELL_PAD_LABEL = { top: 40, bottom: 40, left: 0, right: 100 };
 
-const noBorders = {
-  top: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-  bottom: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-  left: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-  right: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
+const NO_BORDER = { style: BorderStyle.NONE, size: 0, color: C.white };
+const NO_BORDERS = { top: NO_BORDER, bottom: NO_BORDER, left: NO_BORDER, right: NO_BORDER };
+const NO_TABLE_BORDERS = {
+  ...NO_BORDERS,
+  insideHorizontal: NO_BORDER,
+  insideVertical: NO_BORDER,
 };
 
-const bottomBorderOnly = {
-  top: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-  bottom: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border },
-  left: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-  right: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-};
+/* ------------------------------------------------------------------ */
+/*  Numbering config                                                   */
+/* ------------------------------------------------------------------ */
+
+const NUMBERING_CONFIGS = [
+  {
+    reference: 'main-numbered',
+    levels: [{
+      level: 0,
+      format: LevelFormat.DECIMAL,
+      text: '%1.',
+      alignment: AlignmentType.START,
+      style: {
+        run: { font: FONT, size: 18, bold: true, color: C.secondary },
+        paragraph: { indent: { left: 500, hanging: 360 } },
+      },
+    }],
+  },
+  {
+    reference: 'source-numbered',
+    levels: [{
+      level: 0,
+      format: LevelFormat.DECIMAL,
+      text: '%1.',
+      alignment: AlignmentType.START,
+      style: {
+        run: { font: FONT, size: 17, bold: true, color: C.secondary },
+        paragraph: { indent: { left: 500, hanging: 360 } },
+      },
+    }],
+  },
+];
 
 /* ------------------------------------------------------------------ */
 /*  Helper builders                                                    */
@@ -76,204 +124,138 @@ function formatTimestamp(iso: string): string {
   try {
     const d = new Date(iso);
     return d.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZoneName: 'short',
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
     });
-  } catch {
-    return iso;
-  }
+  } catch { return iso; }
 }
 
 function formatDateShort(iso: string): string {
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return iso; }
 }
 
-/** Creates a section-heading paragraph with a top border rule. */
-function sectionHeading(title: string): Paragraph {
+/** Section heading with top border rule. */
+function heading(title: string): Paragraph {
   return new Paragraph({
-    spacing: { before: 280, after: 80 },
-    border: {
-      top: { style: BorderStyle.SINGLE, size: 6, color: COLORS.border, space: 6 },
-    },
-    children: [
-      new TextRun({
-        text: title,
-        font: FONT_FAMILY,
-        size: 24,
-        bold: true,
-        color: COLORS.accent,
-      }),
-    ],
+    spacing: { before: 300, after: 100 },
+    border: { top: { style: BorderStyle.SINGLE, size: 6, color: C.border, space: 8 } },
+    children: [new TextRun({ text: title, font: FONT, size: 24, bold: true, color: C.accent })],
   });
 }
 
-/** Creates a subheading paragraph. */
+/** Subheading. */
 function subheading(title: string): Paragraph {
   return new Paragraph({
-    spacing: { before: 160, after: 60 },
-    children: [
-      new TextRun({
-        text: title,
-        font: FONT_FAMILY,
-        size: 21,
-        bold: true,
-        color: COLORS.text,
-      }),
-    ],
+    spacing: { before: 180, after: 60 },
+    children: [new TextRun({ text: title, font: FONT, size: 20, bold: true, color: C.text })],
   });
 }
 
-/** Creates an italicized section note. */
-function sectionNote(text: string): Paragraph {
+/** Italic section note. */
+function note(text: string): Paragraph {
   return new Paragraph({
     spacing: { before: 0, after: 80 },
-    children: [
-      new TextRun({
-        text,
-        font: FONT_FAMILY,
-        size: 15,
-        italics: true,
-        color: COLORS.textMuted,
-      }),
-    ],
+    children: [new TextRun({ text, font: FONT, size: 16, italics: true, color: C.muted })],
   });
 }
 
-/** Creates a body-text paragraph. */
-function bodyText(text: string, options?: { secondary?: boolean; indent?: number }): Paragraph {
+/** Body text paragraph. */
+function body(text: string, opts?: { secondary?: boolean; indent?: number }): Paragraph {
   return new Paragraph({
-    spacing: { before: 20, after: 60 },
-    indent: options?.indent ? { left: options.indent } : undefined,
-    children: [
-      new TextRun({
-        text,
-        font: FONT_FAMILY,
-        size: 19,
-        color: options?.secondary ? COLORS.textSecondary : COLORS.text,
-      }),
-    ],
+    spacing: { before: 20, after: 80 },
+    indent: opts?.indent ? { left: opts.indent } : undefined,
+    children: [new TextRun({
+      text, font: FONT, size: 19,
+      color: opts?.secondary ? C.secondary : C.text,
+    })],
   });
 }
 
-/** Creates a label-value table row (borderless, two-column aligned). */
-function labelValueRow(
-  label: string,
-  value: string,
-  isMissing = false,
-  labelWidthPct = 28,
-): TableRow {
-  return new TableRow({
-    children: [
-      new TableCell({
-        width: { size: labelWidthPct, type: WidthType.PERCENTAGE },
-        borders: noBorders,
-        margins: { top: 20, bottom: 20, right: 80 },
-        children: [
-          new Paragraph({
-            spacing: { before: 0, after: 0 },
-            children: [
-              new TextRun({
-                text: label,
-                font: FONT_FAMILY,
-                size: 17,
-                bold: true,
-                color: COLORS.textSecondary,
-              }),
-            ],
-          }),
-        ],
-      }),
-      new TableCell({
-        width: { size: 100 - labelWidthPct, type: WidthType.PERCENTAGE },
-        borders: noBorders,
-        margins: { top: 20, bottom: 20 },
-        children: [
-          new Paragraph({
-            spacing: { before: 0, after: 0 },
-            children: [
-              new TextRun({
-                text: value,
-                font: FONT_FAMILY,
-                size: 19,
-                color: isMissing ? COLORS.missingText : COLORS.text,
-              }),
-            ],
-          }),
-        ],
-      }),
-    ],
-  });
-}
-
-/** Creates a borderless two-column table from label-value pairs. */
-function labelValueTable(
+/** Two-column label-value table. DXA widths required. */
+function kvTable(
   items: Array<{ label: string; value: string; isMissing?: boolean }>,
-  labelWidthPct = 28,
+  labelW: number,
+  valueW: number,
 ): Table {
   return new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
+    width: { size: CONTENT_WIDTH, type: WidthType.DXA },
+    columnWidths: [labelW, valueW],
     layout: TableLayoutType.FIXED,
-    borders: {
-      top: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      bottom: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      left: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      right: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      insideHorizontal: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      insideVertical: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-    },
+    borders: NO_TABLE_BORDERS,
     rows: items.map((item) =>
-      labelValueRow(item.label, item.value, item.isMissing, labelWidthPct),
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: labelW, type: WidthType.DXA },
+            borders: NO_BORDERS,
+            margins: CELL_PAD_LABEL,
+            children: [new Paragraph({
+              spacing: { before: 0, after: 0 },
+              children: [new TextRun({
+                text: item.label, font: FONT, size: 17, bold: true, color: C.secondary,
+              })],
+            })],
+          }),
+          new TableCell({
+            width: { size: valueW, type: WidthType.DXA },
+            borders: NO_BORDERS,
+            margins: CELL_PAD,
+            children: [new Paragraph({
+              spacing: { before: 0, after: 0 },
+              children: [new TextRun({
+                text: item.value, font: FONT, size: 19,
+                color: item.isMissing ? C.missing : C.text,
+              })],
+            })],
+          }),
+        ],
+      }),
     ),
   });
 }
 
-/** Creates a numbered list. */
-function numberedList(items: string[], fontSize = 19): Paragraph[] {
-  return items.map((item, i) =>
+/** Stacked label (label on top, value below indented). For long-text fields. */
+function stackedField(label: string, value: string, isMissing = false): Paragraph[] {
+  return [
+    new Paragraph({
+      spacing: { before: 100, after: 20 },
+      children: [new TextRun({ text: label, font: FONT, size: 17, bold: true, color: C.secondary })],
+    }),
+    new Paragraph({
+      spacing: { before: 0, after: 80 },
+      indent: { left: 280 },
+      children: [new TextRun({
+        text: value, font: FONT, size: 19,
+        color: isMissing ? C.missing : C.text,
+      })],
+    }),
+  ];
+}
+
+/** Numbered list items using proper Word numbering. */
+function numberedItems(
+  items: string[],
+  ref: string,
+  fontSize = 19,
+): Paragraph[] {
+  return items.map((item) =>
     new Paragraph({
       spacing: { before: 20, after: 40 },
-      indent: { left: convertInchesToTwip(0.35), hanging: convertInchesToTwip(0.25) },
-      children: [
-        new TextRun({
-          text: `${i + 1}.  `,
-          font: FONT_FAMILY,
-          size: fontSize,
-          bold: true,
-          color: COLORS.textSecondary,
-        }),
-        new TextRun({
-          text: item,
-          font: FONT_FAMILY,
-          size: fontSize,
-          color: COLORS.text,
-        }),
-      ],
+      numbering: { reference: ref, level: 0 },
+      children: [new TextRun({ text: item, font: FONT, size: fontSize, color: C.text })],
     }),
   );
 }
 
-/** Creates a tag-style inline badge. */
-function tagRun(label: string): TextRun {
+/** Tag-style badge inline. */
+function tag(label: string): TextRun {
   return new TextRun({
     text: ` ${label} `,
-    font: FONT_FAMILY,
-    size: 15,
-    bold: true,
-    color: COLORS.textSecondary,
-    shading: { type: ShadingType.CLEAR, fill: COLORS.tagBg, color: COLORS.tagBg },
+    font: FONT, size: 15, bold: true, color: C.secondary,
+    shading: { type: ShadingType.CLEAR, fill: C.tagBg, color: C.tagBg },
   });
 }
 
@@ -281,515 +263,300 @@ function tagRun(label: string): TextRun {
 /*  Section builders                                                   */
 /* ------------------------------------------------------------------ */
 
-function buildTitleSection(doc: PdfReportDocument): (Paragraph | Table)[] {
-  const elements: (Paragraph | Table)[] = [];
+function buildTitle(doc: PdfReportDocument): (Paragraph | Table)[] {
+  const els: (Paragraph | Table)[] = [];
 
-  // Document kicker
-  elements.push(
-    new Paragraph({
-      spacing: { before: 0, after: 40 },
-      children: [
-        new TextRun({
-          text: 'INTERNAL ASSESSMENT SUPPORT RECORD',
-          font: FONT_FAMILY,
-          size: 15,
-          bold: true,
-          color: COLORS.textMuted,
-          characterSpacing: 60,
-        }),
-      ],
-    }),
-  );
+  els.push(new Paragraph({
+    spacing: { before: 0, after: 60 },
+    children: [new TextRun({
+      text: 'INTERNAL ASSESSMENT SUPPORT RECORD',
+      font: FONT, size: 15, bold: true, color: C.muted, characterSpacing: 60,
+    })],
+  }));
 
-  // Main title
-  elements.push(
-    new Paragraph({
-      spacing: { before: 0, after: 60 },
-      children: [
-        new TextRun({
-          text: doc.header.title,
-          font: FONT_FAMILY,
-          size: 32,
-          bold: true,
-          color: COLORS.text,
-        }),
-      ],
-    }),
-  );
+  els.push(new Paragraph({
+    spacing: { before: 0, after: 80 },
+    children: [new TextRun({
+      text: doc.header.title,
+      font: FONT, size: 32, bold: true, color: C.text,
+    })],
+  }));
 
-  // Provenance line
-  elements.push(
-    new Paragraph({
-      spacing: { before: 0, after: 140 },
-      children: [
-        new TextRun({
-          text: `Prepared from the current assessment record in ${doc.header.subtitle}.`,
-          font: FONT_FAMILY,
-          size: 19,
-          color: COLORS.textSecondary,
-        }),
-      ],
-    }),
-  );
+  els.push(new Paragraph({
+    spacing: { before: 0, after: 160 },
+    children: [new TextRun({
+      text: `Prepared from the current assessment record in ${doc.header.subtitle}.`,
+      font: FONT, size: 19, color: C.secondary,
+    })],
+  }));
 
-  // Metadata table
-  const metaItems: Array<{ label: string; value: string }> = [];
-  if (doc.header.assessmentName) {
-    metaItems.push({ label: 'Assessment', value: doc.header.assessmentName });
-  }
-  if (doc.header.assessmentId) {
-    metaItems.push({ label: 'ID', value: doc.header.assessmentId });
-  }
-  metaItems.push(
+  const meta: Array<{ label: string; value: string }> = [];
+  if (doc.header.assessmentName) meta.push({ label: 'Assessment', value: doc.header.assessmentName });
+  if (doc.header.assessmentId) meta.push({ label: 'ID', value: doc.header.assessmentId });
+  meta.push(
     { label: 'Pathway', value: doc.executiveSummary.pathwayLabel },
     { label: 'Status', value: doc.header.assessmentStatus },
     { label: 'Generated', value: formatTimestamp(doc.header.generatedAt) },
   );
+  els.push(kvTable(meta, COL.titleLabel, COL.titleValue));
 
-  elements.push(labelValueTable(metaItems, 18));
-
-  return elements;
+  return els;
 }
 
-function buildExecutiveSummary(doc: PdfReportDocument): (Paragraph | Table)[] {
-  const elements: (Paragraph | Table)[] = [];
-  const summary = doc.executiveSummary;
+function buildSummary(doc: PdfReportDocument): (Paragraph | Table)[] {
+  const els: (Paragraph | Table)[] = [];
+  const s = doc.executiveSummary;
 
-  elements.push(sectionHeading('Assessment Summary'));
+  els.push(heading('Assessment Summary'));
 
-  if (summary.isIncomplete) {
-    elements.push(
-      new Paragraph({
-        spacing: { before: 40, after: 100 },
-        shading: { type: ShadingType.CLEAR, fill: COLORS.lightBg, color: COLORS.lightBg },
-        border: {
-          top: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border },
-          bottom: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border },
-          left: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border },
-          right: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border },
-        },
-        children: [
-          new TextRun({
-            text: 'Record status notice: ',
-            font: FONT_FAMILY,
-            size: 17,
-            bold: true,
-            color: COLORS.text,
-          }),
-          new TextRun({
-            text: 'Pathway-critical items remain unresolved; do not treat the current record as a supported pathway conclusion.',
-            font: FONT_FAMILY,
-            size: 17,
-            color: COLORS.text,
-          }),
-        ],
-      }),
-    );
+  if (s.isIncomplete) {
+    els.push(new Paragraph({
+      spacing: { before: 40, after: 120 },
+      shading: { type: ShadingType.CLEAR, fill: C.lightBg, color: C.lightBg },
+      border: {
+        top: { style: BorderStyle.SINGLE, size: 4, color: C.border },
+        bottom: { style: BorderStyle.SINGLE, size: 4, color: C.border },
+        left: { style: BorderStyle.SINGLE, size: 4, color: C.border },
+        right: { style: BorderStyle.SINGLE, size: 4, color: C.border },
+      },
+      children: [
+        new TextRun({ text: 'Record status notice: ', font: FONT, size: 17, bold: true, color: C.text }),
+        new TextRun({
+          text: 'Pathway-critical items remain unresolved; do not treat the current record as a supported pathway conclusion.',
+          font: FONT, size: 17, color: C.text,
+        }),
+      ],
+    }));
   }
 
-  elements.push(
-    labelValueTable([
-      { label: 'Record Status', value: summary.recordStatus },
-      { label: 'Conditions for Reliance', value: summary.relianceQualification },
-      { label: 'Recommended Next Action', value: summary.primaryNextAction },
-    ]),
-  );
+  els.push(kvTable([
+    { label: 'Record Status', value: s.recordStatus },
+    { label: 'Conditions for Reliance', value: s.relianceQualification },
+    { label: 'Recommended Next Action', value: s.primaryNextAction },
+  ], COL.mainLabel, COL.mainValue));
 
-  elements.push(subheading('Conclusion'));
-  elements.push(bodyText(summary.pathwayConclusion));
+  els.push(subheading('Conclusion'));
+  els.push(body(s.pathwayConclusion));
 
-  if (summary.summaryStatement && summary.summaryStatement !== summary.pathwayConclusion) {
-    elements.push(subheading('Analytical Summary'));
-    elements.push(
-      sectionNote(
-        'System-generated summary derived from the assessment logic; review against the record facts and cited sources.',
-      ),
-    );
-    elements.push(bodyText(summary.summaryStatement));
+  if (s.summaryStatement && s.summaryStatement !== s.pathwayConclusion) {
+    els.push(subheading('Analytical Summary'));
+    els.push(note('System-generated summary derived from the assessment logic; review against the record facts and cited sources.'));
+    els.push(body(s.summaryStatement));
   }
 
-  return elements;
+  return els;
 }
 
-function buildAssessmentBasis(doc: PdfReportDocument): (Paragraph | Table)[] {
-  const elements: (Paragraph | Table)[] = [];
-  const basis = doc.assessmentBasis;
+function buildBasis(doc: PdfReportDocument): (Paragraph | Table)[] {
+  const els: (Paragraph | Table)[] = [];
+  const b = doc.assessmentBasis;
 
-  elements.push(sectionHeading('Assessment Basis'));
+  els.push(heading('Assessment Basis'));
+  els.push(subheading('Record Facts'));
+  els.push(note('Copied from the assessment record as entered. Missing fields are shown as "Not provided."'));
 
-  elements.push(subheading('Record Facts'));
-  elements.push(
-    sectionNote(
-      'Copied from the assessment record as entered. Missing fields are shown as "Not provided."',
-    ),
-  );
-
-  // Split record facts: short fields go in a table, long-text fields get stacked
-  const shortFacts = basis.recordFacts.filter((f) => !f.isLongText);
-  const longFacts = basis.recordFacts.filter((f) => f.isLongText);
+  const shortFacts = b.recordFacts.filter((f) => !f.isLongText);
+  const longFacts = b.recordFacts.filter((f) => f.isLongText);
 
   if (shortFacts.length > 0) {
-    elements.push(
-      labelValueTable(
-        shortFacts.map((f) => ({ label: f.label, value: f.value, isMissing: f.isMissing })),
-        32,
-      ),
-    );
+    els.push(kvTable(
+      shortFacts.map((f) => ({ label: f.label, value: f.value, isMissing: f.isMissing })),
+      COL.factLabel, COL.factValue,
+    ));
   }
 
-  // Long-text fields: label on its own line, value below with indent
-  longFacts.forEach((fact) => {
-    elements.push(
-      new Paragraph({
-        spacing: { before: 80, after: 20 },
-        children: [
-          new TextRun({
-            text: fact.label,
-            font: FONT_FAMILY,
-            size: 17,
-            bold: true,
-            color: COLORS.textSecondary,
-          }),
-        ],
-      }),
-    );
-    elements.push(
-      new Paragraph({
-        spacing: { before: 0, after: 60 },
-        indent: { left: convertInchesToTwip(0.2) },
-        children: [
-          new TextRun({
-            text: fact.value,
-            font: FONT_FAMILY,
-            size: 19,
-            color: fact.isMissing ? COLORS.missingText : COLORS.text,
-          }),
-        ],
-      }),
-    );
+  longFacts.forEach((f) => {
+    els.push(...stackedField(f.label, f.value, f.isMissing));
   });
 
-  if (basis.systemGeneratedBasis.length > 0) {
-    elements.push(subheading('Derived Assessment Basis'));
-    elements.push(
-      sectionNote(
-        'Derived by ChangePath from the recorded answers and decision logic. Analytical support, not source evidence.',
-      ),
-    );
-    elements.push(...numberedList(basis.systemGeneratedBasis));
+  if (b.systemGeneratedBasis.length > 0) {
+    els.push(subheading('Derived Assessment Basis'));
+    els.push(note('Derived by ChangePath from the recorded answers and decision logic. Analytical support, not source evidence.'));
+    els.push(...numberedItems(b.systemGeneratedBasis, 'main-numbered'));
   }
 
-  return elements;
+  return els;
 }
 
-function buildDecisionTrace(doc: PdfReportDocument): (Paragraph | Table)[] {
+function buildTrace(doc: PdfReportDocument): (Paragraph | Table)[] {
   if (doc.decisionTrace.steps.length === 0) return [];
-
   return [
-    sectionHeading('Decision Logic Trace'),
-    sectionNote(
-      'Ordered logic steps applied to the current record to arrive at the present pathway assessment.',
-    ),
-    ...numberedList(doc.decisionTrace.steps),
+    heading('Decision Logic Trace'),
+    note('Ordered logic steps applied to the current record to arrive at the present pathway assessment.'),
+    ...numberedItems(doc.decisionTrace.steps, 'main-numbered'),
   ];
 }
 
 function buildNarrative(doc: PdfReportDocument): (Paragraph | Table)[] {
-  const narr = doc.narrative;
-  const hasContent =
-    narr.headlineReason || narr.supportingPoints.length > 0 || narr.verificationSteps.length > 0;
-  if (!hasContent) return [];
+  const n = doc.narrative;
+  if (!n.headlineReason && n.supportingPoints.length === 0 && n.verificationSteps.length === 0) return [];
 
-  const elements: (Paragraph | Table)[] = [];
+  const els: (Paragraph | Table)[] = [];
+  els.push(heading('Assessment Rationale'));
+  els.push(note('System-generated explanatory text. Review against the record facts and cited sources before reliance.'));
 
-  elements.push(sectionHeading('Assessment Rationale'));
-  elements.push(
-    sectionNote(
-      'System-generated explanatory text. Review against the record facts and cited sources before reliance.',
-    ),
-  );
+  if (n.headlineReason && n.headlineReason !== doc.executiveSummary.summaryStatement) {
+    els.push(body(n.headlineReason));
+  }
+  n.supportingPoints.forEach((p) => els.push(body(p, { secondary: true, indent: 280 })));
 
-  if (narr.headlineReason && narr.headlineReason !== doc.executiveSummary.summaryStatement) {
-    elements.push(bodyText(narr.headlineReason));
+  if (n.verificationSteps.length > 0) {
+    els.push(subheading(n.verificationTitle || 'Verification Focus'));
+    els.push(...numberedItems(n.verificationSteps, 'main-numbered'));
   }
 
-  narr.supportingPoints.forEach((point) => {
-    elements.push(bodyText(point, { secondary: true, indent: convertInchesToTwip(0.2) }));
-  });
-
-  if (narr.verificationSteps.length > 0) {
-    elements.push(subheading(narr.verificationTitle || 'Verification Focus'));
-    elements.push(...numberedList(narr.verificationSteps));
-  }
-
-  return elements;
+  return els;
 }
 
-function buildOpenIssueBlock(issue: PdfOpenIssue, index: number): (Paragraph | Table)[] {
-  const elements: (Paragraph | Table)[] = [];
+function buildIssueBlock(issue: PdfOpenIssue, index: number): (Paragraph | Table)[] {
+  const els: (Paragraph | Table)[] = [];
   const kindLabel = issue.kind === 'expert-review' ? 'Expert Review' : 'Evidence Gap';
 
-  // Issue header with tags
-  elements.push(
-    new Paragraph({
-      spacing: { before: index === 0 ? 0 : 140, after: 40 },
-      border: index > 0
-        ? { top: { style: BorderStyle.SINGLE, size: 2, color: COLORS.border, space: 6 } }
-        : undefined,
-      children: [
-        tagRun(`Issue ${index + 1}`),
-        new TextRun({ text: '  ', font: FONT_FAMILY, size: 15 }),
-        tagRun(kindLabel),
-      ],
-    }),
-  );
+  // Tag line + separator for non-first items
+  els.push(new Paragraph({
+    spacing: { before: index === 0 ? 0 : 180, after: 40 },
+    border: index > 0
+      ? { top: { style: BorderStyle.SINGLE, size: 2, color: C.border, space: 8 } }
+      : undefined,
+    children: [
+      tag(`Issue ${index + 1}`),
+      new TextRun({ text: '  ', font: FONT, size: 15 }),
+      tag(kindLabel),
+    ],
+  }));
 
-  // Issue title
-  elements.push(
-    new Paragraph({
-      spacing: { before: 0, after: 60 },
-      indent: { left: convertInchesToTwip(0.15) },
-      children: [
-        new TextRun({
-          text: issue.title,
-          font: FONT_FAMILY,
-          size: 19,
-          bold: true,
-          color: COLORS.text,
-        }),
-      ],
-    }),
-  );
+  // Title
+  els.push(new Paragraph({
+    spacing: { before: 0, after: 60 },
+    indent: { left: 200 },
+    children: [new TextRun({ text: issue.title, font: FONT, size: 19, bold: true, color: C.text })],
+  }));
 
-  // Issue details as a compact table
-  const detailItems: Array<{ label: string; value: string }> = [];
-  if (issue.meta) {
-    detailItems.push({ label: 'Context', value: issue.meta });
-  }
-  detailItems.push({ label: 'Record Impact', value: issue.whyItMatters });
-  detailItems.push({ label: 'Required Action', value: `${issue.actionLabel}: ${issue.actionNeeded}` });
-  if (issue.sources.length > 0) {
-    detailItems.push({ label: 'Basis Referenced', value: issue.sources.join('; ') });
-  }
+  // Details table
+  const details: Array<{ label: string; value: string }> = [];
+  if (issue.meta) details.push({ label: 'Context', value: issue.meta });
+  details.push({ label: 'Record Impact', value: issue.whyItMatters });
+  details.push({ label: 'Required Action', value: `${issue.actionLabel}: ${issue.actionNeeded}` });
+  if (issue.sources.length > 0) details.push({ label: 'Basis Referenced', value: issue.sources.join('; ') });
 
-  elements.push(
-    new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      layout: TableLayoutType.FIXED,
-      indent: { size: convertInchesToTwip(0.15), type: WidthType.DXA },
-      borders: {
-        top: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-        bottom: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-        left: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-        right: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-        insideHorizontal: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-        insideVertical: { style: BorderStyle.NONE, size: 0, color: COLORS.white },
-      },
-      rows: detailItems.map((item) =>
-        new TableRow({
-          children: [
-            new TableCell({
-              width: { size: 22, type: WidthType.PERCENTAGE },
-              borders: noBorders,
-              margins: { top: 15, bottom: 15, right: 60 },
-              children: [
-                new Paragraph({
-                  spacing: { before: 0, after: 0 },
-                  children: [
-                    new TextRun({
-                      text: item.label,
-                      font: FONT_FAMILY,
-                      size: 15,
-                      bold: true,
-                      color: COLORS.textSecondary,
-                    }),
-                  ],
-                }),
-              ],
-            }),
-            new TableCell({
-              width: { size: 78, type: WidthType.PERCENTAGE },
-              borders: noBorders,
-              margins: { top: 15, bottom: 15 },
-              children: [
-                new Paragraph({
-                  spacing: { before: 0, after: 0 },
-                  children: [
-                    new TextRun({
-                      text: item.value,
-                      font: FONT_FAMILY,
-                      size: 17,
-                      color: COLORS.text,
-                    }),
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
-      ),
-    }),
-  );
+  els.push(new Table({
+    width: { size: CONTENT_WIDTH - 200, type: WidthType.DXA },
+    columnWidths: [COL.issueLabel, CONTENT_WIDTH - 200 - COL.issueLabel],
+    layout: TableLayoutType.FIXED,
+    indent: { size: 200, type: WidthType.DXA },
+    borders: NO_TABLE_BORDERS,
+    rows: details.map((d) =>
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: COL.issueLabel, type: WidthType.DXA },
+            borders: NO_BORDERS,
+            margins: { top: 20, bottom: 20, left: 0, right: 80 },
+            children: [new Paragraph({
+              spacing: { before: 0, after: 0 },
+              children: [new TextRun({ text: d.label, font: FONT, size: 15, bold: true, color: C.secondary })],
+            })],
+          }),
+          new TableCell({
+            width: { size: CONTENT_WIDTH - 200 - COL.issueLabel, type: WidthType.DXA },
+            borders: NO_BORDERS,
+            margins: { top: 20, bottom: 20, left: 80, right: 0 },
+            children: [new Paragraph({
+              spacing: { before: 0, after: 0 },
+              children: [new TextRun({ text: d.value, font: FONT, size: 17, color: C.text })],
+            })],
+          }),
+        ],
+      }),
+    ),
+  }));
 
-  return elements;
+  return els;
 }
 
-function buildOpenIssues(doc: PdfReportDocument): (Paragraph | Table)[] {
+function buildIssues(doc: PdfReportDocument): (Paragraph | Table)[] {
   if (doc.openIssues.length === 0) return [];
-
   const n = doc.openIssues.length;
-  const elements: (Paragraph | Table)[] = [];
-
-  elements.push(sectionHeading('Open Issues Requiring Resolution'));
-  elements.push(
-    sectionNote(
-      `${n} open item${n === 1 ? '' : 's'} that limit${n === 1 ? 's' : ''} reliance on the current pathway assessment until resolved or supplemented.`,
-    ),
-  );
-
-  doc.openIssues.forEach((issue, index) => {
-    elements.push(...buildOpenIssueBlock(issue, index));
-  });
-
-  return elements;
-}
-
-function buildAlternativePathways(doc: PdfReportDocument): (Paragraph | Table)[] {
-  if (doc.alternativePathways.length === 0) return [];
-
   return [
-    sectionHeading('Conditions That Could Affect the Pathway'),
-    sectionNote(
-      'Conditions identified by the assessment logic that could change, qualify, or overturn the current pathway assessment.',
-    ),
-    ...numberedList(doc.alternativePathways.map((ap) => ap.description)),
+    heading('Open Issues Requiring Resolution'),
+    note(`${n} open item${n === 1 ? '' : 's'} that limit${n === 1 ? 's' : ''} reliance on the current pathway assessment until resolved or supplemented.`),
+    ...doc.openIssues.flatMap((issue, i) => buildIssueBlock(issue, i)),
   ];
 }
 
-function buildSourcesCited(doc: PdfReportDocument): (Paragraph | Table)[] {
-  if (doc.sourcesCited.length === 0) return [];
-
+function buildAltPathways(doc: PdfReportDocument): (Paragraph | Table)[] {
+  if (doc.alternativePathways.length === 0) return [];
   return [
-    sectionHeading('Sources Cited'),
-    sectionNote(
-      'Regulatory and standards references surfaced by the assessment logic. Citations indicate relevance, not statement-level attribution.',
-    ),
-    ...doc.sourcesCited.map(
-      (source: PdfSourceCitation, i: number) =>
-        new Paragraph({
-          spacing: { before: 20, after: 30 },
-          indent: { left: convertInchesToTwip(0.35), hanging: convertInchesToTwip(0.25) },
-          children: [
-            new TextRun({
-              text: `${i + 1}.  `,
-              font: FONT_FAMILY,
-              size: 17,
-              bold: true,
-              color: COLORS.textSecondary,
-            }),
-            new TextRun({
-              text: source.badge,
-              font: FONT_FAMILY,
-              size: 17,
-              color: COLORS.text,
-            }),
-          ],
-        }),
+    heading('Conditions That Could Affect the Pathway'),
+    note('Conditions identified by the assessment logic that could change, qualify, or overturn the current pathway assessment.'),
+    ...numberedItems(doc.alternativePathways.map((ap) => ap.description), 'main-numbered'),
+  ];
+}
+
+function buildSources(doc: PdfReportDocument): (Paragraph | Table)[] {
+  if (doc.sourcesCited.length === 0) return [];
+  return [
+    heading('Sources Cited'),
+    note('Regulatory and standards references surfaced by the assessment logic. Citations indicate relevance, not statement-level attribution.'),
+    ...doc.sourcesCited.map((source: PdfSourceCitation) =>
+      new Paragraph({
+        spacing: { before: 20, after: 30 },
+        numbering: { reference: 'source-numbered', level: 0 },
+        children: [new TextRun({ text: source.badge, font: FONT, size: 17, color: C.text })],
+      }),
     ),
   ];
 }
 
 function buildReviewerNotes(doc: PdfReportDocument): (Paragraph | Table)[] {
   if (doc.reviewerNotes.length === 0) return [];
+  const els: (Paragraph | Table)[] = [];
+  els.push(heading('Reviewer Notes'));
+  els.push(note('User-entered annotations attached to this assessment. Not system-generated content.'));
 
-  const elements: (Paragraph | Table)[] = [];
-  elements.push(sectionHeading('Reviewer Notes'));
-  elements.push(
-    sectionNote('User-entered annotations attached to this assessment. Not system-generated content.'),
-  );
-
-  doc.reviewerNotes.forEach((note) => {
-    elements.push(
-      new Paragraph({
-        spacing: { before: 80, after: 20 },
-        indent: { left: convertInchesToTwip(0.15) },
-        children: [
-          new TextRun({
-            text: note.author,
-            font: FONT_FAMILY,
-            size: 15,
-            bold: true,
-            color: COLORS.textSecondary,
-          }),
-          new TextRun({
-            text: ` — ${formatDateShort(note.timestamp)}`,
-            font: FONT_FAMILY,
-            size: 15,
-            color: COLORS.textMuted,
-          }),
-        ],
-      }),
-    );
-    elements.push(
-      new Paragraph({
-        spacing: { before: 0, after: 60 },
-        indent: { left: convertInchesToTwip(0.15) },
-        children: [
-          new TextRun({
-            text: note.text,
-            font: FONT_FAMILY,
-            size: 19,
-            color: COLORS.text,
-          }),
-        ],
-      }),
-    );
+  doc.reviewerNotes.forEach((n) => {
+    els.push(new Paragraph({
+      spacing: { before: 100, after: 20 },
+      indent: { left: 200 },
+      children: [
+        new TextRun({ text: n.author, font: FONT, size: 15, bold: true, color: C.secondary }),
+        new TextRun({ text: ` \u2014 ${formatDateShort(n.timestamp)}`, font: FONT, size: 15, color: C.muted }),
+      ],
+    }));
+    els.push(new Paragraph({
+      spacing: { before: 0, after: 80 },
+      indent: { left: 200 },
+      children: [new TextRun({ text: n.text, font: FONT, size: 19, color: C.text })],
+    }));
   });
 
-  return elements;
+  return els;
 }
 
 function buildClosing(doc: PdfReportDocument): (Paragraph | Table)[] {
-  const elements: (Paragraph | Table)[] = [];
-
-  elements.push(sectionHeading('Document Control'));
-
-  elements.push(
-    labelValueTable(
-      [
-        { label: 'Source', value: `Assessment record in ${doc.closing.generatedBy}` },
-        { label: 'Generated', value: formatTimestamp(doc.closing.timestamp) },
-        { label: 'Logic Version', value: doc.closing.schemaVersion },
-        { label: 'Export Format', value: doc.closing.exportVersion },
-      ],
-      22,
-    ),
-  );
-
-  // Disclaimer in a shaded box
-  elements.push(
+  return [
+    heading('Document Control'),
+    kvTable([
+      { label: 'Source', value: `Assessment record in ${doc.closing.generatedBy}` },
+      { label: 'Generated', value: formatTimestamp(doc.closing.timestamp) },
+      { label: 'Logic Version', value: doc.closing.schemaVersion },
+      { label: 'Export Format', value: doc.closing.exportVersion },
+    ], COL.closingLabel, COL.closingValue),
     new Paragraph({
-      spacing: { before: 160, after: 0 },
-      shading: { type: ShadingType.CLEAR, fill: COLORS.lightBg, color: COLORS.lightBg },
+      spacing: { before: 200, after: 0 },
+      shading: { type: ShadingType.CLEAR, fill: C.lightBg, color: C.lightBg },
       border: {
-        top: { style: BorderStyle.SINGLE, size: 2, color: COLORS.border },
-        bottom: { style: BorderStyle.SINGLE, size: 2, color: COLORS.border },
-        left: { style: BorderStyle.SINGLE, size: 2, color: COLORS.border },
-        right: { style: BorderStyle.SINGLE, size: 2, color: COLORS.border },
+        top: { style: BorderStyle.SINGLE, size: 2, color: C.border },
+        bottom: { style: BorderStyle.SINGLE, size: 2, color: C.border },
+        left: { style: BorderStyle.SINGLE, size: 2, color: C.border },
+        right: { style: BorderStyle.SINGLE, size: 2, color: C.border },
       },
-      children: [
-        new TextRun({
-          text: doc.closing.disclaimer,
-          font: FONT_FAMILY,
-          size: 17,
-          italics: true,
-          color: COLORS.textSecondary,
-        }),
-      ],
+      children: [new TextRun({
+        text: doc.closing.disclaimer,
+        font: FONT, size: 17, italics: true, color: C.secondary,
+      })],
     }),
-  );
-
-  return elements;
+  ];
 }
 
 /* ------------------------------------------------------------------ */
@@ -802,137 +569,64 @@ export function buildDocxDocument(reportDoc: PdfReportDocument): Document {
     : reportDoc.header.title;
 
   return new Document({
+    numbering: { config: NUMBERING_CONFIGS },
     styles: {
       default: {
         document: {
-          run: {
-            font: FONT_FAMILY,
-            size: 19,
-            color: COLORS.text,
-          },
-          paragraph: {
-            spacing: { line: 276 },
-          },
+          run: { font: FONT, size: 19, color: C.text },
+          paragraph: { spacing: { line: 276 } },
         },
       },
     },
-    sections: [
-      {
-        properties: {
-          page: {
-            size: { width: convertInchesToTwip(8.5), height: convertInchesToTwip(11) },
-            margin: {
-              top: convertInchesToTwip(0.9),
-              bottom: convertInchesToTwip(0.75),
-              left: convertInchesToTwip(1),
-              right: convertInchesToTwip(1),
-            },
-          },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: PAGE_WIDTH, height: PAGE_HEIGHT },
+          margin: { top: MARGIN, bottom: 1080, left: MARGIN, right: MARGIN },
         },
-        headers: {
-          default: new Header({
-            children: [
-              new Paragraph({
-                border: {
-                  bottom: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border, space: 4 },
-                },
-                tabStops: [
-                  {
-                    type: TabStopType.RIGHT,
-                    position: TabStopPosition.MAX,
-                  },
-                ],
-                children: [
-                  new TextRun({
-                    text: headerText,
-                    font: FONT_FAMILY,
-                    size: 14,
-                    color: COLORS.textMuted,
-                  }),
-                  new TextRun({
-                    text: '\t',
-                    font: FONT_FAMILY,
-                    size: 14,
-                  }),
-                  new TextRun({
-                    text: formatDateShort(reportDoc.header.generatedAt),
-                    font: FONT_FAMILY,
-                    size: 14,
-                    color: COLORS.textMuted,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        },
-        footers: {
-          default: new Footer({
-            children: [
-              new Paragraph({
-                border: {
-                  top: { style: BorderStyle.SINGLE, size: 4, color: COLORS.border, space: 4 },
-                },
-                tabStops: [
-                  {
-                    type: TabStopType.RIGHT,
-                    position: TabStopPosition.MAX,
-                  },
-                ],
-                children: [
-                  new TextRun({
-                    text: 'Internal assessment support record — not a regulatory determination',
-                    font: FONT_FAMILY,
-                    size: 13,
-                    color: COLORS.textMuted,
-                  }),
-                  new TextRun({
-                    text: '\t',
-                    font: FONT_FAMILY,
-                    size: 13,
-                  }),
-                  new TextRun({
-                    text: 'Page ',
-                    font: FONT_FAMILY,
-                    size: 13,
-                    color: COLORS.textMuted,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.CURRENT],
-                    font: FONT_FAMILY,
-                    size: 13,
-                    color: COLORS.textMuted,
-                  }),
-                  new TextRun({
-                    text: ' of ',
-                    font: FONT_FAMILY,
-                    size: 13,
-                    color: COLORS.textMuted,
-                  }),
-                  new TextRun({
-                    children: [PageNumber.TOTAL_PAGES],
-                    font: FONT_FAMILY,
-                    size: 13,
-                    color: COLORS.textMuted,
-                  }),
-                ],
-              }),
-            ],
-          }),
-        },
-        children: [
-          ...buildTitleSection(reportDoc),
-          ...buildExecutiveSummary(reportDoc),
-          ...buildAssessmentBasis(reportDoc),
-          ...buildDecisionTrace(reportDoc),
-          ...buildNarrative(reportDoc),
-          ...buildOpenIssues(reportDoc),
-          ...buildAlternativePathways(reportDoc),
-          ...buildSourcesCited(reportDoc),
-          ...buildReviewerNotes(reportDoc),
-          ...buildClosing(reportDoc),
-        ],
       },
-    ],
+      headers: {
+        default: new Header({
+          children: [new Paragraph({
+            border: { bottom: { style: BorderStyle.SINGLE, size: 4, color: C.border, space: 4 } },
+            tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
+            children: [
+              new TextRun({ text: headerText, font: FONT, size: 14, color: C.muted }),
+              new TextRun({ text: '\t', font: FONT, size: 14 }),
+              new TextRun({ text: formatDateShort(reportDoc.header.generatedAt), font: FONT, size: 14, color: C.muted }),
+            ],
+          })],
+        }),
+      },
+      footers: {
+        default: new Footer({
+          children: [new Paragraph({
+            border: { top: { style: BorderStyle.SINGLE, size: 4, color: C.border, space: 4 } },
+            tabStops: [{ type: TabStopType.RIGHT, position: TabStopPosition.MAX }],
+            children: [
+              new TextRun({ text: 'Internal assessment support record \u2014 not a regulatory determination', font: FONT, size: 13, color: C.muted }),
+              new TextRun({ text: '\t', font: FONT, size: 13 }),
+              new TextRun({ text: 'Page ', font: FONT, size: 13, color: C.muted }),
+              new TextRun({ children: [PageNumber.CURRENT], font: FONT, size: 13, color: C.muted }),
+              new TextRun({ text: ' of ', font: FONT, size: 13, color: C.muted }),
+              new TextRun({ children: [PageNumber.TOTAL_PAGES], font: FONT, size: 13, color: C.muted }),
+            ],
+          })],
+        }),
+      },
+      children: [
+        ...buildTitle(reportDoc),
+        ...buildSummary(reportDoc),
+        ...buildBasis(reportDoc),
+        ...buildTrace(reportDoc),
+        ...buildNarrative(reportDoc),
+        ...buildIssues(reportDoc),
+        ...buildAltPathways(reportDoc),
+        ...buildSources(reportDoc),
+        ...buildReviewerNotes(reportDoc),
+        ...buildClosing(reportDoc),
+      ],
+    }],
   });
 }
 
