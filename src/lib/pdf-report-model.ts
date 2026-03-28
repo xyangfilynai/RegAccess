@@ -159,7 +159,7 @@ function buildRelianceQualification(artifact: AssessmentArtifact, mergedIssueCou
   if (mergedIssueCount > 0) {
     return `Limited reliance only. ${mergedIssueCount} open issue${mergedIssueCount === 1 ? '' : 's'} remain${mergedIssueCount === 1 ? 's' : ''} and should be closed before the record is used beyond preliminary review.`;
   }
-  return 'No tool-detected issues remain. Use only after qualified regulatory, clinical, and quality review and application of normal QMS controls.';
+  return 'No ChangePath-detected issues remain. Use only after qualified regulatory, clinical, and quality review and application of normal QMS controls.';
 }
 
 function buildConclusionStatement(pathway: string, artifact: AssessmentArtifact, mergedIssueCount: number): string {

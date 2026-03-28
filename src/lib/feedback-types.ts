@@ -9,7 +9,7 @@ export interface FeedbackFormData {
   q2_pushback: string;
   /** Q3: What would improve your confidence? */
   q3_confidence: string;
-  /** Q4: How would you use a tool like this? (multi-select) */
+  /** Q4: How would you use ChangePath? (multi-select) */
   q4_use_cases: Q4Option[];
   /** Q4b: Other use case description (conditional on Q4 "Other") */
   q4b_other: string;
