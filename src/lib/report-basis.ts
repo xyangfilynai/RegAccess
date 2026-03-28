@@ -44,7 +44,7 @@ const getPCCPStatusValue = (
   determination: DeterminationResult,
 ): string => {
   if (answers.A2 === Answer.Yes) {
-    if (determination.isPCCPImpl) return 'Authorized PCCP on file; current pathway depends on PCCP fit';
+    if (determination.isPCCPImpl) return 'Authorized PCCP on file; current pathway is contingent on confirmed PCCP scope fit';
     if (determination.pccpScopeFailed) return 'Authorized PCCP on file; current record does not support PCCP use';
     if (determination.pccpIncomplete) return 'Authorized PCCP on file; PCCP scope review incomplete';
     return 'Authorized PCCP on file';

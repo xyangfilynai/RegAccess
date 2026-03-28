@@ -343,7 +343,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to final review
+          <Icon name="arrowLeft" size={14} /> Back to assessment record
         </button>
         <div style={{
           padding: 32,
@@ -442,7 +442,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
             marginBottom: 24,
           }}
         >
-          <Icon name="arrowLeft" size={14} /> Back to final review
+          <Icon name="arrowLeft" size={14} /> Back to assessment record
         </button>
 
         {/* Title Card */}
@@ -503,7 +503,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
               marginBottom: 18,
             }}>
               {[
-                { label: 'Regulatory pathway', value: determination.pathway },
+                { label: 'Assessed pathway', value: determination.pathway },
                 { label: 'Primary package', value: packageLabel },
                 { label: 'Change', value: (answers.B2 as string) || (answers.B1 as string) || 'Not specified' },
                 { label: 'Authorized baseline', value: (answers.A1c as string) || 'Not specified' },
@@ -577,7 +577,7 @@ export const HandoffPage: React.FC<HandoffPageProps> = ({
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.55,
               }}>
-                <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page as an execution-oriented checklist derived from the current determination. For citations and evidence inventory, return to Final review.
+                <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page as an execution-oriented checklist derived from the current assessed pathway. For regulatory source references and open-issue detail, return to the assessment record.
               </div>
             </div>
 

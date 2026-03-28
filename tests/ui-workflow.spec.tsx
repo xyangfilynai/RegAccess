@@ -112,14 +112,14 @@ describe('UI workflow', () => {
     const blocks: Block[] = [
       {
         id: 'A',
-        label: 'What device are we assessing?',
+        label: 'Device under assessment',
         shortLabel: 'Device profile',
         icon: 'shield',
         description: 'Anchor the assessment to the authorized device and baseline.',
       },
       {
         id: 'review',
-        label: 'Final review',
+        label: 'Assessment record',
         shortLabel: 'Review',
         icon: 'check',
       },
@@ -222,7 +222,7 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
-    expect(screen.getByText('Print Assessment Summary')).toBeInTheDocument();
+    expect(screen.getByText('Print Assessment Record')).toBeInTheDocument();
   });
 
   it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {

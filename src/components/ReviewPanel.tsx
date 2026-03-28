@@ -772,7 +772,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                   maxWidth: 760,
                 }}
               >
-                <strong style={{ color: 'var(--color-text)' }}>Assessment reasoning:</strong>{' '}
+                <strong style={{ color: 'var(--color-text)' }}>System reasoning:</strong>{' '}
                 <HelpTextWithLinks text={summaryReason} />
               </div>
             )}
@@ -796,7 +796,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}
           >
             <Icon name="printer" size={14} color="#fff" />
-            Print Assessment Summary
+            Print Assessment Record
           </button>
         </div>
 
@@ -807,7 +807,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             gap: 12,
           }}
         >
-          <SummaryField label="Recommended Pathway">
+          <SummaryField label="Assessed Pathway">
             <div
               style={{
                 fontSize: 14,
@@ -820,7 +820,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
           </SummaryField>
 
-          <SummaryField label="Reliance State">
+          <SummaryField label="Record Status">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <CompactBadge
                 label={relianceState.label}
@@ -840,7 +840,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
           </SummaryField>
 
-          <SummaryField label="Primary Next Action">
+          <SummaryField label="Indicated Next Step">
             <div
               style={{
                 fontSize: 13,
@@ -1009,7 +1009,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 marginBottom: 'var(--space-md)',
               }}
             >
-              <SubsectionLabel>Assessment Reasoning</SubsectionLabel>
+              <SubsectionLabel>Supporting Reasoning</SubsectionLabel>
               <div style={{ display: 'grid', gap: 8 }}>
                 {decisionSupportNotes.map((item, index) => (
                   <div
@@ -1053,7 +1053,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {alternativePathwayNotes.length > 0 && (
           <SectionCard style={{ height: '100%' }}>
             <div style={{ marginBottom: 'var(--space-md)' }}>
-              <SectionHeading>Alternative Pathways</SectionHeading>
+              <SectionHeading>What Would Change This Pathway</SectionHeading>
             </div>
 
             <div
@@ -1064,7 +1064,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 marginBottom: 12,
               }}
             >
-              System-generated comparison against conditions that would support a different pathway.
+              System-generated conditions under which the current record would support a different pathway.
             </div>
 
             <div style={{ display: 'grid', gap: 10 }}>
@@ -1160,7 +1160,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         {citedSources.length > 0 && (
           <SectionCard style={{ height: '100%' }}>
             <div style={{ marginBottom: 'var(--space-md)' }}>
-              <SectionHeading>Sources Cited</SectionHeading>
+              <SectionHeading>Regulatory Sources Referenced</SectionHeading>
             </div>
 
             <div

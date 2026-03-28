@@ -56,14 +56,14 @@ export interface Block {
  */
 export const getBlocks = (answers: Answers, ds: DerivedState): Block[] => {
   const b: Block[] = [
-    { id: "A", label: "What device are we assessing?", shortLabel: "Device profile", icon: "shield", description: "Record the authorized device, baseline, intended use, and change-control context before significance analysis." },
-    { id: "B", label: "What changed?", shortLabel: "Change classification", icon: "layers", description: "Describe the modification so downstream logic uses the correct change category and intended-use assessment." },
-    { id: "C", label: "Is this change regulatory-significant?", shortLabel: "Regulatory significance", icon: "alert", description: "Assess effects on safety, effectiveness, substantial equivalence, and reporting or submission obligations." },
+    { id: "A", label: "Device under assessment", shortLabel: "Device profile", icon: "shield", description: "Record the authorized device, baseline, intended use, and change-control context before significance analysis." },
+    { id: "B", label: "Proposed change description", shortLabel: "Change classification", icon: "layers", description: "Describe the modification so downstream logic uses the correct change category and intended-use assessment." },
+    { id: "C", label: "Regulatory significance assessment", shortLabel: "Regulatory significance", icon: "alert", description: "Assess effects on safety, effectiveness, substantial equivalence, and reporting or submission obligations." },
   ];
-  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "Is this covered by the PCCP?", shortLabel: "PCCP scope", icon: "checkCircle", description: "Confirm the change stays within authorized PCCP boundaries, the validation protocol, and cumulative limits." });
-  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI-specific checks", shortLabel: "GenAI supplemental", icon: "cpu", description: "Review base model, prompts, RAG, guardrails, and other GenAI changes that may affect clinical performance or controls." });
-  b.push({ id: "E", label: "Population impact check", shortLabel: "Bias and equity", icon: "scale", description: "Assess population fit, subgroup performance, bias controls, and whether added expert review is warranted." });
-  b.push({ id: "review", label: "Final review", shortLabel: "Review", icon: "check", description: "Review the determination pathway, evidence gaps, documentation cues, and notes before relying on the output." });
+  if (ds.hasPCCP && answers.B3 !== Answer.Yes && answers.B3 !== Answer.Uncertain) b.push({ id: "P", label: "PCCP scope verification", shortLabel: "PCCP scope", icon: "checkCircle", description: "Confirm the change stays within authorized PCCP boundaries, the validation protocol, and cumulative limits." });
+  if (ds.hasGenAI) b.push({ id: "D", label: "GenAI supplemental assessment", shortLabel: "GenAI supplemental", icon: "cpu", description: "Review base model, prompts, RAG, guardrails, and other GenAI changes that may affect clinical performance or controls." });
+  b.push({ id: "E", label: "Population and equity assessment", shortLabel: "Bias and equity", icon: "scale", description: "Assess population fit, subgroup performance, bias controls, and whether added expert review is warranted." });
+  b.push({ id: "review", label: "Assessment record", shortLabel: "Review", icon: "check", description: "Review the assessed pathway, open issues, regulatory source references, and reviewer notes before acting on the output." });
   return b;
 };
 
@@ -233,7 +233,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
       { id: "E3", q: "Does this change introduce data from new demographic populations not represented in the original authorization?", type: "yesnouncertain",
         help: "Adding new populations may expand the effective clinical scope and could constitute an intended use change." },
       { id: "E4", q: "Has the bias assessment from the original submission been updated to reflect this change?", type: "yesno",
-        help: "The TPLC approach requires ongoing bias assessment. Changes that affect model behavior should trigger an updated bias analysis." },
+        help: "The Total Product Life Cycle (TPLC) approach requires ongoing bias assessment. Changes that affect model behavior should trigger an updated bias analysis." },
       { id: "E5", q: "Does the change affect any bias mitigation strategies that were part of the original device design?", type: "yesnouncertain",
         help: "Removing or modifying bias mitigation measures is high-risk and may trigger additional regulatory scrutiny." },
     ];
