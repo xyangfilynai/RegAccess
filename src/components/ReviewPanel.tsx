@@ -797,8 +797,8 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                   reviewerNotes: reviewerNotes || [],
                 },
               );
-              const { generateAndDownloadPdf } = await import('../lib/pdf-renderer');
-              generateAndDownloadPdf(reportDoc);
+              const { generateAndDownloadDocx } = await import('../lib/docx-renderer');
+              await generateAndDownloadDocx(reportDoc);
             }}
             style={{
               display: 'inline-flex',
@@ -816,7 +816,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}
           >
             <Icon name="printer" size={14} color="#fff" />
-            Export PDF Report
+            Export Report
           </button>
         </div>
 

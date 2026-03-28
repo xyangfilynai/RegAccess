@@ -219,10 +219,9 @@ describe('UI workflow', () => {
     expect(screen.getByText('Open Issues')).toBeInTheDocument();
     expect(screen.getAllByText(/New or modified cause of harm: Uncertain/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Decision support only — not a regulatory determination\./i)).not.toBeInTheDocument();
-    expect(screen.queryByText('Export Report')).not.toBeInTheDocument();
     expect(screen.queryByText('Export JSON')).not.toBeInTheDocument();
     expect(screen.queryByText('Save Assessment')).not.toBeInTheDocument();
-    expect(screen.getByText('Export PDF Report')).toBeInTheDocument();
+    expect(screen.getByText('Export Report')).toBeInTheDocument();
   });
 
   it('renders evidence gaps as case-specific evidence requests instead of generic notes', () => {
