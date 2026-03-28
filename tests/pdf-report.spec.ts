@@ -205,13 +205,16 @@ describe('buildPdfReportDocument', () => {
     expect(new Set(normalizedSupportingPoints).size).toBe(normalizedSupportingPoints.length);
   });
 
-  it('normalizes and deduplicates related source references into source families', () => {
+  it('formats each source reference individually without grouping', () => {
     const doc = buildDoc(base510k());
-    const softwareGuidance = doc.sourcesCited.find((source) => source.text === 'FDA-SW-510K-2017');
+    const softwareGuidanceEntries = doc.sourcesCited.filter((source) => source.text === 'FDA-SW-510K-2017');
 
-    expect(softwareGuidance).toBeTruthy();
-    expect(softwareGuidance!.badge).toContain('sections referenced: Q3, Q4');
-    expect(doc.sourcesCited.filter((source) => source.text.startsWith('FDA-SW-510K-2017')).length).toBe(1);
+    // Each source ref should appear as its own entry (matching ReviewPanel count)
+    expect(softwareGuidanceEntries.length).toBeGreaterThanOrEqual(1);
+    // No "sections referenced" grouping — each entry has its own section inline
+    softwareGuidanceEntries.forEach((entry) => {
+      expect(entry.badge).not.toContain('sections referenced:');
+    });
   });
 
   /* ---------------------------------------------------------------- */

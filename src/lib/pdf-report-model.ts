@@ -476,10 +476,19 @@ export function buildPdfReportDocument(
   const summaryStatement = narrativeHeadline;
   const supportingPoints = deduplicateText(narrativeView.supportingReasoning, [narrativeHeadline]);
 
-  const citedSourceRefs = deduplicateText([
+  // Collect sources using exact-match dedup (matching ReviewPanel's pushUnique behavior)
+  const citedSourceRefs: string[] = [];
+  const seenSources = new Set<string>();
+  for (const ref of [
     ...artifact.rationale.sources,
     ...openIssues.flatMap((issue) => issue.sourceRefs),
-  ]);
+  ]) {
+    const trimmed = ref.trim();
+    if (trimmed && !seenSources.has(trimmed)) {
+      seenSources.add(trimmed);
+      citedSourceRefs.push(trimmed);
+    }
+  }
 
   // Alternative pathways — only include if counter-considerations exist and assessment is not incomplete
   const alternativePathways: PdfAlternativePathway[] = [];
@@ -537,7 +546,14 @@ export function buildPdfReportDocument(
 
     alternativePathways,
 
-    sourcesCited: normalizeSourceCitations(citedSourceRefs),
+    sourcesCited: citedSourceRefs.map((ref) => {
+      const grouping = getSourceGrouping(ref);
+      return {
+        text: grouping.key,
+        badge: grouping.fullLabel + (grouping.section ? ` (${grouping.section})` : ''),
+        shortText: grouping.shortLabel + (grouping.section ? ` (${grouping.section})` : ''),
+      };
+    }),
 
     reviewerNotes: (options?.reviewerNotes || []).map((note) => ({
       author: note.author,
@@ -552,7 +568,7 @@ export function buildPdfReportDocument(
       schemaVersion: artifact.meta.toolVersion,
       exportVersion: PDF_EXPORT_VERSION,
       disclaimer:
-        'This PDF is an internal assessment support record prepared from the current ChangePath assessment record. ' +
+        'This document is an internal assessment support record prepared from the current ChangePath assessment record. ' +
         'It is not a regulatory determination, legal opinion, approval record, or substitute for qualified review. ' +
         'System-generated basis and rationale text are analytical support only and should be reviewed against the record facts, cited sources, and applicable procedures before reliance or action.',
     },
