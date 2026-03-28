@@ -29,6 +29,14 @@ function buildDoc(answers: Answers, options?: { assessmentId?: string; assessmen
   });
 }
 
+function normalizeText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function buildPdfText(reportDoc: PdfReportDocument): string {
+  return renderPdfReport(reportDoc).output();
+}
+
 /* ------------------------------------------------------------------ */
 /*  Document model tests                                               */
 /* ------------------------------------------------------------------ */
@@ -41,20 +49,24 @@ describe('buildPdfReportDocument', () => {
     expect(doc.header.subtitle).toBe('ChangePath');
     expect(doc.header.generatedAt).toBeTruthy();
     expect(doc.header.assessmentStatus).toBeTruthy();
+    expect(doc.header.exportVersion).toBe('pdf-v2');
+    expect(doc.header.preparedFrom).toBe('Assessment record in ChangePath');
 
-    expect(doc.executiveSummary.pathwayConclusion).toBe(Pathway.LetterToFile);
+    expect(doc.executiveSummary.pathwayLabel).toBe(Pathway.LetterToFile);
     expect(doc.executiveSummary.isIncomplete).toBe(false);
-    expect(doc.executiveSummary.confidenceLevel).toBe('HIGH');
-    expect(doc.executiveSummary.relianceState).toBeTruthy();
+    expect(doc.executiveSummary.recordStatus).toBe('Complete — pending qualified review');
+    expect(doc.executiveSummary.relianceQualification).toContain('qualified regulatory review');
     expect(doc.executiveSummary.primaryNextAction).toBeTruthy();
     expect(doc.executiveSummary.summaryStatement).toBeTruthy();
+    expect(doc.executiveSummary.pathwayConclusion).toContain(`supports a pathway assessment of ${Pathway.LetterToFile}`);
+    expect('confidenceLevel' in doc.executiveSummary).toBe(false);
 
     expect(doc.assessmentBasis.recordFacts.length).toBeGreaterThan(0);
     expect(doc.assessmentBasis.systemGeneratedBasis.length).toBeGreaterThan(0);
 
     expect(doc.decisionTrace.steps.length).toBeGreaterThan(0);
 
-    expect(doc.closing.disclaimer).toContain('does not constitute a regulatory determination');
+    expect(doc.closing.disclaimer).toContain('not a regulatory determination');
     expect(doc.closing.generatedBy).toBe('ChangePath');
   });
 
@@ -63,8 +75,10 @@ describe('buildPdfReportDocument', () => {
     const doc = buildDoc(sparseAnswers);
 
     expect(doc.executiveSummary.isIncomplete).toBe(true);
-    expect(doc.executiveSummary.pathwayConclusion).toContain('Incomplete');
-    expect(doc.executiveSummary.confidenceLevel).toBe('LOW');
+    expect(doc.executiveSummary.pathwayLabel).toBe('Assessment Incomplete');
+    expect(doc.executiveSummary.recordStatus).toContain('Incomplete');
+    expect(doc.executiveSummary.pathwayConclusion).toContain('No pathway conclusion should be treated as supported');
+    expect('confidenceLevel' in doc.executiveSummary).toBe(false);
   });
 
   it('handles PMA pathway', () => {
@@ -146,6 +160,7 @@ describe('buildPdfReportDocument', () => {
     doc.sourcesCited.forEach((s) => {
       expect(s.text).toBeTruthy();
       expect(s.badge).toBeTruthy();
+      expect(s.shortText).toBeTruthy();
     });
   });
 
@@ -174,6 +189,38 @@ describe('buildPdfReportDocument', () => {
     const doc = buildDoc(base510k({ D1: Answer.Yes }));
     // Whether there are open issues depends on the specific logic
     expect(Array.isArray(doc.openIssues)).toBe(true);
+  });
+
+  it('softens the pathway conclusion when open issues remain', () => {
+    const doc = buildDoc(base510k({ E1: Answer.No }));
+
+    expect(doc.executiveSummary.isIncomplete).toBe(false);
+    expect(doc.openIssues.length).toBeGreaterThan(0);
+    expect(doc.executiveSummary.recordStatus).toBe('Preliminary — open issues remain');
+    expect(doc.executiveSummary.pathwayConclusion).toContain('preliminary pathway assessment');
+    expect(doc.executiveSummary.relianceQualification).toContain('Limited reliance only');
+  });
+
+  it('deduplicates rationale text across the PDF narrative view', () => {
+    const doc = buildDoc(base510k({
+      B1: 'Software change',
+      B2: 'Algorithm enhancement',
+      B4: 'Updated the model ranking logic while keeping the clinician-facing output structure unchanged.',
+    }));
+    const normalizedHeadline = normalizeText(doc.narrative.headlineReason);
+    const normalizedSupportingPoints = doc.narrative.supportingPoints.map(normalizeText);
+
+    expect(normalizedSupportingPoints).not.toContain(normalizedHeadline);
+    expect(new Set(normalizedSupportingPoints).size).toBe(normalizedSupportingPoints.length);
+  });
+
+  it('normalizes and deduplicates related source references into source families', () => {
+    const doc = buildDoc(base510k());
+    const softwareGuidance = doc.sourcesCited.find((source) => source.text === 'FDA-SW-510K-2017');
+
+    expect(softwareGuidance).toBeTruthy();
+    expect(softwareGuidance!.badge).toContain('sections referenced: Q3, Q4');
+    expect(doc.sourcesCited.filter((source) => source.text.startsWith('FDA-SW-510K-2017')).length).toBe(1);
   });
 });
 
@@ -252,5 +299,28 @@ describe('renderPdfReport', () => {
     const header = new Uint8Array(output, 0, 5);
     const magic = String.fromCharCode(...header);
     expect(magic).toBe('%PDF-');
+  });
+
+  it('renders hardened summary labels and document-control language', () => {
+    const reportDoc = buildDoc(base510k({ E1: Answer.No }));
+    const pdfText = buildPdfText(reportDoc);
+
+    expect(pdfText).toContain('ASSESSMENT SUMMARY');
+    expect(pdfText).toContain('Current Pathway Assessment');
+    expect(pdfText).toContain('Record Status');
+    expect(pdfText).toContain('Reliance Qualification');
+    expect(pdfText).toContain('DOCUMENT CONTROL');
+    expect(pdfText).toContain('Prepared from assessment record in ChangePath');
+    expect(pdfText).toContain('Page 1 of');
+    expect(pdfText).not.toContain('Confidence');
+  });
+
+  it('renders normalized source-family citations instead of repeated raw source codes', () => {
+    const reportDoc = buildDoc(base510k());
+    const pdfText = buildPdfText(reportDoc);
+
+    expect(pdfText).toContain('referenced: Q3, Q4');
+    expect(pdfText).not.toContain('FDA-SW-510K-2017 Q3');
+    expect(pdfText).not.toContain('FDA-SW-510K-2017 Q4');
   });
 });
