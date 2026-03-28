@@ -115,7 +115,7 @@ describe('UI workflow', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByText('Open'));
+    fireEvent.click(screen.getAllByText('Open')[0]);
 
     expect(storage.loadAnswers()).toEqual({
       A1: '510(k)',

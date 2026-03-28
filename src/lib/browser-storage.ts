@@ -66,7 +66,7 @@ export const removeStoredKeys = (...keys: string[]): void => {
     try {
       storage.removeItem(key);
     } catch {
-      return;
+      // Continue removing remaining keys even if one fails
     }
   }
 };

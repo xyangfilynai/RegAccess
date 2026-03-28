@@ -169,12 +169,19 @@ const hasMeaningfulAssessmentChange = (
   existing.lastPathway !== next.lastPathway ||
   serializeAnswers(existing.answers) !== serializeAnswers(next.answers);
 
+/** Write-through cache: avoids redundant JSON.parse calls when
+ *  multiple store operations run in the same synchronous turn
+ *  (e.g. save → list refresh). Invalidated on every write. */
+let _cache: SavedAssessment[] | null = null;
+
 function loadAll(): SavedAssessment[] {
+  if (_cache) return _cache;
   const raw = readStoredJson(PERSISTENCE_KEYS.savedAssessments);
   if (!Array.isArray(raw)) return [];
-  return raw
+  _cache = raw
     .map((entry) => normalizeSavedAssessment(entry))
     .filter((entry): entry is SavedAssessment => entry !== null);
+  return _cache;
 }
 
 function saveAll(assessments: SavedAssessment[]): void {
@@ -182,6 +189,12 @@ function saveAll(assessments: SavedAssessment[]): void {
     PERSISTENCE_KEYS.savedAssessments,
     assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
   );
+  _cache = assessments;
+}
+
+/** Exposed for tests only — forces the next loadAll() to re-read localStorage. */
+export function _invalidateCache(): void {
+  _cache = null;
 }
 
 export const assessmentStore = {
