@@ -3,30 +3,17 @@ import { describe, expect, it } from 'vitest';
 import {
   Answer,
   computeDerivedState,
-  getBlocks,
   getBlockFields,
-  type Answers,
 } from '../src/lib/assessment-engine';
-import { base510k, baseDeNovo, basePMA } from './helpers';
-
-const findQ = (blockId: string, answers: Answers, id: string) => {
-  const ds = computeDerivedState(answers);
-  return getBlockFields(blockId, answers, ds).find(q => q.id === id);
-};
-
-const isVisible = (blockId: string, answers: Answers, id: string) => {
-  const q = findQ(blockId, answers, id);
-  return q !== undefined && !q.skip;
-};
-
-const isHidden = (blockId: string, answers: Answers, id: string) => {
-  return !isVisible(blockId, answers, id);
-};
-
-const blockIds = (answers: Answers) => {
-  const ds = computeDerivedState(answers);
-  return getBlocks(answers, ds).map(b => b.id);
-};
+import {
+  base510k,
+  baseDeNovo,
+  basePMA,
+  findField as findQ,
+  isFieldVisible as isVisible,
+  isFieldHidden as isHidden,
+  getVisibleBlockIds as blockIds,
+} from './helpers';
 
 describe('De Novo-only field visibility', () => {
   it('C0_DN1 is hidden unless A1 === "De Novo" and B3 !== Yes', () => {

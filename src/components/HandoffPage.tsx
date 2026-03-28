@@ -10,14 +10,14 @@ interface HandoffPageProps {
   onBackToAssessment: () => void;
 }
 
-interface ChecklistSection {
+export interface ChecklistSection {
   n: number;
   title: string;
   detail: string;
   items: string[];
 }
 
-const getSections = (
+export const getSections = (
   determination: DeterminationResult,
   answers: Answers,
 ): ChecklistSection[] => {

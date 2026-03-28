@@ -1,13 +1,13 @@
 import type { FeedbackFormData } from './feedback-types';
 
 /** Submission payload — matches form data plus metadata. */
-export interface FeedbackPayload {
+interface FeedbackPayload {
   submittedAt: string;
   formData: FeedbackFormData;
 }
 
 /** Abstract submission interface — swap the implementation when a real backend exists. */
-export interface FeedbackSubmitter {
+interface FeedbackSubmitter {
   submit(payload: FeedbackPayload): Promise<{ ok: boolean }>;
 }
 
