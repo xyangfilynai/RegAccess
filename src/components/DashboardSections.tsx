@@ -686,9 +686,12 @@ export const PrototypeUseSection: React.FC = () => (
         }}
       >
         ChangePath is an early prototype intended to support structured internal assessment. It does not provide a
-        regulatory determination and does not replace qualified regulatory, legal, clinical, quality, or engineering
-        judgment. Outputs must be reviewed by qualified personnel against applicable regulations and organizational
-        procedures before any reliance or action.
+        regulatory determination, legal opinion, or approval record, and does not replace qualified regulatory, legal,
+        clinical, quality, or engineering judgment. ChangePath applies conservative internal policies (e.g., treating
+        unresolved significance uncertainty as requiring a marketing submission) that may exceed FDA minimum
+        requirements; these are risk-based internal choices, not direct regulatory mandates. All outputs must be
+        reviewed by qualified personnel against applicable regulations, guidance, and organizational procedures before
+        any reliance or action.
       </p>
     </div>
   </section>

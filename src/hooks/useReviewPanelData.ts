@@ -385,9 +385,9 @@ export function useReviewPanelData(
       };
     }
     return {
-      label: 'Ready for review',
+      label: 'No automated issues detected',
       detail:
-        'No open issues are listed on the current record. Continue with standard expert review and QMS controls before action.',
+        'No tool-detected issues remain on the current record. Proceed with qualified expert review and QMS controls before any reliance or action.',
       bg: 'var(--color-success-bg)',
       border: 'var(--color-success-border)',
       text: 'var(--color-success)',

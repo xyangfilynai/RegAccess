@@ -26,6 +26,23 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
   <SectionCard accentColor={data.config.accent} background={data.config.surface} borderColor={data.config.border}>
     <div
       style={{
+        padding: '10px 14px',
+        borderRadius: 'var(--radius-md)',
+        background: 'var(--color-warning-bg)',
+        border: '1px solid var(--color-warning-border)',
+        fontSize: 12,
+        color: 'var(--color-text-secondary)',
+        lineHeight: 1.55,
+        marginBottom: 'var(--space-lg)',
+      }}
+    >
+      <strong style={{ color: 'var(--color-warning)' }}>Internal assessment only.</strong> This is a tool-generated
+      preliminary assessment, not a regulatory determination. It applies conservative internal policies that may exceed
+      regulatory requirements. Outputs must be reviewed by qualified regulatory, clinical, and quality personnel before
+      any reliance or action.
+    </div>
+    <div
+      style={{
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'space-between',
@@ -57,7 +74,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
             lineHeight: 1.2,
           }}
         >
-          {data.isIncomplete ? data.incompleteHeading : data.pathway}
+          {data.isIncomplete ? data.incompleteHeading : `Assessed Pathway: ${data.pathway}`}
         </h1>
 
         {data.summaryReason && (
@@ -69,7 +86,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
               maxWidth: 760,
             }}
           >
-            <strong style={{ color: 'var(--color-text)' }}>System reasoning:</strong>{' '}
+            <strong style={{ color: 'var(--color-text)' }}>Tool-generated reasoning (not expert review):</strong>{' '}
             <HelpTextWithLinks text={data.summaryReason} />
           </div>
         )}
@@ -328,7 +345,8 @@ export const ReviewOpenIssuesSection: React.FC<{ data: ReviewPanelData }> = ({ d
           lineHeight: 1.6,
         }}
       >
-        No open issues are listed for this record. Continue with standard expert review and QMS controls before action.
+        No tool-detected issues remain for this record. Proceed with qualified expert review and QMS controls before any
+        reliance or action.
       </div>
     )}
   </SectionCard>

@@ -524,7 +524,7 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'pma-intended-use-change',
-    description: 'A PMA intended-use change maps to PMA Supplement Required.',
+    description: 'A PMA intended-use change supports PMA Supplement Required.',
     when: all(eq('isPMA', true), eq('isIntendedUseChange', true)),
     outcome: Pathway.PMASupplementRequired,
   },
@@ -561,7 +561,8 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'pma-supplement-required',
-    description: 'A PMA change affecting safety/effectiveness maps to PMA Supplement Required.',
+    description:
+      'A PMA change where the record indicates or does not rule out a safety/effectiveness impact supports PMA Supplement Required. Note: treating C_PMA1 = Uncertain as requiring a supplement is an internal conservative policy, not a direct regulatory mandate.',
     when: all(eq('isPMA', true), eq('pmaRequiresSupplement', true)),
     outcome: Pathway.PMASupplementRequired,
   },
@@ -580,7 +581,7 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-intended-use-change',
-    description: 'A non-PMA intended-use change maps to New Submission Required.',
+    description: 'A non-PMA intended-use change supports New Submission Required.',
     when: all(eq('isNonPMA', true), eq('isIntendedUseChange', true)),
     outcome: Pathway.NewSubmission,
   },
@@ -598,19 +599,22 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-denovo-fit-failed',
-    description: 'A failed De Novo device-type fit overrides the rest of the non-PMA decision tree.',
+    description:
+      'A failed De Novo device-type fit (the modified device no longer fits the authorized device type or special controls) supports New Submission. This overrides the significance assessment because the device may require reclassification. Consider a Pre-Submission (Q-Sub) if the fit boundary is ambiguous.',
     when: all(eq('isNonPMA', true), eq('deNovoDeviceTypeFitFailed', true)),
     outcome: Pathway.NewSubmission,
   },
   {
     id: 'nonpma-cybersecurity-exemption',
-    description: 'A qualifying cybersecurity-only change maps to Letter to File.',
+    description:
+      'A change assessed as cybersecurity-only (C1 = Yes, no intended-use change) supports a Letter to File pathway, contingent on affirmative demonstration that the change has zero functional or clinical-performance impact.',
     when: all(eq('isNonPMA', true), eq('isCyberOnly', true)),
     outcome: Pathway.LetterToFile,
   },
   {
     id: 'nonpma-restore-to-spec-exemption',
-    description: 'A qualifying restore-to-specification change maps to Letter to File.',
+    description:
+      'A change assessed as restoring to a known, documented, previously authorized specification (C2 = Yes) supports a Letter to File pathway, contingent on evidence that the target state matches the previously authorized configuration.',
     when: all(eq('isNonPMA', true), eq('isBugFix', true)),
     outcome: Pathway.LetterToFile,
   },
@@ -635,13 +639,13 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
   },
   {
     id: 'nonpma-significant-new-submission',
-    description: 'A significant non-PMA change without an authorized PCCP pathway maps to New Submission Required.',
+    description: 'A significant non-PMA change without an authorized PCCP pathway supports New Submission Required.',
     when: all(eq('isNonPMA', true), eq('isSignificant', true)),
     outcome: Pathway.NewSubmission,
   },
   {
     id: 'nonpma-all-significance-no',
-    description: 'A fully evaluated non-significant non-PMA change maps to Letter to File.',
+    description: 'A fully evaluated non-significant non-PMA change supports Letter to File.',
     when: all(eq('isNonPMA', true), eq('allSignificanceNo', true)),
     outcome: Pathway.LetterToFile,
   },

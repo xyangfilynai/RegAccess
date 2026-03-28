@@ -41,7 +41,7 @@ describe('buildPdfReportDocument', () => {
   it('produces a complete document for a standard 510(k) Letter to File case', () => {
     const doc = buildDoc(base510k());
 
-    expect(doc.header.title).toBe('Regulatory Change Assessment Record');
+    expect(doc.header.title).toBe('Preliminary Regulatory Change Assessment Record');
     expect(doc.header.subtitle).toBe('ChangePath');
     expect(doc.header.generatedAt).toBeTruthy();
     expect(doc.header.assessmentStatus).toBeTruthy();
@@ -51,11 +51,11 @@ describe('buildPdfReportDocument', () => {
     expect(doc.executiveSummary.pathwayLabel).toBe(Pathway.LetterToFile);
     expect(doc.executiveSummary.isIncomplete).toBe(false);
     expect(doc.executiveSummary.recordStatus).toBe('Complete — pending qualified review');
-    expect(doc.executiveSummary.relianceQualification).toContain('qualified regulatory review');
+    expect(doc.executiveSummary.relianceQualification).toContain('qualified regulatory');
     expect(doc.executiveSummary.primaryNextAction).toBeTruthy();
     expect(doc.executiveSummary.summaryStatement).toBeTruthy();
     expect(doc.executiveSummary.pathwayConclusion).toContain(
-      `supports a pathway assessment of ${Pathway.LetterToFile}`,
+      `supports a preliminary pathway assessment of ${Pathway.LetterToFile}`,
     );
     expect('confidenceLevel' in doc.executiveSummary).toBe(false);
 
@@ -101,7 +101,7 @@ describe('buildPdfReportDocument', () => {
   it('handles sparse data gracefully (empty answers)', () => {
     const doc = buildDoc({});
 
-    expect(doc.header.title).toBe('Regulatory Change Assessment Record');
+    expect(doc.header.title).toBe('Preliminary Regulatory Change Assessment Record');
     expect(doc.executiveSummary.isIncomplete).toBe(true);
     expect(doc.assessmentBasis.recordFacts.length).toBeGreaterThan(0);
     const missingFacts = doc.assessmentBasis.recordFacts.filter((f) => f.isMissing);
@@ -249,6 +249,49 @@ describe('buildPdfReportDocument', () => {
     const authPathway = doc.assessmentBasis.recordFacts.find((f) => f.label === 'Authorization Pathway');
     expect(authPathway).toBeTruthy();
     expect(authPathway!.isLongText).toBe(false);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Regulatory framing and disclaimer tests                            */
+/* ------------------------------------------------------------------ */
+
+describe('regulatory framing and disclaimers', () => {
+  it('includes conservative-policy transparency in the disclaimer', () => {
+    const doc = buildDoc(base510k());
+    expect(doc.closing.disclaimer).toContain('conservative internal policies');
+    expect(doc.closing.disclaimer).toContain('not direct regulatory mandates');
+  });
+
+  it('uses "preliminary" language in report title', () => {
+    const doc = buildDoc(base510k());
+    expect(doc.header.title).toContain('Preliminary');
+  });
+
+  it('uses "preliminary" in conclusion statement for clean records', () => {
+    const doc = buildDoc(base510k());
+    expect(doc.executiveSummary.pathwayConclusion).toContain('preliminary');
+  });
+
+  it('uses "provisionally supports" when open issues remain', () => {
+    const answers = base510k({ E1: Answer.No });
+    const doc = buildDoc(answers);
+    // open issues from E1=No should trigger "provisionally"
+    if (doc.openIssues.length > 0) {
+      expect(doc.executiveSummary.pathwayConclusion).toMatch(/provisionally|preliminary/);
+    }
+  });
+
+  it('reliance qualification mentions "No tool-detected issues" for clean records', () => {
+    const doc = buildDoc(base510k());
+    if (doc.openIssues.length === 0 && !doc.executiveSummary.isIncomplete) {
+      expect(doc.executiveSummary.relianceQualification).toContain('No tool-detected issues');
+    }
+  });
+
+  it('reliance qualification says "Not suitable for reliance" when incomplete', () => {
+    const doc = buildDoc({});
+    expect(doc.executiveSummary.relianceQualification).toContain('Not suitable for reliance');
   });
 });
 

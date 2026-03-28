@@ -807,3 +807,53 @@ describe('PCCP incomplete must not fire for PMA Annual Report pathway', () => {
     expect(det.pathway).toBe(Pathway.PMAAnnualReport);
   });
 });
+
+/* ------------------------------------------------------------------ */
+/*  Rule description regulatory language quality                       */
+/* ------------------------------------------------------------------ */
+
+describe('rule description language uses "supports" rather than "maps to"', () => {
+  it('cybersecurity exemption rule references contingency on zero-impact demonstration', () => {
+    const det = computeDetermination(base510k({ C1: Answer.Yes }));
+    expect(det.decisionTrace.pathwayRule.description).toContain('contingent on');
+    expect(det.decisionTrace.pathwayRule.description).toContain('zero functional');
+  });
+
+  it('restore-to-spec rule references contingency on matching authorized configuration', () => {
+    const det = computeDetermination(base510k({ C2: Answer.Yes }));
+    expect(det.decisionTrace.pathwayRule.description).toContain('contingent on');
+    expect(det.decisionTrace.pathwayRule.description).toContain('previously authorized configuration');
+  });
+
+  it('PMA supplement rule explicitly labels uncertain-as-supplement as internal policy', () => {
+    const det = computeDetermination(basePMA({ C_PMA1: Answer.Uncertain }));
+    expect(det.decisionTrace.pathwayRule.description).toContain('internal conservative policy');
+    expect(det.decisionTrace.pathwayRule.description).toContain('not a direct regulatory mandate');
+  });
+
+  it('De Novo fit-failed rule recommends Pre-Submission for ambiguous boundaries', () => {
+    const det = computeDetermination(
+      baseDeNovo({
+        C0_DN1: Answer.No,
+      }),
+    );
+    expect(det.decisionTrace.pathwayRule.description).toContain('Pre-Submission');
+  });
+
+  it('non-PMA intended-use change rule uses "supports" not "maps to"', () => {
+    const det = computeDetermination(base510k({ B3: Answer.Yes }));
+    expect(det.decisionTrace.pathwayRule.description).toContain('supports');
+    expect(det.decisionTrace.pathwayRule.description).not.toContain('maps to');
+  });
+
+  it('non-PMA significant new-submission rule uses "supports" not "maps to"', () => {
+    const det = computeDetermination(base510k({ C3: Answer.Yes }));
+    expect(det.decisionTrace.pathwayRule.description).toContain('supports');
+  });
+
+  it('non-PMA all-significance-no rule uses "supports" not "maps to"', () => {
+    const det = computeDetermination(base510k());
+    expect(det.decisionTrace.pathwayRule.description).toContain('supports');
+    expect(det.decisionTrace.pathwayRule.description).not.toContain('maps to');
+  });
+});

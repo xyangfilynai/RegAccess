@@ -336,7 +336,7 @@ export function buildCaseSpecificReasoning(
     decisionPath.push(...blockers.map((blocker) => blocker.charAt(0).toUpperCase() + blocker.slice(1) + '.'));
   } else if (determination.isIntendedUseChange) {
     narrative.push(
-      `The pathway is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. That threshold issue has to be resolved before any exemption, significance, or PCCP logic applies.`,
+      `The assessed pathway is ${determination.pathway} because the change was assessed as affecting the authorized intended use or indications for use. This threshold issue must be addressed before any exemption, significance, or PCCP logic can apply.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
     decisionPath.push(
@@ -354,7 +354,7 @@ export function buildCaseSpecificReasoning(
     );
   } else if (determination.isIntendedUseUncertain) {
     narrative.push(
-      'The pathway is Assessment Incomplete because the current record does not establish whether the proposed change remains within the authorized intended use or indications for use, so no downstream pathway conclusion is reliable yet.',
+      'The assessed pathway is Assessment Incomplete because the current record does not establish whether the proposed change remains within the authorized intended use or indications for use, so no downstream pathway conclusion is reliable yet.',
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
     decisionPath.push('The intended-use threshold is unresolved, so the pathway cannot be finalized.');
@@ -366,7 +366,7 @@ export function buildCaseSpecificReasoning(
     );
     pushUnique(
       counterConsiderations,
-      'A borderline intended-use answer cannot be neutralized by relying on downstream risk fields. Intended use is the threshold decision point.',
+      'A borderline intended-use answer should not be overridden by downstream risk fields alone. Intended use is the threshold decision point and requires independent resolution.',
     );
   } else if (determination.pathway === Pathway.NewSubmission) {
     const triggerNarratives: string[] = [];
@@ -554,7 +554,7 @@ export function buildCaseSpecificReasoning(
   } else if (determination.pathway === Pathway.LetterToFile) {
     if (determination.isCyberOnly) {
       narrative.push(
-        'The pathway is Letter to File because the change was assessed as a cybersecurity-only update with no intended-use change and no claimed performance or functional impact.',
+        'The assessed pathway is Letter to File because the change was assessed as a cybersecurity-only update with no intended-use change and no claimed performance or functional impact. This pathway is contingent on affirmative demonstration that the update has zero functional or clinical-performance impact.',
       );
       decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
       decisionPath.push('The change qualifies for the cybersecurity-only documentation pathway.');
@@ -570,7 +570,7 @@ export function buildCaseSpecificReasoning(
       );
     } else if (determination.isBugFix) {
       narrative.push(
-        'The pathway is Letter to File because the change was assessed as restoring the device to a known, documented, previously authorized specification.',
+        'The assessed pathway is Letter to File because the change was assessed as restoring the device to a known, documented, previously authorized specification. This pathway is contingent on evidence that the target state matches the previously authorized configuration exactly.',
       );
       decisionPath.push('The change was assessed as staying within the existing intended use and indications for use.');
       decisionPath.push('The change qualifies for the restore-to-specification documentation pathway.');
@@ -586,7 +586,7 @@ export function buildCaseSpecificReasoning(
       );
     } else {
       narrative.push(
-        'The pathway is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption, and the risk and performance review still came back all No: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
+        'The assessed pathway is Letter to File because the change was assessed as staying within the existing intended use and indications for use, it did not qualify for a documentation-only exemption, and the risk and performance review resulted in all No answers: the current record does not identify a new cause of harm, a new hazardous situation, a material risk-control change, or a clinically meaningful performance impact.',
       );
       decisionPath.push(
         'The change was assessed as staying within the existing intended use and indications for use, so the case proceeded through the 510(k)/De Novo significance framework.',
@@ -628,7 +628,7 @@ export function buildCaseSpecificReasoning(
     addSources(sources, 'FDA-PCCP-2025 §V–VIII');
 
     narrative.push(
-      `The pathway is Implement Under Authorized PCCP because ${joinWithAnd(pccpSteps)}. On the current record, the change remains inside the already authorized PCCP boundaries rather than requiring a stand-alone submission for this implementation.`,
+      `The assessed pathway is Implement Under Authorized PCCP because ${joinWithAnd(pccpSteps)}. On the current record, the change remains inside the already authorized PCCP boundaries rather than requiring a stand-alone submission for this implementation.`,
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 
@@ -717,7 +717,7 @@ export function buildCaseSpecificReasoning(
     );
   } else if (determination.pathway === Pathway.PMAAnnualReport) {
     narrative.push(
-      'This is a PMA-approved device, and the safety-and-effectiveness review was answered No, meaning the current record does not identify a safety or effectiveness impact from the proposed change. That keeps the case in PMA annual-report / Letter-to-File handling rather than a PMA supplement.',
+      'This is a PMA-approved device, and the safety-and-effectiveness review was answered No, meaning the current record does not identify a safety or effectiveness impact from the proposed change. On the current record, that supports PMA annual-report / Letter-to-File handling rather than a PMA supplement.',
     );
     if (caseDescriptionSentence) narrative.push(caseDescriptionSentence);
 

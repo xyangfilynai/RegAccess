@@ -249,6 +249,21 @@ describe('computeEvidenceGaps', () => {
     it('does not fire when E5 is No', () => {
       expect(gapIds(base510k({ E5: Answer.No }))).not.toContain('GAP-BIAS-MITIGATION');
     });
+
+    it('uses definitive language when E5 is Yes (known change)', () => {
+      const gaps = gapsFor(base510k({ E5: Answer.Yes }));
+      const gap = gaps.find((g) => g.id === 'GAP-BIAS-MITIGATION');
+      expect(gap).toBeTruthy();
+      expect(gap!.description).toMatch(/was changed/);
+      expect(gap!.description).not.toMatch(/uncertain/i);
+    });
+
+    it('uses uncertain language when E5 is Uncertain', () => {
+      const gaps = gapsFor(base510k({ E5: Answer.Uncertain }));
+      const gap = gaps.find((g) => g.id === 'GAP-BIAS-MITIGATION');
+      expect(gap).toBeTruthy();
+      expect(gap!.description).toMatch(/uncertain/i);
+    });
   });
 
   // --- Cumulative impact gaps ---

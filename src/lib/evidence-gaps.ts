@@ -113,12 +113,13 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       gaps.push({
         id: 'GAP-VALIDATION',
         category: 'Validation',
-        description: 'Validation scope may be incomplete — clinical performance impact not ruled out',
+        description:
+          'Clinical performance impact has not been answered No — pre/post validation evidence is needed to support the significance assessment',
         severity: 'important',
         sourceClass: 'Final guidance',
         source: 'FDA-SW-510K-2017 Q4; FDA-PCCP-2025 §VII',
         remediation:
-          'Run pre/post performance comparison against predefined acceptance criteria. Validate subgroup performance independently.',
+          'Run a pre/post performance comparison against predefined acceptance criteria at the authorized operating point. Validate subgroup performance independently for each affected demographic or clinical subgroup.',
       });
     }
   }
@@ -177,16 +178,27 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
     });
   }
 
-  if (answers.E5 === Answer.Yes || answers.E5 === Answer.Uncertain) {
+  if (answers.E5 === Answer.Yes) {
     gaps.push({
       id: 'GAP-BIAS-MITIGATION',
       category: 'Bias and equity',
-      description: 'A bias mitigation strategy may have been changed, weakened, or removed',
+      description: 'A bias mitigation strategy was changed, weakened, or removed',
       severity: 'important',
       sourceClass: 'Draft guidance',
       source: 'FDA-LIFECYCLE-2025 §IV.B; ISO 14971:2019',
       remediation:
-        'Review whether the modified bias mitigation remains effective, whether it functions as a risk control, and whether additional validation or risk analysis is required.',
+        'Document the specific mitigation change, assess whether the modified mitigation remains effective, determine whether it functions as a risk control under the current risk management file, and provide additional validation or risk analysis as needed.',
+    });
+  } else if (answers.E5 === Answer.Uncertain) {
+    gaps.push({
+      id: 'GAP-BIAS-MITIGATION',
+      category: 'Bias and equity',
+      description: 'It is uncertain whether the bias mitigation strategy was changed, weakened, or removed',
+      severity: 'important',
+      sourceClass: 'Draft guidance',
+      source: 'FDA-LIFECYCLE-2025 §IV.B; ISO 14971:2019',
+      remediation:
+        'Determine whether any bias mitigation strategy was affected by this change. If so, review whether the modified mitigation remains effective and whether it functions as a risk control.',
     });
   }
 
@@ -237,12 +249,13 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
     gaps.push({
       id: 'GAP-PCCP-FAILED',
       category: 'PCCP',
-      description: 'PCCP scope verification failed — change cannot be implemented under PCCP',
+      description:
+        'PCCP scope verification failed — change does not fit within the authorized PCCP boundaries on the current record',
       severity: 'important',
       sourceClass: 'Final guidance',
       source: 'FDA-PCCP-2025 §V',
       remediation:
-        'Identify which PCCP gate(s) failed. Consider expanding PCCP scope via new submission or proceeding through standard submission pathway.',
+        'Identify which PCCP gate(s) failed and document the basis. Options include: (1) expanding PCCP scope via a new marketing submission, (2) proceeding through the standard submission pathway, or (3) filing a Pre-Submission (Q-Sub) if the scope boundary is ambiguous.',
     });
   }
 
@@ -321,7 +334,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       severity: 'critical',
       sourceClass: 'Regulation',
       source: '21 CFR 814.39',
-      remediation: 'Complete the PMA-specific fields (C_PMA1–C_PMA3) to determine whether a supplement is required.',
+      remediation:
+        'Complete the PMA-specific fields (C_PMA1–C_PMA3) to determine whether a supplement is required. Note: for PMA devices, the threshold is whether the change "could affect" safety or effectiveness — a lower bar than the 510(k) significance framework.',
     });
   }
 

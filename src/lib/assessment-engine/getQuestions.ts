@@ -251,7 +251,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           consequencePreview: null,
           mlguidance:
             "Pull up the clearance letter and Indications for Use statement. Compare word-by-word: does the change expand the patient population, clinical setting, anatomical region, severity scope, or diagnostic capability? For GenAI: does expanded prompting ability or RAG content broaden effective clinical scope even if the stated IFU hasn't changed?",
-          help: 'The most consequential field in the assessment. Compare the proposed change against the exact authorized indications for use (IFU), labeling claims, population, clinical context, and outputs. PCCPs are intended to be focused and bounded within the originally reviewed device scope; ChangePath therefore treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented.',
+          help: 'The most consequential field in the assessment. Compare the proposed change against the exact authorized indications for use (IFU), labeling claims, population, clinical context, and outputs. PCCPs are generally intended to be focused and bounded within the originally reviewed device scope. ChangePath treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented; however, some authorized PCCPs may include limited intended-use modifications — consult your specific PCCP authorization.',
         },
         {
           id: 'B4',
@@ -272,7 +272,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
             pathwayCritical: true,
             mlguidance:
               "PMA threshold is lower than 510(k): any change that COULD affect safety or effectiveness. Run full validation suite and compare every metric. For AI/ML: check not just overall performance but subgroup stability, calibration drift, and failure mode distribution. If any metric shows a statistically meaningful shift, answer 'Yes' or 'Uncertain.'",
-            help: 'Under 21 CFR 814.39(a), any change affecting safety or effectiveness of a PMA-approved device requires a PMA supplement. See FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section V.B for establishing a PCCP through the PMA pathway.',
+            help: 'Under 21 CFR 814.39(a), any change that could affect safety or effectiveness of a PMA-approved device requires a PMA supplement — a lower threshold than the 510(k) significance framework. Note: ChangePath applies an internal conservative policy that treats "Uncertain" on this field as requiring a supplement until the impact is definitively resolved; this is a risk-based internal escalation, not a direct regulatory mandate. See FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section V.B for establishing a PCCP through the PMA pathway.',
           },
           {
             id: 'C_PMA2',

@@ -159,7 +159,7 @@ function buildRelianceQualification(artifact: AssessmentArtifact, mergedIssueCou
   if (mergedIssueCount > 0) {
     return `Limited reliance only. ${mergedIssueCount} open issue${mergedIssueCount === 1 ? '' : 's'} remain${mergedIssueCount === 1 ? 's' : ''} and should be closed before the record is used beyond preliminary review.`;
   }
-  return 'Use only after qualified regulatory review and normal QMS controls are completed.';
+  return 'No tool-detected issues remain. Use only after qualified regulatory, clinical, and quality review and application of normal QMS controls.';
 }
 
 function buildConclusionStatement(pathway: string, artifact: AssessmentArtifact, mergedIssueCount: number): string {
@@ -169,7 +169,7 @@ function buildConclusionStatement(pathway: string, artifact: AssessmentArtifact,
   if (mergedIssueCount > 0) {
     return `The current record supports a preliminary pathway assessment of ${pathway}, but reliance remains limited until the listed issues are resolved, supporting evidence is added, and qualified review is completed.`;
   }
-  return `The current record supports a pathway assessment of ${pathway}, pending qualified regulatory review and application of normal QMS controls before action.`;
+  return `The current record supports a preliminary pathway assessment of ${pathway}, subject to qualified regulatory review and application of normal QMS controls before any reliance or action.`;
 }
 
 function getPrimaryAction(determination: DeterminationResult, pathway: string): string {
@@ -217,13 +217,13 @@ function softenSummaryStatement(
     );
   }
 
-  if (/^The pathway is .+ because/i.test(normalized)) {
+  if (/^The (assessed )?pathway is .+ because/i.test(normalized)) {
     const prefix =
       artifact.outcome.isIncomplete || mergedIssueCount > 0
         ? `The current record provisionally supports a pathway assessment of ${pathway} because`
-        : `The current record supports a pathway assessment of ${pathway} because`;
+        : `The current record supports a preliminary pathway assessment of ${pathway} because`;
 
-    return normalized.replace(/^The pathway is .+? because/i, prefix);
+    return normalized.replace(/^The (assessed )?pathway is .+? because/i, prefix);
   }
 
   return normalized;
@@ -491,7 +491,7 @@ export function buildPdfReportDocument(
 
   return {
     header: {
-      title: 'Regulatory Change Assessment Record',
+      title: 'Preliminary Regulatory Change Assessment Record',
       subtitle: 'ChangePath',
       generatedAt,
       assessmentId: options?.assessmentId || null,
@@ -561,7 +561,8 @@ export function buildPdfReportDocument(
       disclaimer:
         'This document is an internal assessment support record prepared from the current ChangePath assessment record. ' +
         'It is not a regulatory determination, legal opinion, approval record, or substitute for qualified review. ' +
-        'System-generated basis and rationale text are analytical support only and should be reviewed against the record facts, cited sources, and applicable procedures before reliance or action.',
+        'ChangePath applies conservative internal policies (e.g., treating unresolved significance uncertainty as requiring a marketing submission) that may exceed FDA minimum requirements; these are risk-based internal choices, not direct regulatory mandates. ' +
+        'System-generated basis and rationale text are analytical support only and must be reviewed by qualified regulatory, clinical, and quality personnel against the record facts, cited sources, and applicable procedures before any reliance or action.',
     },
   };
 }

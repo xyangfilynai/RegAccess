@@ -284,8 +284,10 @@ export const HandoffAdvisories: React.FC<HandoffAdvisoriesProps> = ({ consistenc
         }}
       >
         <strong style={{ color: 'var(--color-success)' }}>Preparation checklist</strong> — Use this page as an
-        execution-oriented checklist derived from the current assessed pathway. For regulatory source references and
-        open-issue detail, return to the assessment record.
+        execution-oriented checklist derived from the current assessed pathway. Completing this checklist confirms
+        internal preparation only; regulatory submissions or PCCP implementation require separate qualified review and
+        appropriate FDA authorization. For regulatory source references and open-issue detail, return to the assessment
+        record.
       </div>
     </div>
 

@@ -190,8 +190,8 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
     lines.push('');
   }
 
-  lines.push(`RECOMMENDED PATH: ${artifact.outcome.pathway}`);
-  lines.push(`Confidence: ${artifact.outcome.confidenceLevel}`);
+  lines.push(`ASSESSED PATHWAY: ${artifact.outcome.pathway}`);
+  lines.push(`Record Confidence: ${artifact.outcome.confidenceLevel}`);
   lines.push('');
   lines.push('SUMMARY');
   lines.push(artifact.rationale.headlineReason || artifact.rationale.primaryReason);
@@ -287,10 +287,12 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   lines.push(hr);
   lines.push('DISCLAIMER');
   lines.push(hr);
-  lines.push('Internal workflow aid only — not a regulatory determination.');
-  lines.push('ChangePath supports internal change-control planning and submission strategy discussion.');
+  lines.push('Internal workflow aid only — not a regulatory determination, legal opinion, or approval record.');
   lines.push(
-    'Outputs must be reviewed by qualified personnel against applicable regulations and organizational procedures before any reliance or action.',
+    'ChangePath applies conservative internal policies (e.g., treating "Uncertain" significance answers as requiring submission) that may exceed FDA minimum requirements. These policies are risk-based internal choices, not direct regulatory mandates.',
+  );
+  lines.push(
+    'All outputs must be reviewed by qualified regulatory, clinical, and quality personnel against applicable regulations, guidance, and organizational procedures before any reliance or action.',
   );
   lines.push('');
 
