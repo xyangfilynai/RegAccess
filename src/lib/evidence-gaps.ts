@@ -4,7 +4,7 @@
  */
 
 import type { Answers, DeterminationResult } from './assessment-engine';
-import { Answer, AuthPathway } from './assessment-engine';
+import { Answer, AuthPathway, answerIsOneOf } from './assessment-engine';
 import type { SourceClass } from './source-classification';
 
 export type GapSeverity = 'critical' | 'important' | 'advisory';
@@ -83,14 +83,15 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
     const hasYesOrUncertain = sigAnswers.some(a => a === Answer.Yes || a === Answer.Uncertain);
     // C3-C6 have cascading skip logic: if an earlier field is Yes, later ones are skipped.
     // Only check "all answered" for fields that are actually visible (not skipped by cascade).
-    const c3Answered = [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C3);
+    const yesNoUncertain = [Answer.Yes, Answer.No, Answer.Uncertain] as const;
+    const c3Answered = answerIsOneOf(answers.C3, yesNoUncertain);
     const c4Visible = answers.C3 !== Answer.Yes;
     const c5Visible = c4Visible && answers.C4 !== Answer.Yes;
     const c6Visible = c5Visible && answers.C5 !== Answer.Yes;
     const allAnswered = c3Answered &&
-      (!c4Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C4)) &&
-      (!c5Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C5)) &&
-      (!c6Visible || [Answer.Yes, Answer.No, Answer.Uncertain].includes(answers.C6));
+      (!c4Visible || answerIsOneOf(answers.C4, yesNoUncertain)) &&
+      (!c5Visible || answerIsOneOf(answers.C5, yesNoUncertain)) &&
+      (!c6Visible || answerIsOneOf(answers.C6, yesNoUncertain));
 
     if (!allAnswered && !determination.isCyberOnly && !determination.isBugFix) {
       gaps.push({

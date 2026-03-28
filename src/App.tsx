@@ -23,6 +23,8 @@ import {
   type SavedAssessment,
 } from './lib/assessment-store';
 import { storage } from './lib/storage';
+import { useCascadeClearing } from './hooks/useCascadeClearing';
+import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
 
 type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
 
@@ -37,7 +39,6 @@ export const App: React.FC = () => {
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
   const isViewingSample = activeSampleCaseId !== null;
 
-  // Refresh saved assessments list
   const refreshSavedAssessments = useCallback(() => {
     setSavedAssessments(assessmentStore.list());
   }, []);
@@ -56,11 +57,8 @@ export const App: React.FC = () => {
 
   // Compute derived state from answers
   const derivedState = useMemo(() => computeDerivedState(answers), [answers]);
-
-  // Get blocks based on current answers
   const blocks = useMemo(() => getBlocks(answers, derivedState), [answers, derivedState]);
 
-  // Fields shown for the current block (assessment items + section dividers)
   const getFieldsForBlock = useCallback((blockId: string): AssessmentField[] => {
     return getBlockFields(blockId, answers, derivedState);
   }, [answers, derivedState]);
@@ -72,12 +70,16 @@ export const App: React.FC = () => {
   }, [blocks.length, currentBlockIndex]);
 
   const currentBlock = blocks[currentBlockIndex];
-  const currentBlockFields = currentBlock ? getFieldsForBlock(currentBlock.id) : [];
+  const currentBlockFields = useMemo(
+    () => (currentBlock ? getFieldsForBlock(currentBlock.id) : []),
+    [currentBlock, getFieldsForBlock],
+  );
 
-  // Compute determination
   const determination = useMemo(() => computeDetermination(answers), [answers]);
 
-  // Calculate answered and total field counts per block in a single pass
+  // --- Extracted hooks ---
+  const handleAnswerChange = useCascadeClearing(setAnswers);
+
   const {
     answeredCounts,
     totalCounts,
@@ -87,137 +89,19 @@ export const App: React.FC = () => {
     overallTotal,
     overallRequiredAnswered,
     overallRequiredTotal,
-  } = useMemo(() => {
-    const answered: Record<string, number> = {};
-    const total: Record<string, number> = {};
-    const requiredAnswered: Record<string, number> = {};
-    const requiredTotal: Record<string, number> = {};
-    let overallAnsweredCount = 0;
-    let overallTotalCount = 0;
-    let overallRequiredAnsweredCount = 0;
-    let overallRequiredTotalCount = 0;
+  } = useAssessmentProgress(blocks, answers, getFieldsForBlock);
 
-    blocks.forEach(block => {
-      if (block.id === 'review') {
-        answered[block.id] = 0;
-        total[block.id] = 0;
-        requiredAnswered[block.id] = 0;
-        requiredTotal[block.id] = 0;
-        return;
-      }
-      const blockFields = getFieldsForBlock(block.id);
-      const visible = blockFields.filter(q => !q.sectionDivider && !q.skip);
-      const required = visible.filter(q => q.pathwayCritical);
-      total[block.id] = visible.length;
-      answered[block.id] = visible.filter(q => isAnsweredValue(answers[q.id])).length;
-      requiredTotal[block.id] = required.length;
-      requiredAnswered[block.id] = required.filter(q => isAnsweredValue(answers[q.id])).length;
-      overallTotalCount += visible.length;
-      overallAnsweredCount += answered[block.id];
-      overallRequiredTotalCount += required.length;
-      overallRequiredAnsweredCount += requiredAnswered[block.id];
-    });
+  const completedBlocks = useCompletedBlocks(blocks, requiredAnsweredCounts, requiredCounts);
 
-    return {
-      answeredCounts: answered,
-      totalCounts: total,
-      requiredAnsweredCounts: requiredAnswered,
-      requiredCounts: requiredTotal,
-      overallAnswered: overallAnsweredCount,
-      overallTotal: overallTotalCount,
-      overallRequiredAnswered: overallRequiredAnsweredCount,
-      overallRequiredTotal: overallRequiredTotalCount,
-    };
-  }, [blocks, answers, getFieldsForBlock]);
-
-  // Track completed blocks
-  const completedBlocks = useMemo(() => {
-    const completed = new Set<string>();
-    blocks.forEach((block) => {
-      if (block.id !== 'review' && (requiredCounts[block.id] || 0) > 0 && requiredAnsweredCounts[block.id] === requiredCounts[block.id]) {
-        completed.add(block.id);
-      }
-    });
-    return completed;
-  }, [blocks, requiredAnsweredCounts, requiredCounts]);
-
-  // Handle answer change with cascade clearing (matches original setAnswer logic)
-  const handleAnswerChange = useCallback((fieldId: string, value: unknown) => {
-    setAnswers(prev => {
-      const next: Answers = { ...prev, [fieldId]: value };
-
-      // A1 change -> clear all downstream blocks, including any legacy hidden answers.
-      if (fieldId === 'A1' && prev.A1 !== value) {
-        Object.keys(prev).filter(k =>
-          k.startsWith('B') || k.startsWith('C') || k.startsWith('P') ||
-          k.startsWith('D') || k.startsWith('E') || k.startsWith('F')
-        ).forEach(k => { next[k] = undefined; });
-      }
-
-      // B1 change -> clear B2 + all downstream blocks, including any legacy hidden answers.
-      if (fieldId === 'B1' && prev.B1 !== value) {
-        next.B2 = undefined;
-        Object.keys(prev).filter(k =>
-          k.startsWith('C') || k.startsWith('P') ||
-          k.startsWith('D') || k.startsWith('E') || k.startsWith('F')
-        ).forEach(k => { next[k] = undefined; });
-      }
-
-      // B1 change away from "Intended Use / Indications for Use" -> clear B3
-      if (
-        fieldId === 'B1' &&
-        prev.B1 === 'Intended Use / Indications for Use' &&
-        value !== 'Intended Use / Indications for Use'
-      ) {
-        next.B3 = undefined;
-      }
-
-      return next;
-    });
-  }, []);
-
-  const handlePrevious = useCallback(() => {
-    if (currentBlockIndex > 0) {
-      setCurrentBlockIndex(currentBlockIndex - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      // At block 0, go back to dashboard
-      setScreen('dashboard');
-    }
-  }, [currentBlockIndex]);
-
-  const handleBlockSelect = useCallback((index: number) => {
-    setCurrentBlockIndex(index);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Reset assessment and return to dashboard
-  const handleReset = useCallback(() => {
-    if (isViewingSample) {
-      setAnswers(storage.loadAnswers());
-      setCurrentBlockIndex(storage.loadBlockIndex());
-    } else {
-      setAnswers({});
-      setCurrentBlockIndex(0);
-      storage.clearSession();
-    }
-    setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
-    setScreen('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isViewingSample]);
-
-  // Check if current block has required pathway fields answered
+  // --- Block completion & validation ---
   const currentBlockComplete = useMemo(() => {
     if (!currentBlock || currentBlock.id === 'review') return true;
-    const fields = currentBlockFields;
-    const requiredPathwayFields = fields.filter(q =>
+    const requiredPathwayFields = currentBlockFields.filter(q =>
       !q.sectionDivider && !q.skip && q.pathwayCritical
     );
     return requiredPathwayFields.every(q => isAnsweredValue(answers[q.id]));
   }, [currentBlock, currentBlockFields, answers]);
 
-  // Validation state for highlighting incomplete required fields
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
 
   const currentMissingRequired = useMemo(() => {
@@ -227,8 +111,6 @@ export const App: React.FC = () => {
 
   type CaseSummaryTone = 'default' | 'warning' | 'success' | 'info';
   const caseSummary = useMemo((): { label: string; value: string; tone: CaseSummaryTone }[] => {
-    const baselineMissing = !answers.A1c;
-    const authIdMissing = !answers.A1b;
     return [
       {
         label: 'Authorization',
@@ -238,12 +120,12 @@ export const App: React.FC = () => {
       {
         label: 'Authorization ID',
         value: answers.A1b ? String(answers.A1b) : 'Not provided',
-        tone: authIdMissing ? 'warning' : 'default',
+        tone: !answers.A1b ? 'warning' : 'default',
       },
       {
         label: 'Authorized baseline',
         value: answers.A1c ? String(answers.A1c) : 'Not provided',
-        tone: baselineMissing ? 'warning' : 'default',
+        tone: !answers.A1c ? 'warning' : 'default',
       },
       {
         label: 'Change',
@@ -263,10 +145,19 @@ export const App: React.FC = () => {
     if (Object.keys(validationErrors).length > 0) {
       setValidationErrors({});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `validationErrors` is intentionally excluded to prevent an infinite loop (the effect sets validationErrors, so including it in deps would cause re-triggering)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- validationErrors excluded to prevent infinite loop
   }, [answers]);
 
-  // Navigation with validation gating
+  // --- Navigation ---
+  const handlePrevious = useCallback(() => {
+    if (currentBlockIndex > 0) {
+      setCurrentBlockIndex(currentBlockIndex - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setScreen('dashboard');
+    }
+  }, [currentBlockIndex]);
+
   const handleNext = useCallback(() => {
     if (currentBlockIndex < blocks.length - 1) {
       if (currentBlock && currentBlock.id !== 'review' && !currentBlockComplete) {
@@ -285,6 +176,27 @@ export const App: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [currentBlockIndex, blocks.length, currentBlock, currentBlockComplete, currentBlockFields, answers]);
+
+  const handleBlockSelect = useCallback((index: number) => {
+    setCurrentBlockIndex(index);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // --- Assessment lifecycle ---
+  const handleReset = useCallback(() => {
+    if (isViewingSample) {
+      setAnswers(storage.loadAnswers());
+      setCurrentBlockIndex(storage.loadBlockIndex());
+    } else {
+      setAnswers({});
+      setCurrentBlockIndex(0);
+      storage.clearSession();
+    }
+    setCurrentAssessmentId(null);
+    setActiveSampleCaseId(null);
+    setScreen('dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [isViewingSample]);
 
   const handleLoadAssessment = useCallback((id: string) => {
     const assessment = assessmentStore.get(id);
@@ -322,25 +234,22 @@ export const App: React.FC = () => {
     }
   }, [currentAssessmentId, refreshSavedAssessments]);
 
-  // Get current reviewer notes from store
   const currentReviewerNotes = useMemo(() => {
     if (!currentAssessmentId) return [];
     const assessment = assessmentStore.get(currentAssessmentId);
     return assessment?.reviewerNotes || [];
-  }, [currentAssessmentId, savedAssessments]); // savedAssessments as dependency to refresh
+    // savedAssessments included intentionally: triggers refresh when notes change via store
+  }, [currentAssessmentId, savedAssessments]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Navigate to dashboard without destroying current answers
   const handleHome = useCallback(() => {
     setScreen('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   // --- Dashboard actions ---
-
   const handleOpenSampleCase = useCallback((sampleCaseId: string) => {
     const sampleCase = SAMPLE_CASES_BY_ID[sampleCaseId];
     if (!sampleCase) return;
-
     setAnswers({ ...sampleCase.answers });
     setCurrentBlockIndex(0);
     setValidationErrors({});
@@ -369,7 +278,7 @@ export const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // --- Dashboard page ---
+  // --- Screen routing ---
   if (screen === 'dashboard') {
     return (
       <DashboardPage
@@ -386,21 +295,16 @@ export const App: React.FC = () => {
     );
   }
 
-  // --- Feedback survey ---
   if (screen === 'feedback') {
-    return (
-      <FeedbackSurvey onBack={() => setScreen('assess')} />
-    );
+    return <FeedbackSurvey onBack={() => setScreen('assess')} />;
   }
 
-  // --- Handoff / preparation checklist ---
   if (screen === 'handoff') {
     return (
       <HandoffPage
         determination={determination}
         answers={answers}
         onBack={() => {
-          // Go back to assessment on the review block
           setCurrentBlockIndex(blocks.length - 1);
           setScreen('assess');
         }}
@@ -412,13 +316,10 @@ export const App: React.FC = () => {
     );
   }
 
-  // --- Assessment (existing flow) ---
-
-  // Render current block content
+  // --- Assessment flow ---
   const renderBlockContent = () => {
     if (!currentBlock) return null;
 
-    // Review block
     if (currentBlock.id === 'review') {
       return (
         <ReviewPanel
@@ -435,13 +336,10 @@ export const App: React.FC = () => {
       );
     }
 
-    // Assessment blocks (fields) with contextual banners
-    const blockId = currentBlock.id;
-
     return (
       <div>
         <BlockBanners
-          blockId={blockId}
+          blockId={currentBlock.id}
           answers={answers}
           derivedState={derivedState}
           currentBlockComplete={currentBlockComplete}
@@ -517,7 +415,6 @@ export const App: React.FC = () => {
           alignItems: 'center',
           gap: 'var(--space-md)',
         }}>
-          {/* Block indicator */}
           <span style={{
             fontSize: 12,
             color: 'var(--color-text-muted)',

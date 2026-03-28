@@ -19,7 +19,20 @@ export const Pathway = Object.freeze({
   AssessmentIncomplete: "Assessment Incomplete" as const,
 });
 
-export type Answers = Record<string, any>;
+export type AnswerValue = string | string[] | undefined;
+export type Answers = Record<string, AnswerValue>;
+
+/** Check if an answer value is one of the given string options. */
+export const answerIsOneOf = (value: AnswerValue, options: readonly string[]): boolean =>
+  typeof value === 'string' && options.includes(value);
+
+/** Safely read an answer value as a string (returns '' if array or undefined). */
+export const answerAsString = (value: AnswerValue): string =>
+  typeof value === 'string' ? value : '';
+
+/** Safely read an answer value as a string array (returns [] if string or undefined). */
+export const answerAsArray = (value: AnswerValue): string[] =>
+  Array.isArray(value) ? value : [];
 
 export const isAnsweredValue = (value: unknown): boolean => {
   if (Array.isArray(value)) return value.length > 0;

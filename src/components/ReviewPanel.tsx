@@ -1,28 +1,25 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Icon } from './Icon';
 import {
   GuidanceRef,
   HelpTextWithLinks,
 } from './ui';
-import { Answer, Pathway, changeTaxonomy } from '../lib/assessment-engine';
 import type { Answers, Block, DeterminationResult, AssessmentField } from '../lib/assessment-engine';
 import {
   findGuidanceLink,
   getSourceBadge,
 } from '../lib/content';
-import { computeEvidenceGaps } from '../lib/evidence-gaps';
 import { assessmentStore, type ReviewerNote } from '../lib/assessment-store';
-import {
-  buildEvidenceGapInsightItems,
-  buildExpertReviewItems,
-} from '../lib/review-insights';
-import { buildCaseSpecificReasoning } from '../lib/case-specific-reasoning';
-import {
-  buildAssessmentBasisView,
-  splitReportNarrative,
-  type AssessmentRecordFact,
-} from '../lib/report-basis';
 import { buildPdfReportDocument } from '../lib/pdf-report-model';
+import {
+  useReviewPanelData,
+  type MergedBlockerItem,
+  type AssessmentRecordFact,
+} from '../hooks/useReviewPanelData';
+
+/* ------------------------------------------------------------------ */
+/*  Small presentational components                                    */
+/* ------------------------------------------------------------------ */
 
 const SectionCard: React.FC<{
   children: React.ReactNode;
@@ -229,24 +226,10 @@ const EvidenceGapSourceRef: React.FC<{ code: string }> = ({ code }) => {
 };
 
 const IssueCard: React.FC<{
-  title: string;
-  meta: string;
-  whyThisMatters: string;
-  actionLabel: string;
-  actionText: string;
-  sourceRefs: string[];
-  kind: 'expert' | 'evidence';
-}> = ({
-  title,
-  meta,
-  whyThisMatters,
-  actionLabel,
-  actionText,
-  sourceRefs,
-  kind,
-}) => {
-  const uniqueSources = Array.from(new Set(sourceRefs));
-  const accent = kind === 'expert'
+  item: MergedBlockerItem;
+}> = ({ item }) => {
+  const uniqueSources = Array.from(new Set(item.sourceRefs));
+  const accent = item.kind === 'expert'
     ? {
         bg: 'var(--color-warning-bg)',
         border: 'var(--color-warning-border)',
@@ -288,7 +271,7 @@ const IssueCard: React.FC<{
             minWidth: 0,
           }}
         >
-          <HelpTextWithLinks text={title} />
+          <HelpTextWithLinks text={item.title} />
         </div>
         <span
           style={{
@@ -304,7 +287,7 @@ const IssueCard: React.FC<{
             flexShrink: 0,
           }}
         >
-          {kind === 'expert' ? 'Expert Review' : 'Evidence Gap'}
+          {item.kind === 'expert' ? 'Expert Review' : 'Evidence Gap'}
         </span>
       </div>
 
@@ -316,59 +299,32 @@ const IssueCard: React.FC<{
           marginBottom: 10,
         }}
       >
-        {meta}
+        {item.meta}
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gap: 10,
-        }}
-      >
+      <div style={{ display: 'grid', gap: 10 }}>
         <div>
           <SubsectionLabel>Why It Matters</SubsectionLabel>
-          <div
-            style={{
-              fontSize: 13,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.6,
-            }}
-          >
-            <HelpTextWithLinks text={whyThisMatters} />
+          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            <HelpTextWithLinks text={item.whyThisMatters} />
           </div>
         </div>
 
         <div>
-          <SubsectionLabel>{actionLabel}</SubsectionLabel>
-          <div
-            style={{
-              fontSize: 13,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.6,
-            }}
-          >
-            <HelpTextWithLinks text={actionText} />
+          <SubsectionLabel>{item.actionLabel}</SubsectionLabel>
+          <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            <HelpTextWithLinks text={item.actionText} />
           </div>
         </div>
 
         {uniqueSources.length > 0 && (
           <div>
             <SubsectionLabel>Basis</SubsectionLabel>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-              }}
-            >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {uniqueSources.map((source) => (
                 <div
-                  key={`${title}-${source}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 8,
-                  }}
+                  key={`${item.title}-${source}`}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}
                 >
                   <span style={{ color: 'var(--color-text-muted)', lineHeight: 1.4, flexShrink: 0 }}>•</span>
                   <EvidenceGapSourceRef code={source} />
@@ -382,6 +338,10 @@ const IssueCard: React.FC<{
   );
 };
 
+/* ------------------------------------------------------------------ */
+/*  ReviewPanel                                                        */
+/* ------------------------------------------------------------------ */
+
 interface ReviewPanelProps {
   determination: DeterminationResult;
   answers: Answers;
@@ -394,123 +354,6 @@ interface ReviewPanelProps {
   assessmentId?: string | null;
 }
 
-interface MergedBlockerItem {
-  id: string;
-  title: string;
-  meta: string;
-  whyThisMatters: string;
-  actionLabel: string;
-  actionText: string;
-  sourceRefs: string[];
-  priority: number;
-  kind: 'expert' | 'evidence';
-}
-
-const normalizeTitle = (value: string): string =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-
-const pushUnique = (items: string[], value: string | null | undefined) => {
-  if (!value) return;
-  const normalized = value.trim();
-  if (!normalized || items.includes(normalized)) return;
-  items.push(normalized);
-};
-
-const getPathwayConfig = (pathway: string, hasIssues: boolean) => {
-  switch (pathway) {
-    case Pathway.LetterToFile:
-    case Pathway.PMAAnnualReport:
-      return {
-        surface: hasIssues ? 'var(--color-warning-bg)' : 'var(--color-success-bg)',
-        border: hasIssues ? 'var(--color-warning-border)' : 'var(--color-success-border)',
-        accent: hasIssues ? 'var(--color-warning)' : 'var(--color-success)',
-        label: 'Documentation-only pathway',
-      };
-    case Pathway.ImplementPCCP:
-      return {
-        surface: 'var(--color-info-bg)',
-        border: 'var(--color-info-border)',
-        accent: 'var(--color-info)',
-        label: 'Authorized PCCP pathway',
-      };
-    case Pathway.NewSubmission:
-    case Pathway.PMASupplementRequired:
-      return {
-        surface: 'var(--color-danger-bg)',
-        border: 'var(--color-danger-border)',
-        accent: 'var(--color-danger)',
-        label: 'Submission pathway',
-      };
-    case Pathway.AssessmentIncomplete:
-      return {
-        surface: 'var(--color-warning-bg)',
-        border: 'var(--color-warning-border)',
-        accent: 'var(--color-warning)',
-        label: 'Assessment not complete',
-      };
-    default:
-      return {
-        surface: 'var(--color-bg-card)',
-        border: 'var(--color-border)',
-        accent: 'var(--color-text-secondary)',
-        label: 'Pathway summary',
-      };
-  }
-};
-
-const getPrimaryAction = (determination: DeterminationResult, pathway: string): string => {
-  if (pathway === Pathway.LetterToFile || pathway === Pathway.PMAAnnualReport) {
-    return 'Document the rationale and file the record per QMS.';
-  }
-  if (pathway === Pathway.ImplementPCCP) {
-    return 'Complete the authorized PCCP validation protocol before implementation.';
-  }
-  if (pathway === Pathway.NewSubmission) {
-    return 'Prepare the submission package for the selected 510(k) or De Novo strategy.';
-  }
-  if (pathway === Pathway.PMASupplementRequired) {
-    return 'Confirm the PMA supplement type and assemble the supporting package.';
-  }
-  if (determination.isIntendedUseUncertain) {
-    return 'Resolve intended-use uncertainty before treating this assessment as final.';
-  }
-  if (determination.pmaIncomplete) {
-    return 'Complete the PMA safety/effectiveness review fields before reliance.';
-  }
-  if (determination.pccpIncomplete) {
-    return 'Complete the PCCP scope review before relying on PCCP implementation.';
-  }
-  if (determination.hasUncertainSignificance) {
-    return 'Close unresolved significance fields with supporting evidence and review.';
-  }
-  if (determination.seUncertain) {
-    return 'Reassess substantial equivalence on the cumulative change record.';
-  }
-  return 'Complete the remaining pathway-critical fields before reliance.';
-};
-
-const getIncompleteHeading = (determination: DeterminationResult): string => {
-  if (determination.isIntendedUseUncertain) {
-    return 'Assessment Incomplete: Intended-Use Impact Unresolved';
-  }
-  if (determination.pmaIncomplete) {
-    return 'Assessment Incomplete: PMA Significance Review Outstanding';
-  }
-  if (determination.pccpIncomplete) {
-    return 'Assessment Incomplete: PCCP Scope Review Outstanding';
-  }
-  if (determination.hasUncertainSignificance) {
-    return 'Assessment Incomplete: Significance Review Unresolved';
-  }
-  if (determination.seUncertain) {
-    return 'Assessment Incomplete: Substantial Equivalence Unresolved';
-  }
-  return 'Assessment Incomplete: Required Fields Outstanding';
-};
-
 export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   determination,
   answers,
@@ -522,199 +365,12 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
   onRemoveNote,
   assessmentId,
 }) => {
-  const pathway = determination.pathway;
   const [noteAuthor, setNoteAuthor] = useState('');
   const [noteText, setNoteText] = useState('');
 
-  const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
-  const criticalGaps = evidenceGaps.filter((gap) => gap.severity === 'critical');
-  const expertReviewItems = useMemo(
-    () => buildExpertReviewItems(answers, determination),
-    [answers, determination],
-  );
-  const evidenceGapItems = useMemo(
-    () => buildEvidenceGapInsightItems(answers, determination, evidenceGaps),
-    [answers, determination, evidenceGaps],
-  );
-  const caseReasoning = useMemo(
-    () => buildCaseSpecificReasoning(answers, determination, blocks, getFieldsForBlock),
-    [answers, determination, blocks, getFieldsForBlock],
-  );
-  const assessmentBasisView = useMemo(
-    () => buildAssessmentBasisView(answers, determination),
-    [answers, determination],
-  );
-  const reportNarrative = useMemo(
-    () => splitReportNarrative(caseReasoning.narrative || []),
-    [caseReasoning],
-  );
+  const data = useReviewPanelData(answers, determination, blocks, getFieldsForBlock, onHandoff);
 
-  const selectedChangeType = (answers.B1 && answers.B2)
-    ? changeTaxonomy[answers.B1 as string]?.types?.find((item) => item.name === answers.B2)
-    : null;
-  const pccpEligibility = selectedChangeType?.pccp;
-  const showPCCPRecommendation = determination.pccpRecommendation?.shouldRecommend
-    && answers.A2 !== Answer.Yes
-    && determination.isNewSub
-    && pccpEligibility
-    && ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility);
-
-  const pccpHeroSummary = showPCCPRecommendation ? {
-    heading: pccpEligibility === 'TYPICAL'
-      ? 'Consider a PCCP in the next marketing submission'
-      : 'Evaluate PCCP feasibility in the next marketing submission',
-    summary: pccpEligibility === 'TYPICAL'
-      ? 'For this change pattern, PCCP is often a reasonable mechanism when modifications are pre-described, bounded, and validated prospectively. This assessment already maps to a new submission and no authorized PCCP is on file, so the next submission is a practical point to request PCCP coverage if scope and evidence support it.'
-      : 'PCCP may apply only when future changes are tightly bounded and supported by prospective validation. This assessment maps to a new submission with no authorized PCCP on file; use the next submission to assess whether PCCP is viable for your program, subject to RA judgment and any FDA interaction.',
-    detail: selectedChangeType?.pccpNote || null,
-  } : null;
-
-  const mergedBlockers = useMemo(() => {
-    const deduped = new Map<string, MergedBlockerItem>();
-
-    const addItem = (item: MergedBlockerItem) => {
-      const key = normalizeTitle(item.title);
-      const existing = deduped.get(key);
-      if (!existing || item.priority < existing.priority) {
-        deduped.set(key, item);
-      }
-    };
-
-    expertReviewItems.forEach((item) => {
-      addItem({
-        id: item.id,
-        title: item.title,
-        meta: item.meta,
-        whyThisMatters: item.whyThisMatters,
-        actionLabel: item.actionLabel,
-        actionText: item.actionText,
-        sourceRefs: item.sourceRefs,
-        priority: 0,
-        kind: 'expert',
-      });
-    });
-
-    evidenceGapItems
-      .filter((item) => item.severity !== 'advisory')
-      .forEach((item) => {
-        addItem({
-          id: item.id,
-          title: item.title,
-          meta: item.meta,
-          whyThisMatters: item.whyThisMatters,
-          actionLabel: item.actionLabel,
-          actionText: item.actionText,
-          sourceRefs: item.sourceRefs,
-          priority: item.severity === 'critical' ? 1 : 2,
-          kind: 'evidence',
-        });
-      });
-
-    return Array.from(deduped.values()).sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      return a.title.localeCompare(b.title);
-    });
-  }, [evidenceGapItems, expertReviewItems]);
-
-  const consistencyIssues = determination.consistencyIssues || [];
-  const isIncomplete = determination.isIncomplete;
-  const hasCriticalGaps = criticalGaps.length > 0;
-  const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
-  const config = getPathwayConfig(pathway, consistencyIssues.length > 0);
-  const primaryAction = getPrimaryAction(determination, pathway);
-  const summaryReason = reportNarrative.headlineReason || caseReasoning.narrative[1] || caseReasoning.primaryReason;
-
-  const relianceState = useMemo(() => {
-    if (isIncomplete) {
-      return {
-        label: 'Not ready for reliance',
-        detail: 'Pathway-critical fields remain open, so the record should not be treated as final.',
-        bg: '#fff7ed',
-        border: '#fdba74',
-        text: '#9a3412',
-      };
-    }
-
-    if (mergedBlockers.length > 0 || hasCriticalGaps || isDocOnlyWithCriticalGaps) {
-      const blockerCount = mergedBlockers.length > 0 ? mergedBlockers.length : criticalGaps.length;
-      return {
-        label: 'Open issues remain',
-        detail: `${blockerCount} open issue${blockerCount === 1 ? '' : 's'} remain on the current record.`,
-        bg: 'var(--color-warning-bg)',
-        border: 'var(--color-warning-border)',
-        text: 'var(--color-warning)',
-      };
-    }
-
-    return {
-      label: 'Ready for review',
-      detail: 'No open issues are listed on the current record. Continue with standard expert review and QMS controls before action.',
-      bg: 'var(--color-success-bg)',
-      border: 'var(--color-success-border)',
-      text: 'var(--color-success)',
-    };
-  }, [criticalGaps.length, hasCriticalGaps, isDocOnlyWithCriticalGaps, isIncomplete, mergedBlockers.length]);
-
-  const shortRecordFacts = assessmentBasisView.recordFacts.filter((fact) => !fact.isLongText);
-  const longRecordFacts = assessmentBasisView.recordFacts.filter((fact) => fact.isLongText);
-
-  const decisionTraceSteps = useMemo(
-    () => caseReasoning.decisionPath.filter((step) => !step.startsWith('Result:')),
-    [caseReasoning.decisionPath],
-  );
-
-  const decisionSupportNotes = useMemo(() => {
-    const items: string[] = [];
-    reportNarrative.supportingReasoning.forEach((entry) => pushUnique(items, entry));
-    if (items.length === 0) {
-      pushUnique(items, summaryReason);
-    }
-    return items.slice(0, 2);
-  }, [reportNarrative.supportingReasoning, summaryReason]);
-
-  const alternativePathwayNotes = useMemo(() => {
-    if (isIncomplete) return [];
-    return caseReasoning.counterConsiderations.slice(0, 3);
-  }, [caseReasoning.counterConsiderations, isIncomplete]);
-
-  const citedSources = useMemo(() => {
-    const items: string[] = [];
-    caseReasoning.sources.forEach((source) => pushUnique(items, source));
-    mergedBlockers.forEach((item) => {
-      item.sourceRefs.forEach((source) => pushUnique(items, source));
-    });
-    return items;
-  }, [caseReasoning.sources, mergedBlockers]);
-
-  const supportingNextSteps = useMemo(() => {
-    const items: string[] = [];
-    const add = (value: string | null | undefined) => {
-      if (items.length >= 3) return;
-      pushUnique(items, value);
-    };
-
-    if (mergedBlockers.length > 0) {
-      mergedBlockers.slice(0, 3).forEach((item) => add(item.actionText));
-      return items;
-    }
-
-    if (!isIncomplete && onHandoff) {
-      add(
-        determination.isPCCPImpl
-          ? 'Open the preparation checklist and complete the PCCP implementation record.'
-          : determination.isDocOnly
-            ? 'Open the preparation checklist and assemble the documentation package.'
-            : 'Open the preparation checklist and begin the submission package.',
-      );
-    }
-
-    caseReasoning.verificationSteps.forEach((step) => add(step));
-    return items;
-  }, [caseReasoning.verificationSteps, determination.isDocOnly, determination.isPCCPImpl, isIncomplete, mergedBlockers, onHandoff]);
-
-  const showPreparationSection = Boolean(onHandoff || supportingNextSteps.length > 0);
   const showReviewerNotes = Boolean(onAddNote || (reviewerNotes && reviewerNotes.length > 0));
-  const preparationNeedsCaution = mergedBlockers.length > 0 || consistencyIssues.length > 0;
 
   return (
     <div
@@ -725,10 +381,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         gap: 'var(--space-lg)',
       }}
     >
+      {/* === Pathway summary hero === */}
       <SectionCard
-        accentColor={config.accent}
-        background={config.surface}
-        borderColor={config.border}
+        accentColor={data.config.accent}
+        background={data.config.surface}
+        borderColor={data.config.border}
       >
         <div
           style={{
@@ -745,13 +402,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
               style={{
                 fontSize: 12,
                 fontWeight: 700,
-                color: config.accent,
+                color: data.config.accent,
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
                 marginBottom: 8,
               }}
             >
-              {config.label}
+              {data.config.label}
             </div>
 
             <h1
@@ -763,10 +420,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 lineHeight: 1.2,
               }}
             >
-              {isIncomplete ? getIncompleteHeading(determination) : pathway}
+              {data.isIncomplete ? data.incompleteHeading : data.pathway}
             </h1>
 
-            {summaryReason && (
+            {data.summaryReason && (
               <div
                 style={{
                   fontSize: 13,
@@ -776,7 +433,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 }}
               >
                 <strong style={{ color: 'var(--color-text)' }}>System reasoning:</strong>{' '}
-                <HelpTextWithLinks text={summaryReason} />
+                <HelpTextWithLinks text={data.summaryReason} />
               </div>
             )}
           </div>
@@ -828,52 +485,33 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }}
         >
           <SummaryField label="Assessed Pathway">
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: 'var(--color-text)',
-                lineHeight: 1.45,
-              }}
-            >
-              {pathway}
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text)', lineHeight: 1.45 }}>
+              {data.pathway}
             </div>
           </SummaryField>
 
           <SummaryField label="Record Status">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <CompactBadge
-                label={relianceState.label}
-                bg={relianceState.bg}
-                border={relianceState.border}
-                text={relianceState.text}
+                label={data.relianceState.label}
+                bg={data.relianceState.bg}
+                border={data.relianceState.border}
+                text={data.relianceState.text}
               />
-              <div
-                style={{
-                  fontSize: 12.5,
-                  color: 'var(--color-text-secondary)',
-                  lineHeight: 1.55,
-                }}
-              >
-                {relianceState.detail}
+              <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.55 }}>
+                {data.relianceState.detail}
               </div>
             </div>
           </SummaryField>
 
           <SummaryField label="Indicated Next Step">
-            <div
-              style={{
-                fontSize: 13,
-                color: 'var(--color-text)',
-                lineHeight: 1.6,
-              }}
-            >
-              <HelpTextWithLinks text={primaryAction} />
+            <div style={{ fontSize: 13, color: 'var(--color-text)', lineHeight: 1.6 }}>
+              <HelpTextWithLinks text={data.primaryAction} />
             </div>
           </SummaryField>
         </div>
 
-        {pccpHeroSummary && (
+        {data.pccpHeroSummary && (
           <div
             data-testid="pccp-recommendation"
             style={{
@@ -885,19 +523,13 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             }}
           >
             <SubsectionLabel>PCCP Planning Note</SubsectionLabel>
-            <div
-              style={{
-                fontSize: 13,
-                color: 'var(--color-text-secondary)',
-                lineHeight: 1.65,
-              }}
-            >
-              <strong style={{ color: 'var(--color-text)' }}>{pccpHeroSummary.heading}.</strong>{' '}
-              <HelpTextWithLinks text={pccpHeroSummary.summary} />
-              {pccpHeroSummary.detail ? (
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.65 }}>
+              <strong style={{ color: 'var(--color-text)' }}>{data.pccpHeroSummary.heading}.</strong>{' '}
+              <HelpTextWithLinks text={data.pccpHeroSummary.summary} />
+              {data.pccpHeroSummary.detail ? (
                 <>
                   {' '}<strong style={{ color: 'var(--color-text)' }}>Boundary note:</strong>{' '}
-                  <HelpTextWithLinks text={pccpHeroSummary.detail} />
+                  <HelpTextWithLinks text={data.pccpHeroSummary.detail} />
                 </>
               ) : null}
             </div>
@@ -905,6 +537,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         )}
       </SectionCard>
 
+      {/* === Assessment Basis === */}
       <SectionCard>
         <div style={{ marginBottom: 'var(--space-md)' }}>
           <SectionHeading>Assessment Basis</SectionHeading>
@@ -919,14 +552,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         >
           <div>
             <SubsectionLabel>Record Facts</SubsectionLabel>
-            <div
-              style={{
-                fontSize: 12.5,
-                color: 'var(--color-text-tertiary)',
-                lineHeight: 1.55,
-                marginBottom: 12,
-              }}
-            >
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
               User-entered or selected fields from the current record.
             </div>
 
@@ -935,17 +561,17 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: 10,
-                marginBottom: longRecordFacts.length > 0 ? 10 : 0,
+                marginBottom: data.longRecordFacts.length > 0 ? 10 : 0,
               }}
             >
-              {shortRecordFacts.map((fact) => (
+              {data.shortRecordFacts.map((fact) => (
                 <RecordFactBlock key={fact.label} fact={fact} />
               ))}
             </div>
 
-            {longRecordFacts.length > 0 && (
+            {data.longRecordFacts.length > 0 && (
               <div style={{ display: 'grid', gap: 10 }}>
-                {longRecordFacts.map((fact) => (
+                {data.longRecordFacts.map((fact) => (
                   <RecordFactBlock key={fact.label} fact={fact} />
                 ))}
               </div>
@@ -954,25 +580,12 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
 
           <div>
             <SubsectionLabel>System Basis</SubsectionLabel>
-            <div
-              style={{
-                fontSize: 12.5,
-                color: 'var(--color-text-tertiary)',
-                lineHeight: 1.55,
-                marginBottom: 12,
-              }}
-            >
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
               System-generated basis derived from the current record and pathway logic.
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              {assessmentBasisView.systemBasis.length > 0 ? assessmentBasisView.systemBasis.map((item, index) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {data.assessmentBasisView.systemBasis.length > 0 ? data.assessmentBasisView.systemBasis.map((item, index) => (
                 <div
                   key={`basis-${index}`}
                   style={{
@@ -1007,6 +620,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         </div>
       </SectionCard>
 
+      {/* === Decision Trace + Alternative Pathways === */}
       <div
         style={{
           display: 'grid',
@@ -1019,7 +633,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             <SectionHeading>Decision Trace</SectionHeading>
           </div>
 
-          {decisionSupportNotes.length > 0 && (
+          {data.decisionSupportNotes.length > 0 && (
             <div
               style={{
                 padding: '12px 14px',
@@ -1031,14 +645,10 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             >
               <SubsectionLabel>Supporting Reasoning</SubsectionLabel>
               <div style={{ display: 'grid', gap: 8 }}>
-                {decisionSupportNotes.map((item, index) => (
+                {data.decisionSupportNotes.map((item, index) => (
                   <div
                     key={`support-note-${index}`}
-                    style={{
-                      fontSize: 13,
-                      color: 'var(--color-text-secondary)',
-                      lineHeight: 1.6,
-                    }}
+                    style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}
                   >
                     <HelpTextWithLinks text={item} />
                   </div>
@@ -1047,9 +657,9 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
             </div>
           )}
 
-          {decisionTraceSteps.length > 0 ? (
+          {data.decisionTraceSteps.length > 0 ? (
             <div style={{ display: 'grid', gap: 10 }}>
-              {decisionTraceSteps.map((step, index) => (
+              {data.decisionTraceSteps.map((step, index) => (
                 <TraceStep key={`trace-step-${index}`} index={index} text={step} />
               ))}
             </div>
@@ -1070,25 +680,18 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           )}
         </SectionCard>
 
-        {alternativePathwayNotes.length > 0 && (
+        {data.alternativePathwayNotes.length > 0 && (
           <SectionCard style={{ height: '100%' }}>
             <div style={{ marginBottom: 'var(--space-md)' }}>
               <SectionHeading>What Would Change This Pathway</SectionHeading>
             </div>
 
-            <div
-              style={{
-                fontSize: 12.5,
-                color: 'var(--color-text-tertiary)',
-                lineHeight: 1.55,
-                marginBottom: 12,
-              }}
-            >
+            <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
               System-generated conditions under which the current record would support a different pathway.
             </div>
 
             <div style={{ display: 'grid', gap: 10 }}>
-              {alternativePathwayNotes.map((item, index) => (
+              {data.alternativePathwayNotes.map((item, index) => (
                 <div
                   key={`alternative-${index}`}
                   style={{
@@ -1109,6 +712,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         )}
       </div>
 
+      {/* === Open Issues === */}
       <SectionCard>
         <div
           style={{
@@ -1121,7 +725,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           }}
         >
           <SectionHeading>Open Issues</SectionHeading>
-          {mergedBlockers.length > 0 && (
+          {data.mergedBlockers.length > 0 && (
             <span
               style={{
                 fontSize: 11,
@@ -1133,24 +737,15 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 border: '1px solid var(--color-warning-border)',
               }}
             >
-              {mergedBlockers.length}
+              {data.mergedBlockers.length}
             </span>
           )}
         </div>
 
-        {mergedBlockers.length > 0 ? (
+        {data.mergedBlockers.length > 0 ? (
           <div style={{ display: 'grid', gap: 10 }}>
-            {mergedBlockers.map((item) => (
-              <IssueCard
-                key={item.id}
-                title={item.title}
-                meta={item.meta}
-                whyThisMatters={item.whyThisMatters}
-                actionLabel={item.actionLabel}
-                actionText={item.actionText}
-                sourceRefs={item.sourceRefs}
-                kind={item.kind}
-              />
+            {data.mergedBlockers.map((blocker) => (
+              <IssueCard key={blocker.id} item={blocker} />
             ))}
           </div>
         ) : (
@@ -1170,6 +765,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         )}
       </SectionCard>
 
+      {/* === Sources + Preparation === */}
       <div
         style={{
           display: 'grid',
@@ -1177,27 +773,17 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           gap: 'var(--space-lg)',
         }}
       >
-        {citedSources.length > 0 && (
+        {data.citedSources.length > 0 && (
           <SectionCard style={{ height: '100%' }}>
             <div style={{ marginBottom: 'var(--space-md)' }}>
               <SectionHeading>Regulatory Sources Referenced</SectionHeading>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-              }}
-            >
-              {citedSources.map((source) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.citedSources.map((source) => (
                 <div
                   key={`reasoning-source-${source}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 8,
-                  }}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}
                 >
                   <span style={{ color: 'var(--color-text-muted)', lineHeight: 1.4, flexShrink: 0 }}>•</span>
                   <EvidenceGapSourceRef code={source} />
@@ -1207,11 +793,11 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           </SectionCard>
         )}
 
-        {showPreparationSection && (
+        {data.showPreparationSection && (
           <SectionCard
-            dataTestId={onHandoff && !determination.isIncomplete ? 'handoff-cta' : undefined}
-            background={preparationNeedsCaution ? 'var(--color-warning-bg)' : 'var(--color-bg-elevated)'}
-            borderColor={preparationNeedsCaution ? 'var(--color-warning-border)' : 'var(--color-border)'}
+            dataTestId={onHandoff && !data.isIncomplete ? 'handoff-cta' : undefined}
+            background={data.preparationNeedsCaution ? 'var(--color-warning-bg)' : 'var(--color-bg-elevated)'}
+            borderColor={data.preparationNeedsCaution ? 'var(--color-warning-border)' : 'var(--color-border)'}
             style={{ height: '100%' }}
           >
             <div style={{ marginBottom: 'var(--space-md)' }}>
@@ -1223,25 +809,25 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
                 fontSize: 13,
                 color: 'var(--color-text-secondary)',
                 lineHeight: 1.65,
-                marginBottom: supportingNextSteps.length > 0 ? 12 : 0,
+                marginBottom: data.supportingNextSteps.length > 0 ? 12 : 0,
               }}
             >
-              {determination.isIncomplete
+              {data.isIncomplete
                 ? 'Complete pathway-critical fields before treating this record as ready for the preparation checklist.'
-                : preparationNeedsCaution
+                : data.preparationNeedsCaution
                   ? 'The checklist can be opened from this record, but open issues remain and should be closed before reliance or execution.'
                   : 'Use the checklist as the next execution step for this pathway.'}
             </div>
 
-            {supportingNextSteps.length > 0 && (
-              <div style={{ display: 'grid', gap: 8, marginBottom: onHandoff && !determination.isIncomplete ? 16 : 0 }}>
-                {supportingNextSteps.map((step, index) => (
+            {data.supportingNextSteps.length > 0 && (
+              <div style={{ display: 'grid', gap: 8, marginBottom: onHandoff && !data.isIncomplete ? 16 : 0 }}>
+                {data.supportingNextSteps.map((step, index) => (
                   <TraceStep key={`next-step-${index}`} index={index} text={step} />
                 ))}
               </div>
             )}
 
-            {onHandoff && !determination.isIncomplete && (
+            {onHandoff && !data.isIncomplete && (
               <button
                 onClick={onHandoff}
                 style={{
@@ -1270,20 +856,14 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
         )}
       </div>
 
+      {/* === Reviewer Notes === */}
       {showReviewerNotes && (
         <SectionCard>
           <div style={{ marginBottom: 'var(--space-md)' }}>
             <SectionHeading>Reviewer Notes</SectionHeading>
           </div>
 
-          <div
-            style={{
-              fontSize: 12.5,
-              color: 'var(--color-text-tertiary)',
-              lineHeight: 1.55,
-              marginBottom: 12,
-            }}
-          >
+          <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.55, marginBottom: 12 }}>
             Reviewer-entered comments for this assessment record.
           </div>
 
@@ -1351,12 +931,7 @@ export const ReviewPanel: React.FC<ReviewPanelProps> = ({
           )}
 
           {onAddNote && (
-            <div
-              style={{
-                display: 'grid',
-                gap: 10,
-              }}
-            >
+            <div style={{ display: 'grid', gap: 10 }}>
               <input
                 type="text"
                 value={noteAuthor}

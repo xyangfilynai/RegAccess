@@ -8,7 +8,9 @@ import {
 } from '../src/lib/assessment-engine';
 import { SAMPLE_CASES } from '../src/sample-cases';
 
-const getVisibleQuestionIds = (answers: Record<string, unknown>) => {
+import type { Answers } from '../src/lib/assessment-engine';
+
+const getVisibleQuestionIds = (answers: Answers) => {
   const derivedState = computeDerivedState(answers);
   const blocks = getBlocks(answers, derivedState);
   const visibleQuestionIds: string[] = [];

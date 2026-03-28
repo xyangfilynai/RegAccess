@@ -10,7 +10,6 @@ import {
   type Answers,
 } from '../src/lib/assessment-engine';
 import { buildPdfReportDocument, type PdfReportDocument } from '../src/lib/pdf-report-model';
-import { renderPdfReport } from '../src/lib/pdf-renderer';
 import { buildDocxDocument } from '../src/lib/docx-renderer';
 import { base510k, baseDeNovo, basePMA } from './helpers';
 
@@ -32,10 +31,6 @@ function buildDoc(answers: Answers, options?: { assessmentId?: string; assessmen
 
 function normalizeText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
-}
-
-function buildPdfText(reportDoc: PdfReportDocument): string {
-  return renderPdfReport(reportDoc).output();
 }
 
 /* ------------------------------------------------------------------ */
@@ -251,41 +246,6 @@ describe('buildPdfReportDocument', () => {
     );
     expect(authPathway).toBeTruthy();
     expect(authPathway!.isLongText).toBe(false);
-  });
-});
-
-/* ------------------------------------------------------------------ */
-/*  PDF renderer tests (legacy, kept for regression)                   */
-/* ------------------------------------------------------------------ */
-
-describe('renderPdfReport', () => {
-  it('produces a jsPDF document from a standard 510(k) case', () => {
-    const reportDoc = buildDoc(base510k());
-    const pdf = renderPdfReport(reportDoc);
-
-    expect(pdf).toBeTruthy();
-    expect(pdf.getNumberOfPages()).toBeGreaterThanOrEqual(1);
-  });
-
-  it('handles sparse data without throwing', () => {
-    const reportDoc = buildDoc({});
-    const pdf = renderPdfReport(reportDoc);
-
-    expect(pdf).toBeTruthy();
-    expect(pdf.getNumberOfPages()).toBeGreaterThanOrEqual(1);
-  });
-
-  it('generates valid PDF output bytes', () => {
-    const reportDoc = buildDoc(base510k());
-    const pdf = renderPdfReport(reportDoc);
-    const output = pdf.output('arraybuffer');
-
-    expect(output).toBeInstanceOf(ArrayBuffer);
-    expect(output.byteLength).toBeGreaterThan(0);
-
-    const header = new Uint8Array(output, 0, 5);
-    const magic = String.fromCharCode(...header);
-    expect(magic).toBe('%PDF-');
   });
 });
 
