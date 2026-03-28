@@ -146,21 +146,18 @@ export const Layout: React.FC<LayoutProps> = ({
               onClick={onSaveAssessment}
               disabled={!canSaveAssessment}
               data-testid="save-assessment-btn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: canSaveAssessment ? 'var(--color-primary)' : 'var(--color-bg-card)',
-                border: canSaveAssessment ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                color: canSaveAssessment ? '#fff' : 'var(--color-text-muted)',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: canSaveAssessment ? 'pointer' : 'not-allowed',
-                opacity: canSaveAssessment ? 1 : 0.7,
-                transition: 'all var(--transition-fast)',
-              }}
+              className={`btn-sm ${canSaveAssessment ? 'btn-sm-primary' : ''}`}
+              style={
+                canSaveAssessment
+                  ? undefined
+                  : {
+                      background: 'var(--color-bg-card)',
+                      border: '1px solid var(--color-border)',
+                      color: 'var(--color-text-muted)',
+                      opacity: 0.7,
+                      cursor: 'not-allowed',
+                    }
+              }
               title={saveLabel}
             >
               <Icon name="fileText" size={14} color={canSaveAssessment ? '#fff' : 'var(--color-text-muted)'} />
@@ -168,57 +165,20 @@ export const Layout: React.FC<LayoutProps> = ({
             </button>
           )}
           {onHome && (
-            <button
-              onClick={onHome}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-secondary)',
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              title="Return to dashboard"
-            >
+            <button onClick={onHome} className="btn-sm btn-sm-ghost" title="Return to dashboard">
               <Icon name="home" size={14} />
               <span className="hide-mobile">Home</span>
             </button>
           )}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Pathway-critical</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+          <div className="header-chip">
+            <span className="header-chip-label">Pathway-critical</span>
+            <span className="header-chip-value">
               {overallRequiredAnswered}/{overallRequiredTotal || 0}
             </span>
           </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              background: 'var(--color-bg-card)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Responses</span>
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>
+          <div className="header-chip">
+            <span className="header-chip-label">Responses</span>
+            <span className="header-chip-value">
               {overallAnswered}/{overallTotal || 0}
             </span>
           </div>
@@ -233,28 +193,7 @@ export const Layout: React.FC<LayoutProps> = ({
                   onReset();
                 }
               }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-xs)',
-                padding: '6px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'transparent',
-                border: '1px solid var(--color-border)',
-                color: 'var(--color-text-muted)',
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-danger)';
-                e.currentTarget.style.color = 'var(--color-danger)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--color-border)';
-                e.currentTarget.style.color = 'var(--color-text-muted)';
-              }}
+              className="btn-sm btn-sm-danger-ghost"
               title="Reset assessment"
             >
               <Icon name="refresh" size={14} />

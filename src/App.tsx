@@ -207,71 +207,19 @@ export const App: React.FC = () => {
       {renderBlockContent()}
 
       {/* Navigation buttons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: 'var(--space-xl)',
-          paddingTop: 'var(--space-lg)',
-          borderTop: '1px solid var(--color-border)',
-        }}
-      >
-        <button
-          onClick={handlePrevious}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            padding: 'var(--space-md) var(--space-lg)',
-            borderRadius: 'var(--radius-md)',
-            background: 'transparent',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text)',
-            fontSize: 14,
-            fontWeight: 500,
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-          }}
-        >
+      <div className="nav-footer">
+        <button onClick={handlePrevious} className="btn-outline">
           <Icon name="arrowLeft" size={16} />
           {currentBlockIndex === 0 ? 'Dashboard' : 'Previous'}
         </button>
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-md)',
-          }}
-        >
-          <span
-            style={{
-              fontSize: 12,
-              color: 'var(--color-text-muted)',
-            }}
-          >
+        <div className="nav-footer-right">
+          <span className="nav-footer-counter">
             {currentBlockIndex + 1} of {blocks.length}
           </span>
 
           {currentBlockIndex < blocks.length - 1 && (
-            <button
-              onClick={handleNext}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                padding: 'var(--space-md) var(--space-lg)',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--color-primary)',
-                border: 'none',
-                color: '#fff',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
+            <button onClick={handleNext} className="btn-continue">
               Continue
               <Icon name="arrow" size={16} color="#fff" />
             </button>
@@ -281,27 +229,9 @@ export const App: React.FC = () => {
 
       {/* Incomplete warning */}
       {!currentBlockComplete && currentBlock?.id !== 'review' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-sm)',
-            marginTop: 'var(--space-md)',
-            padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: 'var(--color-warning-bg)',
-            border: '1px solid var(--color-warning-border)',
-          }}
-        >
+        <div className="incomplete-warning">
           <Icon name="alertCircle" size={16} color="var(--color-warning)" />
-          <span
-            style={{
-              fontSize: 13,
-              color: 'var(--color-text-secondary)',
-            }}
-          >
-            Complete all required fields in this section to continue.
-          </span>
+          <span className="incomplete-warning-text">Complete all required fields in this section to continue.</span>
         </div>
       )}
     </Layout>
