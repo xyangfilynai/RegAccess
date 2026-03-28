@@ -74,7 +74,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
             lineHeight: 1.2,
           }}
         >
-          {data.isIncomplete ? data.incompleteHeading : `Assessed Pathway: ${data.pathway}`}
+          {data.isIncomplete ? data.incompleteHeading : data.pathway}
         </h1>
 
         {data.summaryReason && (
