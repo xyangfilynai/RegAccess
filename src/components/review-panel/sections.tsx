@@ -36,7 +36,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
         marginBottom: 'var(--space-lg)',
       }}
     >
-      <strong style={{ color: 'var(--color-warning)' }}>Internal assessment only.</strong> This is a tool-generated
+      <strong style={{ color: 'var(--color-warning)' }}>Internal assessment only.</strong> This is a ChangePath-generated
       preliminary assessment, not a regulatory determination. It applies conservative internal policies that may exceed
       regulatory requirements. Outputs must be reviewed by qualified regulatory, clinical, and quality personnel before
       any reliance or action.
@@ -86,7 +86,7 @@ export const ReviewHeroSection: React.FC<ReviewHeroSectionProps> = ({ data, onEx
               maxWidth: 760,
             }}
           >
-            <strong style={{ color: 'var(--color-text)' }}>Tool-generated reasoning (not expert review):</strong>{' '}
+            <strong style={{ color: 'var(--color-text)' }}>System reasoning:</strong>{' '}
             <HelpTextWithLinks text={data.summaryReason} />
           </div>
         )}
@@ -345,7 +345,7 @@ export const ReviewOpenIssuesSection: React.FC<{ data: ReviewPanelData }> = ({ d
           lineHeight: 1.6,
         }}
       >
-        No tool-detected issues remain for this record. Proceed with qualified expert review and QMS controls before any
+        No ChangePath-detected issues remain for this record. Proceed with qualified expert review and QMS controls before any
         reliance or action.
       </div>
     )}

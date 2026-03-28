@@ -282,10 +282,10 @@ describe('regulatory framing and disclaimers', () => {
     }
   });
 
-  it('reliance qualification mentions "No tool-detected issues" for clean records', () => {
+  it('reliance qualification mentions "No ChangePath-detected issues" for clean records', () => {
     const doc = buildDoc(base510k());
     if (doc.openIssues.length === 0 && !doc.executiveSummary.isIncomplete) {
-      expect(doc.executiveSummary.relianceQualification).toContain('No tool-detected issues');
+      expect(doc.executiveSummary.relianceQualification).toContain('No ChangePath-detected issues');
     }
   });
 

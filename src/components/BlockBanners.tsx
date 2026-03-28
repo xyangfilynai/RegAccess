@@ -85,7 +85,7 @@ export const BlockBanners: React.FC<BlockBannersProps> = ({
               Intended use impact uncertain — conservative pathway selection
             </span>
             <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', lineHeight: 1.6, marginTop: 4 }}>
-              This tool applies conservative pathway selection when intended-use impact is uncertain. Complete the
+              ChangePath applies conservative pathway selection when intended-use impact is uncertain. Complete the
               remaining fields for your internal record.{' '}
               <strong>
                 Consider an FDA Pre-Submission (Q-Sub) or equivalent expert review before relying on a

@@ -387,7 +387,7 @@ export function useReviewPanelData(
     return {
       label: 'No automated issues detected',
       detail:
-        'No tool-detected issues remain on the current record. Proceed with qualified expert review and QMS controls before any reliance or action.',
+        'No ChangePath-detected issues remain on the current record. Proceed with qualified expert review and QMS controls before any reliance or action.',
       bg: 'var(--color-success-bg)',
       border: 'var(--color-success-border)',
       text: 'var(--color-success)',
