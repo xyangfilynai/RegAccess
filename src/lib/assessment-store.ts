@@ -171,16 +171,26 @@ const hasMeaningfulAssessmentChange = (
 
 /** Write-through cache: avoids redundant JSON.parse calls when
  *  multiple store operations run in the same synchronous turn
- *  (e.g. save → list refresh). Invalidated on every write. */
+ *  (e.g. save → list refresh). Updated in-place on writes — never invalidated. */
 let _cache: SavedAssessment[] | null = null;
+let _indexById: Map<string, SavedAssessment> | null = null;
+
+function rebuildIndex(assessments: SavedAssessment[]): void {
+  _indexById = new Map(assessments.map((a) => [a.id, a]));
+}
 
 function loadAll(): SavedAssessment[] {
   if (_cache) return _cache;
   const raw = readStoredJson(PERSISTENCE_KEYS.savedAssessments);
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) {
+    _cache = [];
+    rebuildIndex(_cache);
+    return _cache;
+  }
   _cache = raw
     .map((entry) => normalizeSavedAssessment(entry))
     .filter((entry): entry is SavedAssessment => entry !== null);
+  rebuildIndex(_cache);
   return _cache;
 }
 
@@ -190,11 +200,13 @@ function saveAll(assessments: SavedAssessment[]): void {
     assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
   );
   _cache = assessments;
+  rebuildIndex(assessments);
 }
 
 /** Exposed for tests only — forces the next loadAll() to re-read localStorage. */
 export function _invalidateCache(): void {
   _cache = null;
+  _indexById = null;
 }
 
 export const assessmentStore = {
@@ -203,7 +215,8 @@ export const assessmentStore = {
   },
 
   get(id: string): SavedAssessment | undefined {
-    return loadAll().find((a) => a.id === id);
+    loadAll(); // ensure cache is populated
+    return _indexById?.get(id);
   },
 
   save(

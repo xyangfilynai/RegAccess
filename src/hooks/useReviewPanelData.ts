@@ -7,7 +7,7 @@
  * 3. The memoization strategy is centralized and auditable
  */
 
-import { useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import { Answer, Pathway, changeTaxonomy } from '../lib/assessment-engine';
 import type { Answers, Block, DeterminationResult, AssessmentField } from '../lib/assessment-engine';
 import { computeEvidenceGaps, type EvidenceGap } from '../lib/evidence-gaps';
@@ -293,6 +293,25 @@ export interface ReviewPanelData {
 /*  Hook                                                               */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Stabilize the determination reference: avoid recomputing expensive downstream
+ * memos when a new determination object is structurally identical to the previous one.
+ * DeterminationResult contains ~30 primitive/small-array fields — the stringify cost
+ * is negligible compared to the downstream computations it gates.
+ */
+function useStableDetermination(determination: DeterminationResult): DeterminationResult {
+  const ref = useRef(determination);
+  const prevJson = useRef('');
+
+  const json = JSON.stringify(determination);
+  if (json !== prevJson.current) {
+    ref.current = determination;
+    prevJson.current = json;
+  }
+
+  return ref.current;
+}
+
 export function useReviewPanelData(
   answers: Answers,
   determination: DeterminationResult,
@@ -300,25 +319,26 @@ export function useReviewPanelData(
   getFieldsForBlock: (blockId: string) => AssessmentField[],
   onHandoff?: () => void,
 ): ReviewPanelData {
-  const pathway = determination.pathway;
+  const stableDet = useStableDetermination(determination);
+  const pathway = stableDet.pathway;
 
-  const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, determination), [answers, determination]);
+  const evidenceGaps = useMemo(() => computeEvidenceGaps(answers, stableDet), [answers, stableDet]);
 
   const criticalGaps = useMemo(() => evidenceGaps.filter((gap) => gap.severity === 'critical'), [evidenceGaps]);
 
-  const expertReviewItems = useMemo(() => buildExpertReviewItems(answers, determination), [answers, determination]);
+  const expertReviewItems = useMemo(() => buildExpertReviewItems(answers, stableDet), [answers, stableDet]);
 
   const evidenceGapItems = useMemo(
-    () => buildEvidenceGapInsightItems(answers, determination, evidenceGaps),
-    [answers, determination, evidenceGaps],
+    () => buildEvidenceGapInsightItems(answers, stableDet, evidenceGaps),
+    [answers, stableDet, evidenceGaps],
   );
 
   const caseReasoning = useMemo(
-    () => buildCaseSpecificReasoning(answers, determination, blocks, getFieldsForBlock),
-    [answers, determination, blocks, getFieldsForBlock],
+    () => buildCaseSpecificReasoning(answers, stableDet, blocks, getFieldsForBlock),
+    [answers, stableDet, blocks, getFieldsForBlock],
   );
 
-  const assessmentBasisView = useMemo(() => buildAssessmentBasisView(answers, determination), [answers, determination]);
+  const assessmentBasisView = useMemo(() => buildAssessmentBasisView(answers, stableDet), [answers, stableDet]);
 
   const reportNarrative = useMemo(() => splitReportNarrative(caseReasoning.narrative || []), [caseReasoning]);
 
@@ -334,9 +354,9 @@ export function useReviewPanelData(
       : null;
   const pccpEligibility = selectedChangeType?.pccp;
   const showPCCPRecommendation = Boolean(
-    determination.pccpRecommendation?.shouldRecommend &&
+    stableDet.pccpRecommendation?.shouldRecommend &&
     answers.A2 !== Answer.Yes &&
-    determination.isNewSub &&
+    stableDet.isNewSub &&
     pccpEligibility &&
     ['TYPICAL', 'CONDITIONAL'].includes(pccpEligibility),
   );
@@ -356,12 +376,12 @@ export function useReviewPanelData(
     : null;
 
   // Derived display flags
-  const consistencyIssues = determination.consistencyIssues || [];
-  const isIncomplete = determination.isIncomplete;
+  const consistencyIssues = stableDet.consistencyIssues || [];
+  const isIncomplete = stableDet.isIncomplete;
   const hasCriticalGaps = criticalGaps.length > 0;
-  const isDocOnlyWithCriticalGaps = determination.isDocOnly && hasCriticalGaps;
+  const isDocOnlyWithCriticalGaps = stableDet.isDocOnly && hasCriticalGaps;
   const config = getPathwayConfig(pathway, consistencyIssues.length > 0);
-  const primaryAction = getPrimaryAction(determination, pathway);
+  const primaryAction = getPrimaryAction(stableDet, pathway);
   const summaryReason = reportNarrative.headlineReason || caseReasoning.narrative[1] || caseReasoning.primaryReason;
 
   const relianceState = useMemo((): RelianceState => {
@@ -437,9 +457,9 @@ export function useReviewPanelData(
     }
     if (!isIncomplete && onHandoff) {
       add(
-        determination.isPCCPImpl
+        stableDet.isPCCPImpl
           ? 'Open the preparation checklist and complete the PCCP implementation record.'
-          : determination.isDocOnly
+          : stableDet.isDocOnly
             ? 'Open the preparation checklist and assemble the documentation package.'
             : 'Open the preparation checklist and begin the submission package.',
       );
@@ -448,8 +468,8 @@ export function useReviewPanelData(
     return items;
   }, [
     caseReasoning.verificationSteps,
-    determination.isDocOnly,
-    determination.isPCCPImpl,
+    stableDet.isDocOnly,
+    stableDet.isPCCPImpl,
     isIncomplete,
     mergedBlockers,
     onHandoff,
@@ -464,7 +484,7 @@ export function useReviewPanelData(
     primaryAction,
     isIncomplete,
     summaryReason,
-    incompleteHeading: getIncompleteHeading(determination),
+    incompleteHeading: getIncompleteHeading(stableDet),
     relianceState,
     assessmentBasisView,
     shortRecordFacts,

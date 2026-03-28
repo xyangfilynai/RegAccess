@@ -17,6 +17,8 @@ import { useCascadeClearing } from './hooks/useCascadeClearing';
 import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
 import { useAssessmentFlow } from './hooks/useAssessmentFlow';
 import { useAssessmentWorkspace } from './hooks/useAssessmentWorkspace';
+import { LayoutContext, type LayoutContextValue } from './contexts/LayoutContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const LazyReviewPanel = lazy(() =>
   import('./components/ReviewPanel').then((module) => ({ default: module.ReviewPanel })),
@@ -122,6 +124,52 @@ export const App: React.FC = () => {
 
   const caseSummary = useMemo(() => buildCaseSummary(answers), [answers]);
 
+  const layoutContextValue: LayoutContextValue = useMemo(
+    () => ({
+      blocks,
+      currentBlockIndex,
+      onBlockSelect: handleBlockSelect,
+      completedBlocks,
+      answeredCounts,
+      totalCounts,
+      requiredAnsweredCounts,
+      requiredCounts,
+      overallAnswered,
+      overallTotal,
+      overallRequiredAnswered,
+      overallRequiredTotal,
+      caseSummary,
+      onReset: handleReset,
+      onHome: handleHome,
+      onSaveAssessment: () => {
+        handleSaveAssessment(determination.pathway);
+      },
+      canSaveAssessment: Object.keys(answers).length > 0,
+      saveLabel: currentAssessmentId ? 'Update library record' : 'Save to library',
+    }),
+    [
+      blocks,
+      currentBlockIndex,
+      handleBlockSelect,
+      completedBlocks,
+      answeredCounts,
+      totalCounts,
+      requiredAnsweredCounts,
+      requiredCounts,
+      overallAnswered,
+      overallTotal,
+      overallRequiredAnswered,
+      overallRequiredTotal,
+      caseSummary,
+      handleReset,
+      handleHome,
+      handleSaveAssessment,
+      determination.pathway,
+      answers,
+      currentAssessmentId,
+    ],
+  );
+
   // --- Screen routing ---
   if (screen === 'dashboard') {
     return (
@@ -172,19 +220,21 @@ export const App: React.FC = () => {
 
     if (currentBlock.id === 'review') {
       return (
-        <Suspense fallback={<DeferredContentFallback />}>
-          <LazyReviewPanel
-            determination={determination}
-            answers={answers}
-            blocks={blocks}
-            getFieldsForBlock={getFieldsForBlock}
-            onHandoff={() => setScreen('handoff')}
-            reviewerNotes={currentReviewerNotes}
-            onAddNote={currentAssessmentId ? handleAddNote : undefined}
-            onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
-            assessmentId={currentAssessmentId}
-          />
-        </Suspense>
+        <ErrorBoundary section="Review Panel">
+          <Suspense fallback={<DeferredContentFallback />}>
+            <LazyReviewPanel
+              determination={determination}
+              answers={answers}
+              blocks={blocks}
+              getFieldsForBlock={getFieldsForBlock}
+              onHandoff={() => setScreen('handoff')}
+              reviewerNotes={currentReviewerNotes}
+              onAddNote={currentAssessmentId ? handleAddNote : undefined}
+              onRemoveNote={currentAssessmentId ? handleRemoveNote : undefined}
+              assessmentId={currentAssessmentId}
+            />
+          </Suspense>
+        </ErrorBoundary>
       );
     }
 
@@ -213,58 +263,39 @@ export const App: React.FC = () => {
   };
 
   return (
-    <Layout
-      blocks={blocks}
-      currentBlockIndex={currentBlockIndex}
-      onBlockSelect={handleBlockSelect}
-      completedBlocks={completedBlocks}
-      answeredCounts={answeredCounts}
-      totalCounts={totalCounts}
-      requiredAnsweredCounts={requiredAnsweredCounts}
-      requiredCounts={requiredCounts}
-      overallAnswered={overallAnswered}
-      overallTotal={overallTotal}
-      overallRequiredAnswered={overallRequiredAnswered}
-      overallRequiredTotal={overallRequiredTotal}
-      caseSummary={caseSummary}
-      onReset={handleReset}
-      onHome={handleHome}
-      onSaveAssessment={() => {
-        handleSaveAssessment(determination.pathway);
-      }}
-      canSaveAssessment={Object.keys(answers).length > 0}
-      saveLabel={currentAssessmentId ? 'Update library record' : 'Save to library'}
-    >
-      {renderBlockContent()}
+    <LayoutContext.Provider value={layoutContextValue}>
+      <Layout>
+        {renderBlockContent()}
 
-      {/* Navigation buttons */}
-      <div className="nav-footer">
-        <button onClick={handlePrevious} className="btn-outline">
-          <Icon name="arrowLeft" size={16} />
-          {currentBlockIndex === 0 ? 'Dashboard' : 'Previous'}
-        </button>
+        {/* Navigation buttons */}
+        <div className="nav-footer">
+          <button onClick={handlePrevious} className="btn-outline">
+            <Icon name="arrowLeft" size={16} />
+            {currentBlockIndex === 0 ? 'Dashboard' : 'Previous'}
+          </button>
 
-        <div className="nav-footer-right">
-          <span className="nav-footer-counter">
-            {currentBlockIndex + 1} of {blocks.length}
-          </span>
+          <div className="nav-footer-right">
+            <span className="nav-footer-counter">
+              {currentBlockIndex + 1} of {blocks.length}
+            </span>
 
-          {currentBlockIndex < blocks.length - 1 && (
-            <button onClick={handleNext} className="btn-continue">
-              Continue
-              <Icon name="arrow" size={16} color="#fff" />
-            </button>
-          )}
+            {currentBlockIndex < blocks.length - 1 && (
+              <button onClick={handleNext} className="btn-continue">
+                Continue
+                <Icon name="arrow" size={16} color="#fff" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
 
-      {/* Incomplete warning */}
-      {!currentBlockComplete && currentBlock?.id !== 'review' && (
-        <div className="incomplete-warning">
-          <Icon name="alertCircle" size={16} color="var(--color-warning)" />
-          <span className="incomplete-warning-text">Complete all required fields in this section to continue.</span>
-        </div>
-      )}
-    </Layout>
+        {/* Incomplete warning */}
+        {!currentBlockComplete && currentBlock?.id !== 'review' && (
+          <div className="incomplete-warning">
+            <Icon name="alertCircle" size={16} color="var(--color-warning)" />
+            <span className="incomplete-warning-text">Complete all required fields in this section to continue.</span>
+          </div>
+        )}
+      </Layout>
+    </LayoutContext.Provider>
   );
 };

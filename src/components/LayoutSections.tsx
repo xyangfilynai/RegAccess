@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrandMark } from './BrandMark';
 import { Icon } from './Icon';
+import { useLayoutContext } from '../contexts/LayoutContext';
 import type { Block } from '../lib/assessment-engine';
 
 export interface LayoutSummaryItem {
@@ -125,18 +126,6 @@ export const LayoutHeader: React.FC<LayoutHeaderProps> = React.memo(
 );
 
 interface LayoutSidebarProps {
-  blocks: Block[];
-  currentBlockIndex: number;
-  onBlockSelect: (index: number) => void;
-  completedBlocks: Set<string>;
-  answeredCounts: Record<string, number>;
-  totalCounts: Record<string, number>;
-  requiredAnsweredCounts: Record<string, number>;
-  requiredCounts: Record<string, number>;
-  overallAnswered: number;
-  overallTotal: number;
-  overallRequiredAnswered: number;
-  overallRequiredTotal: number;
   progress: number;
   currentMissingRequired: number;
   isReviewBlock: boolean;
@@ -145,167 +134,166 @@ interface LayoutSidebarProps {
 }
 
 export const LayoutSidebar: React.FC<LayoutSidebarProps> = React.memo(
-  ({
-    blocks,
-    currentBlockIndex,
-    onBlockSelect,
-    completedBlocks,
-    answeredCounts,
-    totalCounts,
-    requiredAnsweredCounts,
-    requiredCounts,
-    overallAnswered,
-    overallTotal,
-    overallRequiredAnswered,
-    overallRequiredTotal,
-    progress,
-    currentMissingRequired,
-    isReviewBlock,
-    reviewReady,
-    sidebarOpen,
-  }) => (
-    <aside
-      style={{
-        width: 280,
-        borderRight: '1px solid var(--color-border)',
-        background: 'var(--color-bg-elevated)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        flexShrink: 0,
-        transition: 'transform var(--transition-base)',
-      }}
-      className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}
-    >
-      <div
-        style={{
-          padding: 'var(--space-md)',
-          borderBottom: '1px solid var(--color-border)',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 'var(--space-sm)',
-          }}
-        >
-          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
-            Pathway-critical completion
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{progress}%</span>
-        </div>
-        <div
-          style={{
-            height: 4,
-            borderRadius: 2,
-            background: 'var(--color-border)',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${progress}%`,
-              background:
-                currentMissingRequired > 0 && !isReviewBlock
-                  ? 'var(--color-warning)'
-                  : reviewReady
-                    ? 'var(--color-success)'
-                    : 'var(--color-primary)',
-              borderRadius: 2,
-              transition: 'width var(--transition-slow)',
-            }}
-          />
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            gap: 'var(--space-sm)',
-            marginTop: 'var(--space-sm)',
-            fontSize: 11,
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          <span>
-            {overallRequiredAnswered}/{overallRequiredTotal || 0} pathway-critical
-          </span>
-          <span>
-            {overallAnswered}/{overallTotal || 0} total responses
-          </span>
-        </div>
-      </div>
+  ({ progress, currentMissingRequired, isReviewBlock, reviewReady, sidebarOpen }) => {
+    const {
+      blocks,
+      currentBlockIndex,
+      onBlockSelect,
+      completedBlocks,
+      answeredCounts,
+      totalCounts,
+      requiredAnsweredCounts,
+      requiredCounts,
+      overallAnswered,
+      overallTotal,
+      overallRequiredAnswered,
+      overallRequiredTotal,
+    } = useLayoutContext();
 
-      <nav style={{ flex: 1, overflow: 'auto', padding: 'var(--space-sm)' }}>
-        {blocks.map((block, index) => (
-          <LayoutSidebarNavItem
-            key={block.id}
-            block={block}
-            isCurrent={index === currentBlockIndex}
-            onSelect={() => onBlockSelect(index)}
-            answered={answeredCounts[block.id] || 0}
-            total={totalCounts[block.id] || 0}
-            requiredAnswered={requiredAnsweredCounts[block.id] || 0}
-            requiredTotal={requiredCounts[block.id] || 0}
-            isCompleted={block.id === 'review' ? reviewReady : completedBlocks.has(block.id)}
-          />
-        ))}
-      </nav>
-
-      <div
+    return (
+      <aside
         style={{
-          padding: 'var(--space-md)',
-          borderTop: '1px solid var(--color-border)',
+          width: 280,
+          borderRight: '1px solid var(--color-border)',
+          background: 'var(--color-bg-elevated)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          flexShrink: 0,
+          transition: 'transform var(--transition-base)',
         }}
+        className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}
       >
         <div
           style={{
             padding: 'var(--space-md)',
-            borderRadius: 'var(--radius-md)',
-            background: reviewReady ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
-            border: `1px solid ${reviewReady ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
+            borderBottom: '1px solid var(--color-border)',
           }}
         >
           <div
             style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 'var(--space-sm)',
-              marginBottom: 'var(--space-xs)',
+              justifyContent: 'space-between',
+              marginBottom: 'var(--space-sm)',
             }}
           >
-            <Icon
-              name={reviewReady ? 'checkCircle' : 'alertCircle'}
-              size={14}
-              color={reviewReady ? 'var(--color-success)' : 'var(--color-warning)'}
-            />
-            <span
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
+              Pathway-critical completion
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text)' }}>{progress}%</span>
+          </div>
+          <div
+            style={{
+              height: 4,
+              borderRadius: 2,
+              background: 'var(--color-border)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
               style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
+                height: '100%',
+                width: `${progress}%`,
+                background:
+                  currentMissingRequired > 0 && !isReviewBlock
+                    ? 'var(--color-warning)'
+                    : reviewReady
+                      ? 'var(--color-success)'
+                      : 'var(--color-primary)',
+                borderRadius: 2,
+                transition: 'width var(--transition-slow)',
               }}
-            >
-              {reviewReady ? 'Fields complete — review available' : 'Pathway-critical fields remain'}
+            />
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 'var(--space-sm)',
+              marginTop: 'var(--space-sm)',
+              fontSize: 11,
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            <span>
+              {overallRequiredAnswered}/{overallRequiredTotal || 0} pathway-critical
+            </span>
+            <span>
+              {overallAnswered}/{overallTotal || 0} total responses
             </span>
           </div>
-          <p
+        </div>
+
+        <nav style={{ flex: 1, overflow: 'auto', padding: 'var(--space-sm)' }}>
+          {blocks.map((block, index) => (
+            <LayoutSidebarNavItem
+              key={block.id}
+              block={block}
+              isCurrent={index === currentBlockIndex}
+              onSelect={() => onBlockSelect(index)}
+              answered={answeredCounts[block.id] || 0}
+              total={totalCounts[block.id] || 0}
+              requiredAnswered={requiredAnsweredCounts[block.id] || 0}
+              requiredTotal={requiredCounts[block.id] || 0}
+              isCompleted={block.id === 'review' ? reviewReady : completedBlocks.has(block.id)}
+            />
+          ))}
+        </nav>
+
+        <div
+          style={{
+            padding: 'var(--space-md)',
+            borderTop: '1px solid var(--color-border)',
+          }}
+        >
+          <div
             style={{
-              fontSize: 10,
-              color: 'var(--color-text-secondary)',
-              lineHeight: 1.5,
-              margin: 0,
+              padding: 'var(--space-md)',
+              borderRadius: 'var(--radius-md)',
+              background: reviewReady ? 'var(--color-success-bg)' : 'var(--color-warning-bg)',
+              border: `1px solid ${reviewReady ? 'var(--color-success-border)' : 'var(--color-warning-border)'}`,
             }}
           >
-            {reviewReady
-              ? 'All pathway-critical fields are answered. Review the determination, evidence gaps, and documentation needs before relying on the output.'
-              : 'Complete remaining pathway-critical fields, then perform final review before relying on the determined pathway.'}
-          </p>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-sm)',
+                marginBottom: 'var(--space-xs)',
+              }}
+            >
+              <Icon
+                name={reviewReady ? 'checkCircle' : 'alertCircle'}
+                size={14}
+                color={reviewReady ? 'var(--color-success)' : 'var(--color-warning)'}
+              />
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: reviewReady ? 'var(--color-success)' : 'var(--color-warning)',
+                }}
+              >
+                {reviewReady ? 'Fields complete — review available' : 'Pathway-critical fields remain'}
+              </span>
+            </div>
+            <p
+              style={{
+                fontSize: 10,
+                color: 'var(--color-text-secondary)',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              {reviewReady
+                ? 'All pathway-critical fields are answered. Review the determination, evidence gaps, and documentation needs before relying on the output.'
+                : 'Complete remaining pathway-critical fields, then perform final review before relying on the determined pathway.'}
+            </p>
+          </div>
         </div>
-      </div>
-    </aside>
-  ),
+      </aside>
+    );
+  },
 );
 
 interface LayoutSidebarNavItemProps {

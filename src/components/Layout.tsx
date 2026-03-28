@@ -1,56 +1,30 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { Block } from '../lib/assessment-engine';
-import {
-  LayoutBlockHeader,
-  LayoutHeader,
-  LayoutMobileOverlay,
-  LayoutSidebar,
-  type LayoutSummaryItem,
-} from './LayoutSections';
+import { useLayoutContext } from '../contexts/LayoutContext';
+import { LayoutBlockHeader, LayoutHeader, LayoutMobileOverlay, LayoutSidebar } from './LayoutSections';
 
 interface LayoutProps {
   children: React.ReactNode;
-  blocks: Block[];
-  currentBlockIndex: number;
-  onBlockSelect: (index: number) => void;
-  completedBlocks: Set<string>;
-  answeredCounts: Record<string, number>;
-  totalCounts: Record<string, number>;
-  requiredAnsweredCounts?: Record<string, number>;
-  requiredCounts?: Record<string, number>;
-  overallAnswered?: number;
-  overallTotal?: number;
-  overallRequiredAnswered?: number;
-  overallRequiredTotal?: number;
-  caseSummary?: LayoutSummaryItem[];
-  onReset?: () => void;
-  onHome?: () => void;
-  onSaveAssessment?: () => void;
-  canSaveAssessment?: boolean;
-  saveLabel?: string;
 }
 
-export const Layout: React.FC<LayoutProps> = ({
-  children,
-  blocks,
-  currentBlockIndex,
-  onBlockSelect,
-  completedBlocks,
-  answeredCounts,
-  totalCounts,
-  requiredAnsweredCounts = {},
-  requiredCounts = {},
-  overallAnswered = 0,
-  overallTotal = 0,
-  overallRequiredAnswered = 0,
-  overallRequiredTotal = 0,
-  caseSummary = [],
-  onReset,
-  onHome,
-  onSaveAssessment,
-  canSaveAssessment = true,
-  saveLabel = 'Save to library',
-}) => {
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const ctx = useLayoutContext();
+  const {
+    blocks,
+    currentBlockIndex,
+    requiredAnsweredCounts,
+    requiredCounts,
+    overallAnswered,
+    overallTotal,
+    overallRequiredAnswered,
+    overallRequiredTotal,
+    caseSummary,
+    onReset,
+    onHome,
+    onSaveAssessment,
+    canSaveAssessment,
+    saveLabel,
+  } = ctx;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
@@ -113,18 +87,6 @@ export const Layout: React.FC<LayoutProps> = ({
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <LayoutSidebar
-          blocks={blocks}
-          currentBlockIndex={currentBlockIndex}
-          onBlockSelect={onBlockSelect}
-          completedBlocks={completedBlocks}
-          answeredCounts={answeredCounts}
-          totalCounts={totalCounts}
-          requiredAnsweredCounts={requiredAnsweredCounts}
-          requiredCounts={requiredCounts}
-          overallAnswered={overallAnswered}
-          overallTotal={overallTotal}
-          overallRequiredAnswered={overallRequiredAnswered}
-          overallRequiredTotal={overallRequiredTotal}
           progress={progress}
           currentMissingRequired={currentMissingRequired}
           isReviewBlock={Boolean(isReviewBlock)}

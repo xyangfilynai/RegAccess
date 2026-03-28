@@ -10,6 +10,28 @@ import { assessmentStore } from '../src/lib/assessment-store';
 import { Answer, computeDetermination, type Block, type AssessmentField } from '../src/lib/assessment-engine';
 import { storage } from '../src/lib/storage';
 import { SAMPLE_CASES } from '../src/sample-cases';
+import { LayoutContext, type LayoutContextValue } from '../src/contexts/LayoutContext';
+
+function renderWithLayoutContext(children: React.ReactNode, ctx: Partial<LayoutContextValue>) {
+  const defaults: LayoutContextValue = {
+    blocks: [],
+    currentBlockIndex: 0,
+    onBlockSelect: () => {},
+    completedBlocks: new Set(),
+    answeredCounts: {},
+    totalCounts: {},
+    requiredAnsweredCounts: {},
+    requiredCounts: {},
+    overallAnswered: 0,
+    overallTotal: 0,
+    overallRequiredAnswered: 0,
+    overallRequiredTotal: 0,
+    caseSummary: [],
+    canSaveAssessment: true,
+    saveLabel: 'Save to library',
+  };
+  return render(<LayoutContext.Provider value={{ ...defaults, ...ctx }}>{children}</LayoutContext.Provider>);
+}
 
 describe('UI workflow', () => {
   beforeEach(() => {
@@ -164,28 +186,30 @@ describe('UI workflow', () => {
       },
     ];
 
-    const { rerender } = render(
-      <Layout
-        blocks={blocks}
-        currentBlockIndex={0}
-        onBlockSelect={() => {}}
-        completedBlocks={new Set()}
-        answeredCounts={{ A: 3, review: 0 }}
-        totalCounts={{ A: 5, review: 0 }}
-        requiredAnsweredCounts={{ A: 2, review: 0 }}
-        requiredCounts={{ A: 4, review: 0 }}
-        overallAnswered={3}
-        overallTotal={5}
-        overallRequiredAnswered={2}
-        overallRequiredTotal={4}
-        caseSummary={[
-          { label: 'Authorization', value: '510(k)' },
-          { label: 'Authorized baseline', value: 'v4.2 cleared build' },
-          { label: 'PCCP', value: 'No authorized PCCP', tone: 'warning' },
-        ]}
-      >
+    const caseSummary = [
+      { label: 'Authorization', value: '510(k)' },
+      { label: 'Authorized baseline', value: 'v4.2 cleared build' },
+      { label: 'PCCP' as const, value: 'No authorized PCCP', tone: 'warning' as const },
+    ];
+
+    const { rerender } = renderWithLayoutContext(
+      <Layout>
         <div>Assessment body</div>
       </Layout>,
+      {
+        blocks,
+        currentBlockIndex: 0,
+        completedBlocks: new Set(),
+        answeredCounts: { A: 3, review: 0 },
+        totalCounts: { A: 5, review: 0 },
+        requiredAnsweredCounts: { A: 2, review: 0 },
+        requiredCounts: { A: 4, review: 0 },
+        overallAnswered: 3,
+        overallTotal: 5,
+        overallRequiredAnswered: 2,
+        overallRequiredTotal: 4,
+        caseSummary,
+      },
     );
 
     expect(screen.getByText('Pathway-critical')).toBeInTheDocument();
@@ -193,27 +217,29 @@ describe('UI workflow', () => {
     expect(screen.queryByText('Authorization')).not.toBeInTheDocument();
 
     rerender(
-      <Layout
-        blocks={blocks}
-        currentBlockIndex={1}
-        onBlockSelect={() => {}}
-        completedBlocks={new Set(['A'])}
-        answeredCounts={{ A: 5, review: 0 }}
-        totalCounts={{ A: 5, review: 0 }}
-        requiredAnsweredCounts={{ A: 4, review: 0 }}
-        requiredCounts={{ A: 4, review: 0 }}
-        overallAnswered={5}
-        overallTotal={5}
-        overallRequiredAnswered={4}
-        overallRequiredTotal={4}
-        caseSummary={[
-          { label: 'Authorization', value: '510(k)' },
-          { label: 'Authorized baseline', value: 'v4.2 cleared build' },
-          { label: 'PCCP', value: 'No authorized PCCP', tone: 'warning' },
-        ]}
+      <LayoutContext.Provider
+        value={{
+          blocks,
+          currentBlockIndex: 1,
+          onBlockSelect: () => {},
+          completedBlocks: new Set(['A']),
+          answeredCounts: { A: 5, review: 0 },
+          totalCounts: { A: 5, review: 0 },
+          requiredAnsweredCounts: { A: 4, review: 0 },
+          requiredCounts: { A: 4, review: 0 },
+          overallAnswered: 5,
+          overallTotal: 5,
+          overallRequiredAnswered: 4,
+          overallRequiredTotal: 4,
+          caseSummary,
+          canSaveAssessment: true,
+          saveLabel: 'Save to library',
+        }}
       >
-        <div>Assessment body</div>
-      </Layout>,
+        <Layout>
+          <div>Assessment body</div>
+        </Layout>
+      </LayoutContext.Provider>,
     );
 
     expect(screen.getByText('Authorization')).toBeInTheDocument();
