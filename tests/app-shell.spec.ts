@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_SAMPLE_CASE_ID,
-  SAMPLE_CASE,
-  SAMPLE_CASES,
-  SAMPLE_CASES_BY_ID,
-} from '../src/sampleCase';
+import { SAMPLE_CASES } from '../src/sample-cases';
 import {
   computeDetermination,
   computeDerivedState,
@@ -13,10 +8,6 @@ import {
 } from '../src/lib/assessment-engine';
 
 describe('App shell sample library compatibility', () => {
-  it('SAMPLE_CASE remains a compatibility alias for the default source-controlled sample', () => {
-    expect(SAMPLE_CASE).toEqual(SAMPLE_CASES_BY_ID[DEFAULT_SAMPLE_CASE_ID].answers);
-  });
-
   it('every source-controlled sample produces a valid determination', () => {
     for (const sampleCase of SAMPLE_CASES) {
       const determination = computeDetermination(sampleCase.answers);

@@ -16,7 +16,6 @@ import {
   Pathway,
   computeDetermination,
   computeDerivedState,
-  type Answers,
 } from '../src/lib/assessment-engine';
 import { base510k, baseDeNovo, basePMA } from './helpers';
 

@@ -3,6 +3,7 @@ import {
   AuthPathway,
   Pathway,
   isAnsweredValue,
+  answerIsOneOf,
   type Answers,
   type Block,
   type DeterminationResult,
@@ -489,19 +490,19 @@ export function buildCaseSpecificReasoning(
         'Tie each answer that drove the pathway to the specific before/after observations described in the submitted change description, rather than relying only on the change classification.',
       );
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
+    if (answerIsOneOf(answers.C3, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C3', answers.C3));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C4)) {
+    if (answerIsOneOf(answers.C4, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C4', answers.C4));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C5)) {
+    if (answerIsOneOf(answers.C5, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C5', answers.C5));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C6)) {
+    if (answerIsOneOf(answers.C6, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(verificationSteps, getQuestionSpecificVerificationStep('C6', answers.C6));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.E3) || answers.E1 === Answer.Uncertain || answers.E4 === Answer.No) {
+    if (answerIsOneOf(answers.E3, [Answer.Yes, Answer.Uncertain]) || answers.E1 === Answer.Uncertain || answers.E4 === Answer.No) {
       pushUnique(
         verificationSteps,
         'Update the subgroup and bias evidence package so the populations, environments, and protected groups affected by this change are explicitly covered.',
@@ -509,16 +510,16 @@ export function buildCaseSpecificReasoning(
       addSources(sources, 'FDA-LIFECYCLE-2025 §IV.B');
     }
 
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C3)) {
+    if (answerIsOneOf(answers.C3, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C3', determination.pathway));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C4)) {
+    if (answerIsOneOf(answers.C4, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C4', determination.pathway));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C5)) {
+    if (answerIsOneOf(answers.C5, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C5', determination.pathway));
     }
-    if ([Answer.Yes, Answer.Uncertain].includes(answers.C6)) {
+    if (answerIsOneOf(answers.C6, [Answer.Yes, Answer.Uncertain])) {
       pushUnique(counterConsiderations, getPathwayChangeConditionForQuestion('C6', determination.pathway));
     }
     if (determination.seNotSupportable) {

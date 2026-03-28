@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Icon } from './Icon';
 import { HelpTextWithLinks, AuthorityTag, GuidanceRef } from './ui';
-import type { AssessmentField } from '../lib/assessment-engine';
+import type { AssessmentField, AnswerValue } from '../lib/assessment-engine';
 import { Answer } from '../lib/assessment-engine';
 import { fieldReasoningLibrary } from '../lib/content';
 
@@ -43,8 +43,8 @@ const NoteBox: React.FC<{
 
 interface QuestionCardProps {
   field: AssessmentField;
-  value: unknown;
-  onChange: (value: unknown) => void;
+  value: AnswerValue;
+  onChange: (value: AnswerValue) => void;
   index: number;
   hasValidationError?: boolean;
 }
@@ -231,7 +231,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
         );
 
-      case 'multi':
+      case 'multi': {
         const currentValues = Array.isArray(value) ? value : [];
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
@@ -287,6 +287,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             })}
           </div>
         );
+      }
 
       case 'text':
         return (

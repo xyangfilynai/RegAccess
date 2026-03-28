@@ -6,23 +6,32 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/ tests/",
+    "format": "prettier --write 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx}' 'tests/**/*.{ts,tsx}'",
+    "check-all": "npm run type-check && npm run lint && npm run test"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "jsdom": "^29.0.1",
+    "prettier": "^3.8.1",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.57.2",
     "vite": "^8.0.2",
     "vitest": "^3.1.1"
   },
   "dependencies": {
     "docx": "^9.6.1",
-    "jspdf": "^4.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   }

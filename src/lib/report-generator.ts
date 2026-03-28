@@ -4,7 +4,6 @@
  */
 
 import type { Answers, Block, DeterminationResult, AssessmentField } from './assessment-engine';
-import { Pathway } from './assessment-engine';
 import { docRequirements } from './content';
 import { getSourceBadge } from './content';
 import { computeEvidenceGaps, type EvidenceGap } from './evidence-gaps';

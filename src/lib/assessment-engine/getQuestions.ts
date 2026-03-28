@@ -1,4 +1,4 @@
-import { Answer, AuthPathway, Answers } from './types';
+import { Answer, AuthPathway, Answers, answerAsString } from './types';
 import { changeTaxonomy, type ChangeTypeDefinition } from './changeTaxonomy';
 
 /**
@@ -112,12 +112,12 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
         pathwayCritical: true,
         help: "Select the category that best describes the change. This determines the available specific change types." },
       { id: "B2", q: "What is the specific type of change?", type: "single",
-        options: answers.B1 ? (changeTaxonomy[answers.B1]?.types?.map((t) => t.name) || []) : [],
+        options: answers.B1 ? (changeTaxonomy[answerAsString(answers.B1)]?.types?.map((t: ChangeTypeDefinition) => t.name) || []) : [],
         dynamic: true, disabled: !answers.B1,
         help: answers.B1 ? "Select the specific change type within the selected category." : "Select a change category first.",
-        classificationGuidance: answers.B1 ? changeTaxonomy[answers.B1]?.classificationGuidance : null,
-        boundaryNote: answers.B1 ? changeTaxonomy[answers.B1]?.boundaryNote : null,
-        selectedTypeData: (answers.B1 && answers.B2) ? changeTaxonomy[answers.B1]?.types?.find((t) => t.name === answers.B2) : null },
+        classificationGuidance: answers.B1 ? changeTaxonomy[answerAsString(answers.B1)]?.classificationGuidance : null,
+        boundaryNote: answers.B1 ? changeTaxonomy[answerAsString(answers.B1)]?.boundaryNote : null,
+        selectedTypeData: (answers.B1 && answers.B2) ? changeTaxonomy[answerAsString(answers.B1)]?.types?.find((t: ChangeTypeDefinition) => t.name === answers.B2) : null },
       { id: "B3", q: "Does this change affect the intended use or indications for use?", type: "yesnouncertain",
         critical: true, pathwayCritical: true,
         autoWarn: isCatIntendedUse ? "You selected 'Intended Use / Indications for Use' as the change category. This category frequently affects intended use — but you must explicitly confirm by comparing the proposed change against the authorized indications for use (IFU) statement word-by-word. Do not assume 'Yes' without that comparison." : null,
@@ -180,7 +180,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           mlguidance: "Compare performance metrics before and after on your holdout test set. If sensitivity, specificity, or any key metric changes beyond the predefined acceptance range, answer 'Yes.'",
           help: "Changes that significantly affect clinical functionality or performance specifications require a new submission. Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 4 — could the change significantly affect clinical functionality or performance specifications." },
         { id: "C10", q: "Considering all changes since last submission, has the device's overall behavior materially drifted from its cleared specification?", type: "yesnouncertain",
-          skip: !answers.A8 || parseInt(answers.A8) === 0,
+          skip: !answers.A8 || parseInt(answerAsString(answers.A8)) === 0,
           help: "Even if each individual change was non-significant, the cumulative effect may have shifted the device from its cleared state." },
         { id: "C11", q: "Is substantial equivalence to the predicate device still supportable after this change?", type: "yesnouncertain",
           skip: answers.A1 !== AuthPathway.FiveOneZeroK || answers.C10 !== Answer.Yes,

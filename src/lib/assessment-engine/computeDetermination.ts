@@ -1,4 +1,4 @@
-import { Answer, AuthPathway, Pathway, Answers } from './types';
+import { Answer, AuthPathway, Pathway, Answers, answerIsOneOf } from './types';
 
 type PathwayValue = (typeof Pathway)[keyof typeof Pathway];
 
@@ -229,13 +229,13 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     !isBugFix &&
     allUSSignificanceAnswersNo &&
     ans.C10 === Answer.Yes &&
-    ![Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C11);
+    !answerIsOneOf(ans.C11, [Answer.Yes, Answer.No, Answer.Uncertain]);
 
   const cumulativeDriftUnresolved =
     cumulativeEscalation &&
     allSignificanceNo &&
     !seNotSupportable &&
-    (ans.C10 === Answer.Uncertain || ![Answer.Yes, Answer.No].includes(ans.C11));
+    (ans.C10 === Answer.Uncertain || !answerIsOneOf(ans.C11, [Answer.Yes, Answer.No]));
 
   const significanceIncomplete =
     isNonPMA &&
@@ -274,7 +274,7 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
     isPMA &&
     !isIntendedUseChange &&
     !isIntendedUseUncertain &&
-    [Answer.Yes, Answer.No, Answer.Uncertain].includes(ans.C_PMA1);
+    answerIsOneOf(ans.C_PMA1, [Answer.Yes, Answer.No, Answer.Uncertain]);
   const pmaIncomplete = isPMA && !isIntendedUseChange && !isIntendedUseUncertain && !pmaThresholdFieldsAnswered;
   const pmaRequiresSupplement =
     isPMA &&
