@@ -6,6 +6,7 @@ import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
 import { ReviewPanel } from '../src/components/ReviewPanel';
 import { App } from '../src/App';
+import { assessmentStore } from '../src/lib/assessment-store';
 import { Answer, computeDetermination, type Block, type AssessmentField } from '../src/lib/assessment-engine';
 import { storage } from '../src/lib/storage';
 import { SAMPLE_CASES } from '../src/sample-cases';
@@ -89,6 +90,40 @@ describe('UI workflow', () => {
     expect(screen.getByText('Saved assessments')).toBeInTheDocument();
     expect(screen.getByText('Assessment - 510(k)')).toBeInTheDocument();
     expect(screen.getByText(/saved library records preserve structured review context/i)).toBeInTheDocument();
+  });
+
+  it('keeps the resumable browser draft intact when a saved library record is opened', () => {
+    storage.saveAnswers({
+      A1: '510(k)',
+      A1b: 'K009999',
+      A1c: 'Live draft',
+      A2: 'No',
+    });
+    storage.saveBlockIndex(2);
+
+    assessmentStore.save({
+      name: 'Saved library assessment',
+      answers: {
+        A1: 'PMA',
+        A1b: 'P123456',
+        A1c: 'Library record',
+        A2: 'No',
+      },
+      blockIndex: 1,
+      lastPathway: 'PMA Annual Report',
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByText('Open'));
+
+    expect(storage.loadAnswers()).toEqual({
+      A1: '510(k)',
+      A1b: 'K009999',
+      A1c: 'Live draft',
+      A2: 'No',
+    });
+    expect(storage.loadBlockIndex()).toBe(2);
   });
 
   it('keeps supporting field context collapsed until the user asks for it', () => {

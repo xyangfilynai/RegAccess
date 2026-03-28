@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>29/29</span>
+                <span class='fraction'>28/28</span>
             </div>
         
             
@@ -108,9 +108,7 @@
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
-<a name='L46'></a><a href='#L46'>46</a>
-<a name='L47'></a><a href='#L47'>47</a>
-<a name='L48'></a><a href='#L48'>48</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -120,42 +118,40 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">29x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import type { Answers } from './assessment-engine';
 import {
@@ -167,9 +163,7 @@ import {
   writeStoredJson,
   writeStoredValue,
 } from './browser-storage';
-&nbsp;
-const STORAGE_KEY = 'regassess-answers';
-const BLOCK_STORAGE_KEY = 'regassess-block-index';
+import { PERSISTENCE_KEYS } from './persistence-keys';
 &nbsp;
 const isAnswerValue = (value: unknown): value is string | string[] =&gt; typeof value === 'string' || isStringArray(value);
 &nbsp;
@@ -178,26 +172,26 @@ export const isAnswersRecord = (value: unknown): value is Answers =&gt;
 &nbsp;
 export const storage = {
   loadAnswers(): Answers {
-    const saved = readStoredJson(STORAGE_KEY);
+    const saved = readStoredJson(PERSISTENCE_KEYS.draftAnswers);
     return isAnswersRecord(saved) ? saved : {};
   },
 &nbsp;
   saveAnswers(answers: Answers): void {
-    writeStoredJson(STORAGE_KEY, answers);
+    writeStoredJson(PERSISTENCE_KEYS.draftAnswers, answers);
   },
 &nbsp;
   loadBlockIndex(): number {
-    const saved = readStoredValue(BLOCK_STORAGE_KEY);
+    const saved = readStoredValue(PERSISTENCE_KEYS.draftBlockIndex);
     const parsed = saved ? Number.parseInt(saved, 10) : 0;
     return Number.isFinite(parsed) &amp;&amp; parsed &gt;= 0 ? <span class="branch-0 cbranch-no" title="branch not covered" >parsed : 0;</span>
   },
 &nbsp;
   saveBlockIndex(index: number): void {
-    writeStoredValue(BLOCK_STORAGE_KEY, String(index));
+    writeStoredValue(PERSISTENCE_KEYS.draftBlockIndex, String(index));
   },
 &nbsp;
   clearSession(): void {
-    removeStoredKeys(STORAGE_KEY, BLOCK_STORAGE_KEY);
+    removeStoredKeys(PERSISTENCE_KEYS.draftAnswers, PERSISTENCE_KEYS.draftBlockIndex);
   },
 &nbsp;
   hasSavedAnswers(): boolean {
@@ -211,7 +205,7 @@ export const storage = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-28T13:16:35.128Z
+                at 2026-03-28T13:46:28.662Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

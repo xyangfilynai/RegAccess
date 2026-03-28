@@ -5,12 +5,25 @@ import { storage } from '../lib/storage';
 import type { Answers } from '../lib/assessment-engine';
 import { SAMPLE_CASES_BY_ID } from '../sample-cases';
 
-type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
+export type Screen = 'dashboard' | 'assess' | 'feedback' | 'handoff';
+type WorkspaceSource = 'draft' | 'library' | 'sample';
+
+interface DraftSnapshot {
+  answers: Answers;
+  blockIndex: number;
+  hasSavedDraft: boolean;
+}
 
 const scrollToTop = () => {
   if (typeof window === 'undefined') return;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+const loadDraftSnapshot = (): DraftSnapshot => ({
+  answers: storage.loadAnswers(),
+  blockIndex: storage.loadBlockIndex(),
+  hasSavedDraft: storage.hasSavedAnswers(),
+});
 
 export interface AssessmentWorkspace {
   screen: Screen;
@@ -41,28 +54,35 @@ export interface AssessmentWorkspace {
 }
 
 export function useAssessmentWorkspace(): AssessmentWorkspace {
+  const initialDraftSnapshot = useMemo(() => loadDraftSnapshot(), []);
   const [screen, setScreen] = useState<Screen>('dashboard');
-  const [answers, setAnswers] = useState<Answers>(storage.loadAnswers);
-  const [currentBlockIndex, setCurrentBlockIndex] = useState(storage.loadBlockIndex);
+  const [answers, setAnswers] = useState<Answers>(initialDraftSnapshot.answers);
+  const [currentBlockIndex, setCurrentBlockIndex] = useState(initialDraftSnapshot.blockIndex);
   const [activeSampleCaseId, setActiveSampleCaseId] = useState<string | null>(null);
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
-  const isViewingSample = activeSampleCaseId !== null;
+  const [workspaceSource, setWorkspaceSource] = useState<WorkspaceSource>('draft');
+  const [hasSavedDraft, setHasSavedDraft] = useState(initialDraftSnapshot.hasSavedDraft);
+  const isViewingSample = workspaceSource === 'sample';
 
   const refreshSavedAssessments = useCallback(() => {
     setSavedAssessments(assessmentStore.list());
   }, []);
 
   useEffect(() => {
-    if (isViewingSample) return;
-    storage.saveAnswers(answers);
-  }, [answers, isViewingSample]);
+    if (workspaceSource !== 'draft') return;
 
-  useEffect(() => {
-    if (isViewingSample) return;
+    if (Object.keys(answers).length === 0) {
+      storage.clearSession();
+      setHasSavedDraft(false);
+      return;
+    }
+
+    storage.saveAnswers(answers);
     storage.saveBlockIndex(currentBlockIndex);
-  }, [currentBlockIndex, isViewingSample]);
+    setHasSavedDraft(true);
+  }, [answers, currentBlockIndex, workspaceSource]);
 
   useEffect(() => {
     setValidationErrors((prev) => (Object.keys(prev).length > 0 ? {} : prev));
@@ -73,23 +93,31 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     [currentAssessmentId, savedAssessments],
   );
 
+  const restoreDraftSnapshot = useCallback(() => {
+    const snapshot = loadDraftSnapshot();
+    setAnswers(snapshot.answers);
+    setCurrentBlockIndex(snapshot.blockIndex);
+    setHasSavedDraft(snapshot.hasSavedDraft);
+    setWorkspaceSource('draft');
+  }, []);
+
   const currentReviewerNotes = currentSavedAssessment?.reviewerNotes || [];
-  const hasSavedSession = Object.keys(answers).length > 0 && !isViewingSample;
+  const hasSavedSession = hasSavedDraft;
 
   const handleReset = useCallback(() => {
-    if (isViewingSample) {
-      setAnswers(storage.loadAnswers());
-      setCurrentBlockIndex(storage.loadBlockIndex());
-    } else {
+    if (workspaceSource === 'draft') {
       setAnswers({});
       setCurrentBlockIndex(0);
+      setHasSavedDraft(false);
       storage.clearSession();
+    } else {
+      restoreDraftSnapshot();
     }
     setCurrentAssessmentId(null);
     setActiveSampleCaseId(null);
     setScreen('dashboard');
     scrollToTop();
-  }, [isViewingSample]);
+  }, [restoreDraftSnapshot, workspaceSource]);
 
   const handleLoadAssessment = useCallback((id: string) => {
     const assessment = assessmentStore.get(id);
@@ -99,6 +127,7 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setCurrentBlockIndex(assessment.blockIndex);
     setCurrentAssessmentId(assessment.id);
     setActiveSampleCaseId(null);
+    setWorkspaceSource('library');
     setValidationErrors({});
     setScreen('assess');
     scrollToTop();
@@ -161,9 +190,14 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
   );
 
   const handleHome = useCallback(() => {
+    if (workspaceSource !== 'draft') {
+      restoreDraftSnapshot();
+      setCurrentAssessmentId(null);
+      setActiveSampleCaseId(null);
+    }
     setScreen('dashboard');
     scrollToTop();
-  }, []);
+  }, [restoreDraftSnapshot, workspaceSource]);
 
   const handleOpenSampleCase = useCallback((sampleCaseId: string) => {
     const sampleCase = SAMPLE_CASES_BY_ID[sampleCaseId];
@@ -174,6 +208,7 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setValidationErrors({});
     setCurrentAssessmentId(null);
     setActiveSampleCaseId(sampleCaseId);
+    setWorkspaceSource('sample');
     setScreen('assess');
     scrollToTop();
   }, []);
@@ -184,19 +219,20 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setValidationErrors({});
     setCurrentAssessmentId(null);
     setActiveSampleCaseId(null);
+    setWorkspaceSource('draft');
+    setHasSavedDraft(false);
     storage.clearSession();
     setScreen('assess');
     scrollToTop();
   }, []);
 
   const handleResume = useCallback(() => {
-    setAnswers(storage.loadAnswers());
-    setCurrentBlockIndex(storage.loadBlockIndex());
+    restoreDraftSnapshot();
     setCurrentAssessmentId(null);
     setActiveSampleCaseId(null);
     setScreen('assess');
     scrollToTop();
-  }, []);
+  }, [restoreDraftSnapshot]);
 
   return {
     screen,

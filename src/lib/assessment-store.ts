@@ -5,6 +5,7 @@
 
 import type { Answers } from './assessment-engine';
 import { isPlainObject, readStoredJson, writeStoredJson } from './browser-storage';
+import { PERSISTENCE_KEYS } from './persistence-keys';
 import { isAnswersRecord } from './storage';
 
 export interface ReviewerNote {
@@ -34,7 +35,11 @@ export interface SavedAssessment {
   lastPathway?: string;
 }
 
-const STORE_KEY = 'regassess-assessments';
+interface PersistedSavedAssessment extends SavedAssessment {
+  schemaVersion: number;
+}
+
+const ASSESSMENT_STORE_SCHEMA_VERSION = 1;
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -45,13 +50,15 @@ const isReviewerNote = (value: unknown): value is ReviewerNote =>
   typeof value.id === 'string' &&
   typeof value.author === 'string' &&
   typeof value.text === 'string' &&
-  typeof value.timestamp === 'string';
+  isValidTimestamp(value.timestamp);
 
 const isAssessmentVersion = (value: unknown): value is AssessmentVersion =>
   isPlainObject(value) &&
   typeof value.versionNumber === 'number' &&
+  Number.isFinite(value.versionNumber) &&
+  value.versionNumber >= 1 &&
   isAnswersRecord(value.answers) &&
-  typeof value.timestamp === 'string' &&
+  isValidTimestamp(value.timestamp) &&
   typeof value.note === 'string';
 
 const isSavedAssessment = (value: unknown): value is SavedAssessment =>
@@ -60,13 +67,91 @@ const isSavedAssessment = (value: unknown): value is SavedAssessment =>
   typeof value.name === 'string' &&
   isAnswersRecord(value.answers) &&
   typeof value.blockIndex === 'number' &&
-  typeof value.createdAt === 'string' &&
-  typeof value.updatedAt === 'string' &&
+  Number.isFinite(value.blockIndex) &&
+  value.blockIndex >= 0 &&
+  isValidTimestamp(value.createdAt) &&
+  isValidTimestamp(value.updatedAt) &&
   Array.isArray(value.versions) &&
   value.versions.every((entry) => isAssessmentVersion(entry)) &&
   Array.isArray(value.reviewerNotes) &&
   value.reviewerNotes.every((entry) => isReviewerNote(entry)) &&
   (value.lastPathway === undefined || typeof value.lastPathway === 'string');
+
+const isValidTimestamp = (value: unknown): value is string =>
+  typeof value === 'string' && Number.isFinite(Date.parse(value));
+
+const normalizeTimestamp = (value: unknown, fallback: string): string => (isValidTimestamp(value) ? value : fallback);
+
+const toNonNegativeInteger = (value: unknown): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+};
+
+const normalizeReviewerNote = (value: unknown, fallbackTimestamp: string): ReviewerNote | null => {
+  if (isReviewerNote(value)) return value;
+  if (!isPlainObject(value)) return null;
+  if (typeof value.id !== 'string' || typeof value.author !== 'string' || typeof value.text !== 'string') {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    author: value.author,
+    text: value.text,
+    timestamp: normalizeTimestamp(value.timestamp, fallbackTimestamp),
+  };
+};
+
+const normalizeAssessmentVersion = (value: unknown, fallbackTimestamp: string): AssessmentVersion | null => {
+  if (isAssessmentVersion(value)) return value;
+  if (!isPlainObject(value) || !isAnswersRecord(value.answers) || typeof value.note !== 'string') return null;
+
+  return {
+    versionNumber: Math.max(1, toNonNegativeInteger(value.versionNumber)),
+    answers: value.answers,
+    timestamp: normalizeTimestamp(value.timestamp, fallbackTimestamp),
+    note: value.note,
+  };
+};
+
+const normalizeSavedAssessment = (value: unknown): SavedAssessment | null => {
+  if (isSavedAssessment(value)) return value;
+  if (!isPlainObject(value)) return null;
+  if (typeof value.id !== 'string' || typeof value.name !== 'string' || !isAnswersRecord(value.answers)) {
+    return null;
+  }
+
+  const createdAtFallback = new Date().toISOString();
+  const createdAt = normalizeTimestamp(value.createdAt, createdAtFallback);
+  const updatedAt = normalizeTimestamp(value.updatedAt, createdAt);
+  const reviewerNotes = Array.isArray(value.reviewerNotes)
+    ? value.reviewerNotes
+        .map((entry) => normalizeReviewerNote(entry, updatedAt))
+        .filter((entry): entry is ReviewerNote => entry !== null)
+    : [];
+  const versions = Array.isArray(value.versions)
+    ? value.versions
+        .map((entry) => normalizeAssessmentVersion(entry, updatedAt))
+        .filter((entry): entry is AssessmentVersion => entry !== null)
+    : [];
+
+  return {
+    id: value.id,
+    name: value.name,
+    answers: value.answers,
+    blockIndex: toNonNegativeInteger(value.blockIndex),
+    createdAt,
+    updatedAt,
+    versions,
+    reviewerNotes,
+    lastPathway: typeof value.lastPathway === 'string' ? value.lastPathway : undefined,
+  };
+};
+
+const toPersistedSavedAssessment = (assessment: SavedAssessment): PersistedSavedAssessment => ({
+  ...assessment,
+  schemaVersion: ASSESSMENT_STORE_SCHEMA_VERSION,
+});
 
 const serializeAnswers = (answers: Answers): string =>
   JSON.stringify(
@@ -85,13 +170,18 @@ const hasMeaningfulAssessmentChange = (
   serializeAnswers(existing.answers) !== serializeAnswers(next.answers);
 
 function loadAll(): SavedAssessment[] {
-  const raw = readStoredJson(STORE_KEY);
+  const raw = readStoredJson(PERSISTENCE_KEYS.savedAssessments);
   if (!Array.isArray(raw)) return [];
-  return raw.filter((entry) => isSavedAssessment(entry));
+  return raw
+    .map((entry) => normalizeSavedAssessment(entry))
+    .filter((entry): entry is SavedAssessment => entry !== null);
 }
 
 function saveAll(assessments: SavedAssessment[]): void {
-  writeStoredJson(STORE_KEY, assessments);
+  writeStoredJson(
+    PERSISTENCE_KEYS.savedAssessments,
+    assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
+  );
 }
 
 export const assessmentStore = {

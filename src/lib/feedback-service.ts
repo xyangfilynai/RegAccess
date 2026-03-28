@@ -1,5 +1,6 @@
 import type { FeedbackFormData } from './feedback-types';
 import { readStoredJson, writeStoredJson } from './browser-storage';
+import { PERSISTENCE_KEYS } from './persistence-keys';
 
 /** Submission payload — matches form data plus metadata. */
 interface FeedbackPayload {
@@ -18,11 +19,10 @@ interface FeedbackSubmitter {
  */
 const localStorageSubmitter: FeedbackSubmitter = {
   async submit(payload) {
-    const key = 'regassess-feedback';
-    const existing = readStoredJson(key);
+    const existing = readStoredJson(PERSISTENCE_KEYS.feedback);
     const records = Array.isArray(existing) ? existing : [];
     records.push(payload);
-    return { ok: writeStoredJson(key, records) };
+    return { ok: writeStoredJson(PERSISTENCE_KEYS.feedback, records) };
   },
 };
 

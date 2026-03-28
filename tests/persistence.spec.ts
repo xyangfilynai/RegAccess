@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { assessmentStore } from '../src/lib/assessment-store';
 import { feedbackService } from '../src/lib/feedback-service';
 import { createEmptyForm } from '../src/lib/feedback-types';
+import { PERSISTENCE_KEYS } from '../src/lib/persistence-keys';
 import { storage } from '../src/lib/storage';
 
 describe('browser persistence', () => {
@@ -10,16 +11,25 @@ describe('browser persistence', () => {
   });
 
   it('falls back to an empty answer set when persisted answers are malformed', () => {
-    localStorage.setItem('regassess-answers', '{"A1":{"nested":"nope"}}');
+    localStorage.setItem(PERSISTENCE_KEYS.draftAnswers, '{"A1":{"nested":"nope"}}');
 
     expect(storage.loadAnswers()).toEqual({});
     expect(storage.hasSavedAnswers()).toBe(false);
   });
 
-  it('filters invalid saved assessments and creates versions only on meaningful updates', () => {
+  it('normalizes legacy saved assessments and creates versions only on meaningful updates', () => {
     localStorage.setItem(
-      'regassess-assessments',
+      PERSISTENCE_KEYS.savedAssessments,
       JSON.stringify([
+        {
+          id: 'legacy-assessment',
+          name: 'Legacy assessment',
+          answers: { A1: '510(k)' },
+          blockIndex: -3,
+          createdAt: 'not-a-date',
+          updatedAt: '2026-03-02T00:00:00.000Z',
+          lastPathway: 'Letter to File',
+        },
         {
           id: 'valid-assessment',
           name: 'Stored assessment',
@@ -44,7 +54,20 @@ describe('browser persistence', () => {
       ]),
     );
 
-    expect(assessmentStore.list()).toHaveLength(1);
+    const normalized = assessmentStore.list();
+
+    expect(normalized).toHaveLength(2);
+    expect(normalized.find((assessment) => assessment.id === 'legacy-assessment')).toMatchObject({
+      id: 'legacy-assessment',
+      name: 'Legacy assessment',
+      blockIndex: 0,
+      versions: [],
+      reviewerNotes: [],
+      lastPathway: 'Letter to File',
+    });
+    expect(
+      Date.parse(normalized.find((assessment) => assessment.id === 'legacy-assessment')?.createdAt || ''),
+    ).not.toBeNaN();
 
     const created = assessmentStore.save({
       name: 'Draft review',
@@ -76,7 +99,7 @@ describe('browser persistence', () => {
   });
 
   it('recovers from corrupt feedback storage and appends the new submission', async () => {
-    localStorage.setItem('regassess-feedback', '{not valid json');
+    localStorage.setItem(PERSISTENCE_KEYS.feedback, '{not valid json');
 
     const result = await feedbackService.submit({
       submittedAt: '2026-03-28T10:00:00.000Z',
@@ -84,6 +107,6 @@ describe('browser persistence', () => {
     });
 
     expect(result.ok).toBe(true);
-    expect(JSON.parse(localStorage.getItem('regassess-feedback') || '[]')).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(PERSISTENCE_KEYS.feedback) || '[]')).toHaveLength(1);
   });
 });

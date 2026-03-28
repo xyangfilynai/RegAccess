@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
@@ -13,12 +13,12 @@ import {
   getBlockFields,
   computeDerivedState,
   computeDetermination,
-  isAnsweredValue,
   type AssessmentField,
 } from './lib/assessment-engine';
 import { buildCaseSummary } from './lib/assessment-metadata';
 import { useCascadeClearing } from './hooks/useCascadeClearing';
 import { useAssessmentProgress, useCompletedBlocks } from './hooks/useAssessmentProgress';
+import { useAssessmentFlow } from './hooks/useAssessmentFlow';
 import { useAssessmentWorkspace } from './hooks/useAssessmentWorkspace';
 
 export const App: React.FC = () => {
@@ -59,18 +59,6 @@ export const App: React.FC = () => {
     [answers, derivedState],
   );
 
-  useEffect(() => {
-    if (currentBlockIndex > blocks.length - 1) {
-      setCurrentBlockIndex(Math.max(0, blocks.length - 1));
-    }
-  }, [blocks.length, currentBlockIndex, setCurrentBlockIndex]);
-
-  const currentBlock = blocks[currentBlockIndex];
-  const currentBlockFields = useMemo(
-    () => (currentBlock ? getFieldsForBlock(currentBlock.id) : []),
-    [currentBlock, getFieldsForBlock],
-  );
-
   const determination = useMemo(() => computeDetermination(answers), [answers]);
 
   // --- Extracted hooks ---
@@ -89,65 +77,27 @@ export const App: React.FC = () => {
 
   const completedBlocks = useCompletedBlocks(blocks, requiredAnsweredCounts, requiredCounts);
 
-  // --- Block completion & validation ---
-  const currentBlockComplete = useMemo(() => {
-    if (!currentBlock || currentBlock.id === 'review') return true;
-    const requiredPathwayFields = currentBlockFields.filter((q) => !q.sectionDivider && !q.skip && q.pathwayCritical);
-    return requiredPathwayFields.every((q) => isAnsweredValue(answers[q.id]));
-  }, [currentBlock, currentBlockFields, answers]);
-
-  const currentMissingRequired = useMemo(() => {
-    if (!currentBlock || currentBlock.id === 'review') return 0;
-    return Math.max(0, (requiredCounts[currentBlock.id] || 0) - (requiredAnsweredCounts[currentBlock.id] || 0));
-  }, [currentBlock, requiredCounts, requiredAnsweredCounts]);
-
-  const caseSummary = useMemo(() => buildCaseSummary(answers), [answers]);
-
-  // --- Navigation ---
-  const handlePrevious = useCallback(() => {
-    if (currentBlockIndex > 0) {
-      setCurrentBlockIndex(currentBlockIndex - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      setScreen('dashboard');
-    }
-  }, [currentBlockIndex, setCurrentBlockIndex, setScreen]);
-
-  const handleNext = useCallback(() => {
-    if (currentBlockIndex < blocks.length - 1) {
-      if (currentBlock && currentBlock.id !== 'review' && !currentBlockComplete) {
-        const errors: Record<string, boolean> = {};
-        currentBlockFields
-          .filter((q) => !q.sectionDivider && !q.skip && q.pathwayCritical)
-          .forEach((q) => {
-            if (!isAnsweredValue(answers[q.id])) {
-              errors[q.id] = true;
-            }
-          });
-        setValidationErrors(errors);
-        return;
-      }
-      setCurrentBlockIndex(currentBlockIndex + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [
-    currentBlockIndex,
-    blocks.length,
+  const {
     currentBlock,
-    currentBlockComplete,
     currentBlockFields,
+    currentBlockComplete,
+    currentMissingRequired,
+    handlePrevious,
+    handleNext,
+    handleBlockSelect,
+  } = useAssessmentFlow({
     answers,
+    blocks,
+    currentBlockIndex,
+    getFieldsForBlock,
+    requiredAnsweredCounts,
+    requiredCounts,
     setCurrentBlockIndex,
     setValidationErrors,
-  ]);
+    onExitAssessment: () => setScreen('dashboard'),
+  });
 
-  const handleBlockSelect = useCallback(
-    (index: number) => {
-      setCurrentBlockIndex(index);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    [setCurrentBlockIndex],
-  );
+  const caseSummary = useMemo(() => buildCaseSummary(answers), [answers]);
 
   // --- Screen routing ---
   if (screen === 'dashboard') {
