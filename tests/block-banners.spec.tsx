@@ -40,7 +40,7 @@ describe('BlockBanners', () => {
     expect(screen.getByText(/De Novo device-type fit unresolved/i)).toBeInTheDocument();
   });
 
-  it('shows the PCCP suitability banner for scoped PCCP review blocks', () => {
+  it('shows the PCCP planning heuristic banner for scoped PCCP review blocks', () => {
     const answers = base510k({
       A2: Answer.Yes,
       B1: 'Training Data',
@@ -57,7 +57,9 @@ describe('BlockBanners', () => {
       />,
     );
 
-    expect(screen.getByText(/PCCP suitability for "Additional data — new clinical sites"/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/ChangePath PCCP planning heuristic for "Additional data — new clinical sites"/i),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(/May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized/i),
     ).toBeInTheDocument();

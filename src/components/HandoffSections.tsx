@@ -417,7 +417,7 @@ export const HandoffPreSubmissionNotice: React.FC<HandoffPreSubmissionNoticeProp
           }}
         >
           {isDeNovo
-            ? 'FDA 510(k) software change guidance is often applied by analogy to De Novo-authorized devices; a Pre-Submission remains useful when device-type fit or pathway choice is uncertain.'
+            ? "ChangePath uses FDA's 2017 510(k) software-change guidance as a screening framework for De Novo-authorized devices after device-type fit is checked; a Pre-Submission remains useful when device-type fit or pathway choice is uncertain."
             : `Consider a Pre-Submission with FDA before finalizing the ${isPMA ? 'PMA supplement' : '510(k)'} package when the case is borderline or novel.`}
         </div>
       </div>

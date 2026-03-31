@@ -270,7 +270,7 @@ export function formatArtifactAsText(artifact: AssessmentArtifact, assessmentNam
   }
 
   lines.push(hr);
-  lines.push('PACKAGE MUST INCLUDE');
+  lines.push('CORE DOCUMENTATION TO PREPARE');
   lines.push(hr);
   if (artifact.documentationRequirements.required.length > 0) {
     artifact.documentationRequirements.required.forEach((d, i) => {

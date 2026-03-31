@@ -539,10 +539,10 @@ export function buildEvidenceGapInsightItems(
       case 'GAP-GENAI-HALLUCINATION':
         return {
           ...defaultItem,
-          title: 'GenAI factual-accuracy / hallucination testing is not yet documented',
-          whyThisMatters: `The case includes a GenAI high-impact change, but the record does not yet show hallucination/factual-accuracy testing appropriate for the modified behavior.`,
+          title: 'GenAI factual-accuracy / unsafe-output testing is not yet documented',
+          whyThisMatters: `The case includes a GenAI high-impact change, but the record does not yet show factual-accuracy or other unsafe-output testing appropriate for the modified behavior.`,
           actionText:
-            'Provide the GenAI hallucination or factual-accuracy test plan, results, and pass/fail criteria specific to the modified configuration.',
+            'Provide the GenAI factual-accuracy or other unsafe-output test plan, results, and pass/fail criteria specific to the modified configuration.',
         };
       case 'GAP-GENAI-GUARDRAIL':
         return {

@@ -63,23 +63,23 @@ const REG_SOURCES: Record<string, RegulatorySource> = {
   },
   'FDA-PCCP-2025': {
     title:
-      'FDA, "Marketing Submission Recommendations for a Predetermined Change Control Plan for Artificial Intelligence-Enabled Device Software Functions" (Final Guidance; originally issued Dec 4, 2024; reissued Aug 18, 2025)',
+      'FDA, "Marketing Submission Recommendations for a Predetermined Change Control Plan for Artificial Intelligence-Enabled Device Software Functions" (Final Guidance, Aug 2025)',
     shortName: 'FDA PCCP Guidance',
     fullName:
-      'Marketing Submission Recommendations for a Predetermined Change Control Plan for AI-Enabled Device Software Functions (Final Guidance; originally Dec 2024, reissued Aug 2025)',
+      'Marketing Submission Recommendations for a Predetermined Change Control Plan for AI-Enabled Device Software Functions (Final Guidance, Aug 2025)',
     status: 'Final Guidance',
     jurisdiction: 'US',
     url: 'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/marketing-submission-recommendations-predetermined-change-control-plan-artificial-intelligence',
   },
   'FDA-PCCP-2025 §V': {
     title:
-      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025) §V — PCCP Policy (Scope, Establishing, Implementing, and Modifying PCCPs)',
+      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §V — PCCP Policy (Scope, Establishing, Implementing, and Modifying PCCPs)',
     status: 'Final Guidance',
     jurisdiction: 'US',
   },
   'FDA-PCCP-2025 §V–VIII': {
     title:
-      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025) §V–VIII — PCCP Policy, Description of Modifications, Modification Protocol, and Impact Assessment',
+      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §V–VIII — PCCP Policy, Description of Modifications, Modification Protocol, and Impact Assessment',
     status: 'Final Guidance',
     jurisdiction: 'US',
   },
@@ -209,13 +209,23 @@ const REG_SOURCES: Record<string, RegulatorySource> = {
   },
   'FDA-CYBER-2026': {
     title:
-      'FDA, "Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions" (Final Guidance, revised Feb 2026 to align with QMSR; supersedes Jun 2025 and Sep 2023 versions)',
+      'FDA, "Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions" (Final Guidance, Feb 2026)',
     shortName: 'FDA Cybersecurity Guidance',
     fullName:
-      'Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions (Final Guidance, revised Feb 2026)',
+      'Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions (Final Guidance, Feb 2026)',
     status: 'Final Guidance',
     jurisdiction: 'US',
     url: 'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/cybersecurity-medical-devices-quality-system-considerations-and-content-premarket-submissions',
+  },
+  'FDA-PMA-SUPPLEMENTS-2008': {
+    title:
+      'FDA, "Modifications to Devices Subject to Premarket Approval (PMA) - The PMA Supplement Decision-Making Process" (Final Guidance, Dec 2008)',
+    shortName: 'FDA PMA Supplement Guidance',
+    fullName:
+      'Modifications to Devices Subject to Premarket Approval (PMA) - The PMA Supplement Decision-Making Process (Final Guidance, Dec 2008)',
+    status: 'Final Guidance',
+    jurisdiction: 'US',
+    url: 'https://www.fda.gov/regulatory-information/search-fda-guidance-documents/modifications-devices-subject-premarket-approval-pma-pma-supplement-decision-making-process',
   },
   QMSR: {
     title:
@@ -308,7 +318,8 @@ export const findGuidanceLink = (sourceCode: string | null | undefined) => {
     return guidanceLinks['FDA-LIFECYCLE-2025'];
   if (code.includes('Cybersecurity in Medical Devices') || code.includes('cybersecurity'))
     return guidanceLinks['FDA-CYBER-2026'];
-  if (code.includes('PMA Supplements Guidance')) return guidanceLinks['21 CFR 814.39'];
+  if (code.includes('PMA Supplements Guidance') || code.includes('Decision-Making Process'))
+    return guidanceLinks['FDA-PMA-SUPPLEMENTS-2008'];
   if (
     code.includes('Internal reassessment') ||
     code.includes('cumulative') ||
@@ -348,11 +359,16 @@ export const getSourceBadge = (code: string | null | undefined) => {
   const baseCode = c.split(' ')[0].split('§')[0].trim();
   const regSrc = REG_SOURCES[baseCode];
   if (regSrc) return { full: regSrc.title, status: regSrc.status, jurisdiction: regSrc.jurisdiction };
-  if (/^21 CFR|^FD&C Act/.test(c)) return { full: c, status: 'Regulation', jurisdiction: 'US' };
+  if (/^FD&C Act|^FDORA/.test(c)) return { full: c, status: 'Statute', jurisdiction: 'US' };
+  if (/^21 CFR/.test(c)) return { full: c, status: 'Regulation', jurisdiction: 'US' };
   if (/^EU MDR|^EU AI Act|^IVDR|^Regulation \(EU\)/.test(c))
     return { full: c, status: 'Regulation', jurisdiction: 'EU' };
   if (/^ISO \d|^IEC \d/.test(c)) return { full: c, status: 'Standard', jurisdiction: 'International' };
   if (/^MDCG/.test(c)) return { full: c, status: 'Final Guidance', jurisdiction: 'EU' };
+  if (/FDA-LIFECYCLE-2025|AI-Enabled Device Software Functions|Lifecycle Management/i.test(c))
+    return { full: c, status: 'Draft Guidance', jurisdiction: 'US' };
+  if (/PMA Supplements Guidance|Decision-Making Process/i.test(c))
+    return { full: c, status: 'Final Guidance', jurisdiction: 'US' };
   if (/^FDA/.test(c)) return { full: c, status: 'Final Guidance', jurisdiction: 'US' };
   if (/^Best practice$/i.test(c)) return { full: c, status: 'Best Practice', jurisdiction: '' };
   if (/^QMSR/.test(c)) return { full: c, status: 'Regulation', jurisdiction: 'US' };
@@ -362,8 +378,6 @@ export const getSourceBadge = (code: string | null | undefined) => {
     return { full: c, status: 'Final Guidance', jurisdiction: 'US' };
   if (/Marketing Submission|PCCP for AI/i.test(c)) return { full: c, status: 'Final Guidance', jurisdiction: 'US' };
   if (/Cybersecurity in Medical/i.test(c)) return { full: c, status: 'Final Guidance', jurisdiction: 'US' };
-  if (/AI-Enabled Device|Lifecycle Management/i.test(c))
-    return { full: c, status: 'Draft Guidance', jurisdiction: 'US' };
   if (/GenAI|design.control/i.test(c)) return { full: c, status: 'Best Practice', jurisdiction: '' };
   if (/De Novo|device-type|special-controls/i.test(c)) return { full: c, status: 'Regulation', jurisdiction: 'US' };
   if (/PMA Supplement/i.test(c)) return { full: c, status: 'Regulation', jurisdiction: 'US' };

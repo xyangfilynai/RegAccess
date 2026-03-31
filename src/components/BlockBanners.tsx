@@ -127,7 +127,7 @@ export const BlockBanners: React.FC<BlockBannersProps> = React.memo(
             >
               <strong>De Novo note:</strong>{' '}
               {
-                'For software changes, FDA 510(k) software change guidance is often applied by analogy to De Novo-authorized devices; confirm device-type fit and special controls. For borderline cases, consider a Pre-Submission (Q-Sub).'
+                "ChangePath uses FDA's 2017 510(k) software-change guidance as a screening framework for De Novo-authorized devices only after device-type fit and special controls are checked. For borderline cases, consider a Pre-Submission (Q-Sub)."
               }
             </div>
           ))}
@@ -206,7 +206,7 @@ export const BlockBanners: React.FC<BlockBannersProps> = React.memo(
                       marginBottom: 4,
                     }}
                   >
-                    PCCP suitability for {`"${answers.B2 as string}"`}:{' '}
+                    ChangePath PCCP planning heuristic for {`"${answers.B2 as string}"`}:{' '}
                     {pccpStatus === 'TYPICAL'
                       ? 'Often compatible'
                       : pccpStatus === 'EXEMPT'
@@ -225,14 +225,14 @@ export const BlockBanners: React.FC<BlockBannersProps> = React.memo(
                     }}
                   >
                     {pccpStatus === 'TYPICAL'
-                      ? 'This change type is often compatible with PCCP when the change is pre-described, bounded, and validated prospectively.'
+                      ? "In ChangePath's planning heuristic, this change type is often compatible with PCCP when the change is pre-described, bounded, and validated prospectively."
                       : pccpStatus === 'EXEMPT'
-                        ? 'PCCP is typically not the primary mechanism for documentation-only cybersecurity or restore-to-specification pathways.'
+                        ? "In ChangePath's planning heuristic, PCCP is usually not the primary mechanism for documentation-only cybersecurity or restore-to-specification pathways."
                         : pccpStatus === 'CONDITIONAL'
                           ? 'May fit a PCCP only if scope, acceptance criteria, and boundaries are explicitly authorized.'
                           : pccpStatus === 'UNLIKELY'
                             ? 'Unlikely to fit a PCCP without a new authorization scope.'
-                            : 'Outside typical PCCP scope under current FDA PCCP policy for this change pattern.'}
+                            : 'ChangePath planning heuristic: outside routine PCCP fit unless FDA has specifically authorized this change pattern.'}
                   </span>
                   {pccpNote && (
                     <div

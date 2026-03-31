@@ -78,6 +78,33 @@ describe('Authority/source classification credibility fixes', () => {
       ),
     ).toBe(true);
   });
+
+  it('classifies FDA-LIFECYCLE-2025 references as draft guidance in generated artifacts', () => {
+    const answers = base510k();
+    const determination = computeDetermination(answers);
+    const ds = computeDerivedState(answers);
+    const blocks = getBlocks(answers, ds);
+    const artifact = generateAssessmentArtifact(answers, determination, blocks, (blockId: string) =>
+      getBlockFields(blockId, answers, ds),
+    );
+
+    expect(
+      artifact.documentationRequirements.recommended.some(
+        (d) => d.source.includes('FDA-LIFECYCLE-2025') && d.sourceClass === 'Draft guidance',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not mark the GenAI hallucination question as draft FDA guidance', () => {
+    const answers = base510k({
+      A6: ['LLM / Foundation Model', 'Generative AI'],
+    });
+    const ds = computeDerivedState(answers);
+    const d5 = getBlockFields('D', answers, ds).find((field) => field.id === 'D5');
+
+    expect(d5).toBeDefined();
+    expect(d5?.draftRef).not.toBe(true);
+  });
 });
 
 describe('Case-specific reasoning credibility fixes', () => {
@@ -227,7 +254,8 @@ describe('Review insight specificity fixes', () => {
     expect(text).toContain('ASSESSMENT BASIS');
     expect(text).toContain('DECISION RATIONALE');
     expect(text).toContain('NEXT STEPS');
-    expect(text).toContain('PACKAGE MUST INCLUDE');
+    expect(text).toContain('CORE DOCUMENTATION TO PREPARE');
+    expect(text).not.toContain('PACKAGE MUST INCLUDE');
     expect(text).toContain(
       'The authorized Indications for Use statement was available, and the change was assessed as staying within the existing intended use and indications for use.',
     );

@@ -20,16 +20,16 @@ const docModules: Record<string, DocumentRequirement[]> = {
   configMgmt: [{ doc: 'Configuration management record update', source: 'IEC 62304 §8.1.2' }],
   cyberDevice: [
     {
-      doc: 'Software Bill of Materials (SBOM) update (required for cyber devices per §524B)',
+      doc: 'Software Bill of Materials (SBOM) update, when applicable to the device or software inventory change (for premarket submissions involving devices that meet the statutory definition of a cyber device, see §524B)',
       source: 'FDA-CYBER-2026 §V; FD&C Act §524B(b)(3)',
     },
   ],
   cyberDeviceFull: [
     {
-      doc: 'Software Bill of Materials (SBOM) (required for cyber devices per §524B)',
+      doc: 'Software Bill of Materials (SBOM), when applicable to the submission (for devices that meet the statutory definition of a cyber device, see §524B)',
       source: 'FDA-CYBER-2026 §V; FD&C Act §524B(b)(3)',
     },
-    { doc: 'Cybersecurity documentation', source: 'FDA-CYBER-2026' },
+    { doc: 'Cybersecurity documentation, when applicable to the submission', source: 'FDA-CYBER-2026' },
   ],
   swDocs: [{ doc: 'Software documentation per IEC 62304', source: 'IEC 62304' }],
   modelCardRecommended: [
@@ -52,13 +52,13 @@ const docModules: Record<string, DocumentRequirement[]> = {
   ],
   pccpFutureRecommended510k: [
     {
-      doc: 'PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this submission may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025), Sections V–VIII.',
+      doc: 'PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this submission may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025), Sections V–VIII.',
       source: 'FDA-PCCP-2025',
     },
   ],
   pccpFutureRecommendedPMA: [
     {
-      doc: 'PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this PMA supplement may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025), Sections V–VIII.',
+      doc: 'PCCP for future changes — consider including if the device does not yet have an authorized PCCP. A PCCP in this PMA supplement may support defined future changes when authorized by FDA. See Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025), Sections V–VIII.',
       source: 'FDA-PCCP-2025',
     },
   ],
@@ -124,12 +124,12 @@ export const docRequirements: Record<string, DocumentationRequirementSet> = {
       { doc: 'Cumulative PCCP implementation log with running impact assessment', source: 'Organization policy' },
     ],
     basis:
-      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Dec 2024, reissued Aug 2025) §V–VIII; Quality Management System Regulation (QMSR, incorporating ISO 13485:2016 §7.3.9)',
+      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §V–VIII; Quality Management System Regulation (QMSR, incorporating ISO 13485:2016 §7.3.9)',
   },
   'New Submission Required': {
     required: [
       {
-        doc: 'Updated substantial equivalence argument (predicate comparison)',
+        doc: 'Predicate comparison or De Novo device-type / classification strategy narrative, as applicable to the planned submission',
         source: '21 CFR 807.87; 21 CFR 807.92',
       },
       { doc: 'Updated device description', source: '21 CFR 807.87(e)' },
@@ -186,7 +186,7 @@ export const docRequirements: Record<string, DocumentationRequirementSet> = {
       { doc: 'Independent clinical review of supplement type determination', source: 'Organization policy' },
       { doc: 'Advisory committee preparation materials (for Panel-Track supplements)', source: 'Organization policy' },
     ],
-    basis: '21 CFR 814.39; PMA Supplement Guidance',
+    basis: '21 CFR 814.39; FDA-PMA-SUPPLEMENTS-2008',
     scopeNote:
       'Scope limitation: ChangePath identifies that a PMA supplement is required but does not list supplement-type-specific documentation. The supplement type (Panel-Track, 180-Day, Real-Time, Special, 30-Day, or 30-Day Notice) selected in field C_PMA4 drives submission format, clinical data, and review timeline. Consult 21 CFR 814.39(a)–(f) and your PMA approval order.',
   },

@@ -350,6 +350,9 @@ describe('computeEvidenceGaps', () => {
       const det = baseDetermination({ genAIHighImpactChange: true });
       const gaps = computeEvidenceGaps(answers, det);
       expect(gaps.some((g) => g.id === 'GAP-GENAI-HALLUCINATION')).toBe(true);
+      const gap = gaps.find((g) => g.id === 'GAP-GENAI-HALLUCINATION');
+      expect(gap?.sourceClass).toBe('Internal conservative policy');
+      expect(gap?.remediation).toMatch(/factual-accuracy|unsafe-output/i);
     });
 
     it('fires when genAIHighImpactChange=true and D5 is undefined', () => {

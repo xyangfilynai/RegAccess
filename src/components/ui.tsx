@@ -81,9 +81,9 @@ export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({ text }) =>
 
   const refPatterns: RefPattern[] = [
     { pattern: /FDA Software Change Guidance(?:\([^)]*\)|[^.;,)"])*/g, code: 'FDA-SW-510K-2017' },
-    { pattern: /FDA PCCP Final Guidance(?:\([^)]*\)|[^.;,)"])*/g, code: 'FDA-PCCP-2025' },
-    { pattern: /FDA AI-DSF Guidance(?:\([^)]*\)|[^.;,)"])*/g, code: 'FDA-LIFECYCLE-2025' },
-    { pattern: /FDA Cybersecurity Guidance(?:\([^)]*\)|[^.;,)"])*/g, code: 'FDA-CYBER-2026' },
+    { pattern: /FDA(?:'s)? PCCP final guidance(?:\([^)]*\)|[^.;,)"])*/gi, code: 'FDA-PCCP-2025' },
+    { pattern: /FDA(?:'s)? AI-DSF(?: Lifecycle)? Guidance(?:\([^)]*\)|[^.;,)"])*/gi, code: 'FDA-LIFECYCLE-2025' },
+    { pattern: /FDA(?:'s)? Cybersecurity Guidance(?:\([^)]*\)|[^.;,)"])*/gi, code: 'FDA-CYBER-2026' },
     { pattern: /21 CFR 807\.81(?:\([^)]*\))+/g, code: '21 CFR 807.81(a)(3)' },
     { pattern: /21 CFR 814\.39(?:\([^)]*\)|[^.;,)"\s])*/g, code: '21 CFR 814.39' },
     { pattern: /21 CFR 814\.84/g, code: '21 CFR 814.84' },
@@ -94,7 +94,7 @@ export const HelpTextWithLinks: React.FC<HelpTextWithLinksProps> = ({ text }) =>
     { pattern: /ISO 14971(?:\([^)]*\)|[^.;,)"])*/g, code: 'ISO 14971:2019' },
     { pattern: /IEC 62304(?:\([^)]*\)|[^.;,)"])*/g, code: 'IEC 62304' },
     { pattern: /ISO 13485(?:\([^)]*\)|[^.;,)"])*/g, code: 'ISO 13485:2016' },
-    { pattern: /FDORA §515C/g, code: 'FDORA 515C' },
+    { pattern: /(?:FDORA|FD&C Act) §515C/g, code: 'FDORA 515C' },
     { pattern: /§524B/g, code: 'FD&C 524B' },
     { pattern: /Pre-Submission \(Q-Sub\)/g, code: 'FDA Q-Sub' },
     { pattern: /QMSR/g, code: 'QMSR' },

@@ -147,7 +147,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           type: 'single',
           options: ['510(k)', 'De Novo', 'PMA'],
           pathwayCritical: true,
-          help: "The existing regulatory basis determines which change assessment framework applies. For software changes to De Novo-authorized devices that remain subject to 510(k) requirements, FDA's 510(k) change guidances are relevant; continued fit with the De Novo device type and special controls should also be checked.",
+          help: "The existing regulatory basis determines which change assessment framework applies. For software changes to De Novo-authorized devices, ChangePath uses FDA's 510(k) software-change guidance as a screening framework while separately checking continued fit with the De Novo device type and special controls.",
         },
         {
           id: 'A1b',
@@ -175,7 +175,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           q: 'Does the device have an FDA-authorized Predetermined Change Control Plan (PCCP)?',
           type: 'yesno',
           pathwayCritical: true,
-          help: 'An authorized PCCP can allow defined modifications without a new submission when implementation stays within the authorized scope, boundaries, and protocols. See FDORA §515C and FDA PCCP final guidance (Dec 2024, reissued Aug 2025).',
+          help: 'An authorized PCCP can allow defined modifications without a new submission when implementation stays within the authorized scope, boundaries, and protocols. See FD&C Act §515C and FDA PCCP final guidance (Aug 2025).',
         },
         {
           id: 'A6',
@@ -192,9 +192,9 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           ],
           pathwayCritical: true,
           infoNote: hasGenAI
-            ? 'Generative AI / LLM / Foundation Model detected — a dedicated Generative AI Supplemental assessment block will appear after the Regulatory Significance step. This covers base model changes, prompt modifications, RAG knowledge base, guardrails, hallucination testing, and adversarial testing.'
+            ? 'Generative AI / LLM / Foundation Model detected — a dedicated Generative AI Supplemental assessment block will appear after the Regulatory Significance step. This covers base model changes, prompt/configuration updates, retrieval changes, guardrails, factual-accuracy or unsafe-output testing, and adversarial testing.'
             : null,
-          help: "Selecting LLM / Foundation Model or Generative AI will add a dedicated 'Generative AI Supplemental' assessment block (Block D) later in the assessment flow, covering base model changes, prompt engineering, RAG, guardrails, hallucination testing, and explainability.",
+          help: "Selecting LLM / Foundation Model or Generative AI will add a dedicated 'Generative AI Supplemental' assessment block (Block D) later in the assessment flow, covering base model changes, prompt/configuration changes, RAG, guardrails, factual-accuracy testing, and other GenAI-specific review points.",
         },
         {
           id: 'A8',
@@ -251,7 +251,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           consequencePreview: null,
           mlguidance:
             "Pull up the clearance letter and Indications for Use statement. Compare word-by-word: does the change expand the patient population, clinical setting, anatomical region, severity scope, or diagnostic capability? For GenAI: does expanded prompting ability or RAG content broaden effective clinical scope even if the stated IFU hasn't changed?",
-          help: 'The most consequential field in the assessment. Compare the proposed change against the exact authorized indications for use (IFU), labeling claims, population, clinical context, and outputs. PCCPs are generally intended to be focused and bounded within the originally reviewed device scope. ChangePath treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented; however, some authorized PCCPs may include limited intended-use modifications — consult your specific PCCP authorization.',
+          help: "The most consequential field in the assessment. Compare the proposed change against the exact authorized indications for use (IFU), labeling claims, population, clinical context, and outputs. FDA's PCCP final guidance states that modifications in a PCCP should maintain the intended use of the authorized device and notes that most intended-use or indications changes would be difficult to include. ChangePath therefore treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is documented.",
         },
         {
           id: 'B4',
@@ -272,7 +272,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
             pathwayCritical: true,
             mlguidance:
               "PMA threshold is lower than 510(k): any change that COULD affect safety or effectiveness. Run full validation suite and compare every metric. For AI/ML: check not just overall performance but subgroup stability, calibration drift, and failure mode distribution. If any metric shows a statistically meaningful shift, answer 'Yes' or 'Uncertain.'",
-            help: 'Under 21 CFR 814.39(a), any change that could affect safety or effectiveness of a PMA-approved device requires a PMA supplement — a lower threshold than the 510(k) significance framework. Note: ChangePath applies an internal conservative policy that treats "Uncertain" on this field as requiring a supplement until the impact is definitively resolved; this is a risk-based internal escalation, not a direct regulatory mandate. See FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section V.B for establishing a PCCP through the PMA pathway.',
+            help: 'Under 21 CFR 814.39(a), any change that could affect safety or effectiveness of a PMA-approved device requires a PMA supplement unless an alternate PMA postapproval reporting pathway applies. Note: ChangePath applies an internal conservative policy that treats "Uncertain" on this field as requiring a supplement until the impact is definitively resolved; this is a risk-based internal escalation, not a direct regulatory mandate. See FDA PCCP final guidance (Aug 2025), Section V.B for establishing a PCCP through the PMA pathway.',
           },
           {
             id: 'C_PMA2',
@@ -329,7 +329,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           type: 'yesnouncertain',
           skip: answers.B3 === Answer.Yes,
           pathwayCritical: true,
-          help: "Pure cybersecurity patches with verified zero performance impact do not require a new 510(k). Per FDA Software Change Guidance (Oct 2017), Section V, Flowchart Question 1 — cybersecurity-only changes. FDA requires the change to be 'solely to strengthen cybersecurity' with no other impact, supported by appropriate analysis/verification/validation. This pathway requires affirmative demonstration — if uncertain, select 'Uncertain' and the assessment will continue to the full significance evaluation. Note: Cybersecurity in Medical Devices: Quality Management System Considerations and Content of Premarket Submissions Guidance (Feb 2026), Section VII addresses §524B requirements for cyber devices.",
+          help: "FDA's 2017 software-change guidance describes a documentation-only path for changes made solely to strengthen cybersecurity that do not otherwise affect device function or performance. This pathway requires affirmative demonstration through appropriate analysis, verification, or validation. If that showing is not complete, select 'Uncertain' and continue through the full significance evaluation. The February 2026 cybersecurity guidance separately addresses recommended premarket cybersecurity documentation and section 524B obligations for devices that meet the statutory definition of a cyber device.",
         },
         {
           id: 'C2',
@@ -422,7 +422,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           q: 'Is this specific change type explicitly described in the authorized PCCP?',
           type: 'yesno',
           pathwayCritical: true,
-          help: "The PCCP must specifically describe the type of modification. Per FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section VI — Description of Modifications, a general PCCP covering 'software changes' does not authorize specific model architecture changes unless explicitly described.",
+          help: "The PCCP should specifically describe the type of modification being made. Under FDA's PCCP final guidance (Aug 2025), a high-level PCCP covering generic 'software changes' is usually not enough to rely on coverage for a specific architecture or model-change pattern unless that pattern is explicitly described.",
         },
         {
           id: 'P2',
@@ -443,7 +443,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           q: 'Is the PCCP-specified performance monitoring plan active and collecting data?',
           type: 'yesno',
           skip: answers.P1 !== Answer.Yes || answers.P2 !== Answer.Yes || answers.P3 !== Answer.Yes,
-          help: 'Per FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section V.C — Implementing Modifications, an active performance monitoring plan is a prerequisite for PCCP implementation.',
+          help: "FDA's PCCP final guidance (Aug 2025) contemplates implementation and monitoring controls as part of the authorized PCCP. ChangePath therefore treats an inactive or unavailable monitoring plan as not ready for PCCP implementation on the current record.",
         },
         {
           id: 'P5',
@@ -454,7 +454,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
             answers.P2 !== Answer.Yes ||
             answers.P3 !== Answer.Yes ||
             answers.P4 !== Answer.Yes,
-          help: "The PCCP Impact Assessment must evaluate risks 'individually and in combination' per FDA PCCP Final Guidance (Dec 2024, reissued Aug 2025), Section VIII — Impact Assessment. Even if this change is within scope, the cumulative effect of all PCCP-implemented changes must still be within boundaries. If no prior PCCP-implemented changes exist, answer 'Yes' and document that this is the first implementation under the PCCP.",
+          help: "The PCCP Impact Assessment should evaluate risks 'individually and in combination' under FDA's PCCP final guidance (Aug 2025). Even if this change is within scope, the cumulative effect of prior PCCP-implemented changes should still remain within the authorized boundaries. If no prior PCCP-implemented changes exist, answer 'Yes' and document that this is the first implementation under the PCCP.",
         },
       ];
 
@@ -472,7 +472,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           id: 'D2',
           q: 'Are system instructions, reasoning templates, or other controlled prompt/configuration elements being modified?',
           type: 'yesno',
-          help: 'For generative AI medical devices, prompt configurations function as part of the device design specification under general design control principles. FDA PCCP final guidance (Dec 2024, reissued Aug 2025), Section VI discusses describing modifications in the PCCP, which logically extends to prompt/configuration elements. Version control and validation of these elements is advisable for PCCP eligibility and design traceability; confirm current FDA expectations.',
+          help: "Prompt or configuration changes can materially alter model behavior even when model weights stay fixed. FDA's current PCCP final guidance discusses describing planned modifications and protocols at a higher level, but it does not specifically establish prompt instructions as a standalone regulatory category. ChangePath therefore treats controlled prompt/configuration elements as design-traceability items and expects version control and validation as an internal conservative practice.",
         },
         {
           id: 'D3',
@@ -492,10 +492,9 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           id: 'D5',
           q: 'Has hallucination testing been performed on the modified system?',
           type: 'yesno',
-          draftRef: true,
           mlguidance:
             'Evidence expected: a structured hallucination test suite with domain-specific queries, factual accuracy scoring, and comparison against a reference corpus. Document hallucination rate (before/after), types of hallucinations observed, and whether any are clinically dangerous.',
-          help: "Hallucination testing is important best practice for generative AI medical devices. While not explicitly mandated by FDA as a named requirement, consider it for demonstrating safety. A 'No' will generate a risk flag as a testing gap.",
+          help: "ChangePath uses 'hallucination testing' as shorthand for factual-accuracy and unsafe-output testing for generative outputs. Current official FDA device guidance does not establish 'hallucination testing' as a named mandatory requirement; ChangePath keeps it as a conservative best-practice checkpoint for GenAI safety evidence. A 'No' will generate a risk flag as a testing gap.",
         },
       ];
 
@@ -506,7 +505,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           q: "Does the training, validation, or test data adequately represent the device's intended patient population?",
           type: 'yesnouncertain',
           draftRef: true,
-          help: "FDA AI-DSF Lifecycle Guidance (Jan 2025 draft — not yet finalized; verify current status at fda.gov) recommends bias analysis across intended populations. Note: this recommendation derives from draft guidance, which does not establish legally enforceable requirements. Health Canada's MLMD guidance recommends bias and equity analysis for AI/ML devices, particularly regarding representativeness of training data and equitable performance across intended populations; the scope and depth should be proportionate to the device's risk classification.",
+          help: "FDA's AI-DSF Lifecycle Guidance (Jan 2025 draft — not yet finalized; verify current status at fda.gov) recommends evaluating representativeness across intended populations. Because this is draft guidance, it should not be treated as a current binding requirement.",
         },
         {
           id: 'E2',
@@ -527,7 +526,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           id: 'E4',
           q: 'Has the bias assessment from the original submission been updated to reflect this change?',
           type: 'yesno',
-          help: 'The Total Product Life Cycle (TPLC) approach requires ongoing bias assessment. Changes that affect model behavior should trigger an updated bias analysis.',
+          help: "ChangePath treats bias reassessment as an important TPLC review step for AI changes. FDA's Jan 2025 draft AI-DSF lifecycle guidance recommends ongoing evaluation proportionate to risk, but this is not yet a finalized across-the-board requirement.",
         },
         {
           id: 'E5',

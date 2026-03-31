@@ -247,7 +247,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
           'Rarely misclassified directly, but often the TRUE classification for changes teams have classified under other categories. Any change that expands WHAT the device does should be evaluated here first.',
         pccp: 'NO',
         pccpNote:
-          'Typically requires a new marketing submission. Per FDA PCCP guidance (Dec 2024, reissued Aug 2025), PCCPs generally maintain intended use; fundamental clinical-purpose changes are outside typical PCCP scope.',
+          "Typically requires a new marketing submission. FDA's Aug 2025 PCCP final guidance says modifications in a PCCP should maintain intended use and notes that most intended-use or indications changes would be difficult to include.",
       },
       {
         name: 'Expanded patient population',
@@ -288,7 +288,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
     ],
     classificationGuidance: null,
     boundaryNote:
-      'Changes in this category generally require a new marketing submission. PCCPs are bounded to the reviewed device scope; ChangePath does not treat intended-use changes as routine PCCP implementation. Use Q-Submission for borderline intended-use cases.',
+      'Changes in this category often support a new marketing submission. ChangePath does not treat intended-use changes as routine PCCP implementation unless the specific FDA authorization already covers that scope. Use a Q-Submission for borderline intended-use cases.',
   },
   'Deployment & Infrastructure': {
     types: [
@@ -431,9 +431,9 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
       },
     ],
     classificationGuidance:
-      'UI changes that alter how clinical information is presented to clinicians may constitute an intended use change even if the underlying algorithm is unchanged.',
+      'UI or labeling changes that alter how clinicians interpret or act on the output should be assessed for intended-use, performance, and human-factors impact even if the underlying algorithm is unchanged.',
     boundaryNote:
-      'Explainability changes (per the AI-Enabled Device Software Functions: Lifecycle Management Guidance (Jan 2025 draft — not yet finalized; verify current status at fda.gov)) may affect how clinicians interpret and act on AI outputs.',
+      'Explainability or presentation changes can alter how clinicians interpret and act on AI outputs, even when the underlying model remains the same.',
   },
   'Foundation Model / Generative AI': {
     types: [
@@ -455,7 +455,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
           "Sometimes confused with 'Prompt changes.' Fine-tuning changes MODEL WEIGHTS; prompt engineering only changes the INPUT to a frozen model. Also confused with 'Base model swap' when extensive fine-tuning effectively creates a new model.",
         pccp: 'CONDITIONAL',
         pccpNote:
-          'Very robust protocol required: hallucination testing, safety regression, red-teaming, clinical accuracy.',
+          'Very robust protocol expected: factual-accuracy or unsafe-output testing, safety regression, red-teaming, and clinical accuracy review.',
       },
       {
         name: 'Prompt / instruction template change',
@@ -466,7 +466,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
           "Sometimes confused with 'Fine-tuning.' Prompt changes do NOT change model weights — they are input changes. But they can still significantly alter clinical behavior. Also confused with 'RAG update' when prompt changes include instructions about knowledge retrieval.",
         pccp: 'CONDITIONAL',
         pccpNote:
-          'PCCP must define acceptable prompt scope, require output validation, include regression testing. Prompts as controlled documents.',
+          'Any PCCP approach would need defined prompt bounds, output validation, and regression testing. ChangePath also treats prompts as controlled configuration items for traceability.',
       },
       {
         name: 'RAG knowledge base update',
@@ -514,7 +514,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
       },
     ],
     classificationGuidance:
-      'Prompt changes are often treated as configuration, but for generative-AI devices prompts are part of the design specification under design controls and should be version-controlled. FDA PCCP final guidance (Dec 2024, reissued Aug 2025) §VI covers describing modifications in a PCCP, including prompt elements. Version control is advisable practice; confirm current FDA expectations.',
+      "ChangePath treats prompt changes as controlled configuration items because they can materially alter behavior even when model weights do not change. FDA's current PCCP final guidance speaks more generally about describing planned modifications and protocols and does not specifically create prompt-only regulatory categories. Version control remains advisable practice for traceability.",
     boundaryNote:
       'Foundation model updates from upstream providers may change behavior in ways not captured by standard validation suites.',
   },
@@ -556,7 +556,7 @@ export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
         desc: 'Patching a known security vulnerability.',
         example: 'Patching TLS vulnerability; fixing authentication bypass; addressing CVE.',
         misclass:
-          'Must have ZERO performance impact on device function to qualify for cybersecurity exemption. FDA requires appropriate analysis/verification/validation demonstrating the change is solely to strengthen cybersecurity with no other impact. Internal heuristic: bitwise output comparison is a defensible but more-stringent-than-required verification approach.',
+          'To use the cybersecurity-only pathway, the record should show the change is solely to strengthen cybersecurity and does not otherwise affect device behavior or performance. Appropriate analysis/verification/validation is needed. Internal heuristic: bitwise output comparison is a defensible but more-stringent-than-required verification approach.',
         pccp: 'EXEMPT',
         pccpNote:
           'Cybersecurity-only pathway (FDA SW Change Guidance Q1). Documentation only if zero performance impact verified.',

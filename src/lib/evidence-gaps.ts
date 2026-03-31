@@ -45,8 +45,8 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       description:
         'Authorized baseline incomplete — authorization identifier, baseline version, or authorized IFU statement not provided',
       severity: 'critical',
-      sourceClass: 'Final guidance',
-      source: 'FDA-SW-510K-2017; FDA-PCCP-2025 §V',
+      sourceClass: 'Internal conservative policy',
+      source: 'FDA-SW-510K-2017; FDA-PCCP-2025 §V; internal baseline-comparison policy',
       remediation:
         'Provide the authorization number, cleared/approved version identifier, and the authorized Indications for Use / IFU statement. Without these, the assessment cannot establish what the device is being compared against.',
     });
@@ -101,11 +101,12 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       gaps.push({
         id: 'GAP-SIG-INCOMPLETE',
         category: 'Regulatory Significance',
-        description: 'Not all significance fields (C3–C6) have been answered',
+        description: 'Not all visible significance fields have been answered',
         severity: 'critical',
         sourceClass: 'Final guidance',
         source: 'FDA-SW-510K-2017 Q3-Q4',
-        remediation: 'Complete all four significance fields (C3–C6) to produce a reliable pathway determination.',
+        remediation:
+          'Complete the remaining visible significance fields in the C3–C6 sequence to produce a reliable pathway determination.',
       });
     }
 
@@ -281,12 +282,13 @@ export function computeEvidenceGaps(answers: Answers, determination: Determinati
       gaps.push({
         id: 'GAP-GENAI-HALLUCINATION',
         category: 'GenAI',
-        description: 'Hallucination testing not confirmed for GenAI high-impact change',
+        description: 'Factual-accuracy / hallucination testing not confirmed for GenAI high-impact change',
         severity: 'important',
-        sourceClass: 'Draft guidance',
-        source: 'FDA-LIFECYCLE-2025 §V.D',
+        sourceClass: 'Internal conservative policy',
+        source:
+          'FDA-LIFECYCLE-2025 (draft, broader AI safety recommendations); internal GenAI safety evaluation policy',
         remediation:
-          'Perform hallucination/factual accuracy testing appropriate for the GenAI component. Document test methodology and results.',
+          'Perform factual-accuracy, unsupported-output, or other unsafe-output testing appropriate for the GenAI component. Document test methodology and results.',
       });
     }
 
