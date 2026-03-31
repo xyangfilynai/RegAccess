@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { assessmentStore } from '../src/lib/assessment-store';
 import { feedbackService } from '../src/lib/feedback-service';
 import { createEmptyForm } from '../src/lib/feedback-types';
@@ -6,10 +6,6 @@ import { PERSISTENCE_KEYS } from '../src/lib/persistence-keys';
 import { storage } from '../src/lib/storage';
 
 describe('browser persistence', () => {
-  beforeEach(() => {
-    localStorage.clear();
-  });
-
   it('falls back to an empty answer set when persisted answers are malformed', () => {
     localStorage.setItem(PERSISTENCE_KEYS.draftAnswers, '{"A1":{"nested":"nope"}}');
 
@@ -96,6 +92,21 @@ describe('browser persistence', () => {
 
     expect(changedUpdate.versions).toHaveLength(1);
     expect(changedUpdate.versions[0].answers).toEqual({ A1: '510(k)' });
+  });
+
+  it('returns a fresh list snapshot so callers can trigger UI updates safely', () => {
+    assessmentStore.save({
+      name: 'Assessment A',
+      answers: { A1: '510(k)' },
+      blockIndex: 0,
+      lastPathway: 'Letter to File',
+    });
+
+    const firstList = assessmentStore.list();
+    const secondList = assessmentStore.list();
+
+    expect(secondList).toHaveLength(1);
+    expect(secondList).not.toBe(firstList);
   });
 
   it('recovers from corrupt feedback storage and appends the new submission', async () => {

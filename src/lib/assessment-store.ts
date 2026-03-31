@@ -211,7 +211,7 @@ export function _invalidateCache(): void {
 
 export const assessmentStore = {
   list(): SavedAssessment[] {
-    return loadAll().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    return [...loadAll()].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   },
 
   get(id: string): SavedAssessment | undefined {

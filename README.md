@@ -61,7 +61,7 @@ Saved assessments are normalized on read so legacy or partially malformed stored
 ## Quality Guardrails
 
 - GitHub Actions runs `npm run check-all` on pushes to `main` and on pull requests.
-- Coverage thresholds are enforced in Vitest to keep regression protection from drifting downward.
+- Coverage thresholds are enforced when running `npm run test:coverage`.
 - ESLint warnings fail the lint step so code quality issues do not accumulate quietly.
 
 ## Testing Approach

@@ -32,13 +32,11 @@ export interface AssessmentWorkspace {
   setAnswers: React.Dispatch<React.SetStateAction<Answers>>;
   currentBlockIndex: number;
   setCurrentBlockIndex: React.Dispatch<React.SetStateAction<number>>;
-  activeSampleCaseId: string | null;
   currentAssessmentId: string | null;
   savedAssessments: SavedAssessment[];
   validationErrors: Record<string, boolean>;
   setValidationErrors: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   hasSavedSession: boolean;
-  isViewingSample: boolean;
   currentReviewerNotes: SavedAssessment['reviewerNotes'];
   handleReset: () => void;
   handleLoadAssessment: (id: string) => void;
@@ -58,13 +56,11 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
   const [screen, setScreen] = useState<Screen>('dashboard');
   const [answers, setAnswers] = useState<Answers>(initialDraftSnapshot.answers);
   const [currentBlockIndex, setCurrentBlockIndex] = useState(initialDraftSnapshot.blockIndex);
-  const [activeSampleCaseId, setActiveSampleCaseId] = useState<string | null>(null);
   const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
   const [savedAssessments, setSavedAssessments] = useState<SavedAssessment[]>(() => assessmentStore.list());
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   const [workspaceSource, setWorkspaceSource] = useState<WorkspaceSource>('draft');
   const [hasSavedDraft, setHasSavedDraft] = useState(initialDraftSnapshot.hasSavedDraft);
-  const isViewingSample = workspaceSource === 'sample';
 
   const refreshSavedAssessments = useCallback(() => {
     setSavedAssessments(assessmentStore.list());
@@ -73,6 +69,13 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
   const pendingSaveRef = useRef<{ answers: Answers; blockIndex: number } | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const flushPendingDraftSave = useCallback(() => {
+    if (!pendingSaveRef.current) return;
+    storage.saveAnswers(pendingSaveRef.current.answers);
+    storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
+    pendingSaveRef.current = null;
+  }, []);
+
   useEffect(() => {
     if (workspaceSource !== 'draft') {
       // Cancel any pending draft save when leaving draft mode
@@ -80,7 +83,7 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
       }
-      pendingSaveRef.current = null;
+      flushPendingDraftSave();
       return;
     }
 
@@ -102,14 +105,10 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
       clearTimeout(saveTimerRef.current);
     }
     saveTimerRef.current = setTimeout(() => {
-      if (pendingSaveRef.current) {
-        storage.saveAnswers(pendingSaveRef.current.answers);
-        storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
-        pendingSaveRef.current = null;
-      }
+      flushPendingDraftSave();
       saveTimerRef.current = null;
     }, 500);
-  }, [answers, currentBlockIndex, workspaceSource]);
+  }, [answers, currentBlockIndex, flushPendingDraftSave, workspaceSource]);
 
   // Flush any pending debounced save on unmount
   useEffect(() => {
@@ -118,13 +117,9 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
         clearTimeout(saveTimerRef.current);
         saveTimerRef.current = null;
       }
-      if (pendingSaveRef.current) {
-        storage.saveAnswers(pendingSaveRef.current.answers);
-        storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
-        pendingSaveRef.current = null;
-      }
+      flushPendingDraftSave();
     };
-  }, []);
+  }, [flushPendingDraftSave]);
 
   useEffect(() => {
     setValidationErrors((prev) => (Object.keys(prev).length > 0 ? {} : prev));
@@ -156,7 +151,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
       restoreDraftSnapshot();
     }
     setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
     setScreen('dashboard');
     scrollToTop();
   }, [restoreDraftSnapshot, workspaceSource]);
@@ -168,7 +162,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setAnswers(assessment.answers);
     setCurrentBlockIndex(assessment.blockIndex);
     setCurrentAssessmentId(assessment.id);
-    setActiveSampleCaseId(null);
     setWorkspaceSource('library');
     setValidationErrors({});
     setScreen('assess');
@@ -235,7 +228,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     if (workspaceSource !== 'draft') {
       restoreDraftSnapshot();
       setCurrentAssessmentId(null);
-      setActiveSampleCaseId(null);
     }
     setScreen('dashboard');
     scrollToTop();
@@ -249,7 +241,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
-    setActiveSampleCaseId(sampleCaseId);
     setWorkspaceSource('sample');
     setScreen('assess');
     scrollToTop();
@@ -260,7 +251,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setCurrentBlockIndex(0);
     setValidationErrors({});
     setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
     setWorkspaceSource('draft');
     setHasSavedDraft(false);
     storage.clearSession();
@@ -271,7 +261,6 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
   const handleResume = useCallback(() => {
     restoreDraftSnapshot();
     setCurrentAssessmentId(null);
-    setActiveSampleCaseId(null);
     setScreen('assess');
     scrollToTop();
   }, [restoreDraftSnapshot]);
@@ -283,13 +272,11 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setAnswers,
     currentBlockIndex,
     setCurrentBlockIndex,
-    activeSampleCaseId,
     currentAssessmentId,
     savedAssessments,
     validationErrors,
     setValidationErrors,
     hasSavedSession,
-    isViewingSample,
     currentReviewerNotes,
     handleReset,
     handleLoadAssessment,

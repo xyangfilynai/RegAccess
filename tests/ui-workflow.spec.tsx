@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { DashboardPage } from '../src/components/DashboardPage';
 import { QuestionCard } from '../src/components/QuestionCard';
 import { Layout } from '../src/components/Layout';
@@ -35,7 +35,6 @@ function renderWithLayoutContext(children: React.ReactNode, ctx: Partial<LayoutC
 
 describe('UI workflow', () => {
   beforeEach(() => {
-    localStorage.clear();
     Object.defineProperty(window, 'scrollTo', {
       value: vi.fn(),
       writable: true,
@@ -99,6 +98,28 @@ describe('UI workflow', () => {
 
     expect(storage.loadAnswers()).toEqual(savedAnswers);
     expect(storage.loadBlockIndex()).toBe(2);
+  });
+
+  it('flushes a pending draft save before opening a sample case', () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<App />);
+
+      fireEvent.click(screen.getByTestId('full-assessment-btn'));
+      fireEvent.click(screen.getByRole('button', { name: '510(k)' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Dashboard' }));
+      fireEvent.click(screen.getByTestId(`sample-case-open-${SAMPLE_CASES[0].id}`));
+
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      expect(storage.loadAnswers()).toMatchObject({ A1: '510(k)' });
+      expect(storage.loadBlockIndex()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('saves the current assessment into the dashboard library', () => {

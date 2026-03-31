@@ -4,12 +4,6 @@ import userEvent from '@testing-library/user-event';
 import { FeedbackSurvey } from '../src/components/FeedbackSurvey';
 import * as feedbackServiceModule from '../src/lib/feedback-service';
 
-// Mock CSS custom properties for jsdom
-beforeEach(() => {
-  // Clear localStorage between tests
-  localStorage.clear();
-});
-
 describe('FeedbackSurvey', () => {
   const onBack = vi.fn();
 
