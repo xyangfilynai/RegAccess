@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { webcrypto } from 'node:crypto';
+import prettier from 'prettier';
 
 const ACCESS_PUBLIC_KEY_FILE_CONTENT = (publicKeyPem) => `/**
  * Updated by scripts/generate-keypair.mjs.
@@ -37,12 +38,15 @@ const [privateKeyPkcs8, publicKeySpki] = await Promise.all([
 
 const privateKeyPem = formatPem('PRIVATE KEY', privateKeyPkcs8);
 const publicKeyPem = formatPem('PUBLIC KEY', publicKeySpki);
+const formattedBundledPublicKeyFile = await prettier.format(ACCESS_PUBLIC_KEY_FILE_CONTENT(publicKeyPem.trimEnd()), {
+  parser: 'typescript',
+});
 
 await mkdir(keysDir, { recursive: true });
 await Promise.all([
   writeFile(privateKeyPath, privateKeyPem, 'utf8'),
   writeFile(publicKeyPath, publicKeyPem, 'utf8'),
-  writeFile(bundledPublicKeyPath, ACCESS_PUBLIC_KEY_FILE_CONTENT(publicKeyPem.trimEnd()), 'utf8'),
+  writeFile(bundledPublicKeyPath, formattedBundledPublicKeyFile, 'utf8'),
 ]);
 
 console.log(`Generated Ed25519 access-pass keypair.
