@@ -33,6 +33,8 @@ Available scripts:
 - `npm run access:manage -- list`: list locally recorded passes.
 - `npm run access:manage -- show --pass-id partner-001`: show a recorded pass and its raw pass string.
 - `npm run access:manage -- retire --pass-id partner-001 --reason "Superseded"`: retire a pass in the local registry only.
+- `npm run access:manage -- delete --pass-id partner-001`: delete a specific pass entry from the local registry.
+- `npm run access:manage -- prune --status retired`: delete retired or expired entries from the local registry in bulk.
 - `npm run access:pass -- --kind temporary --label "QA tester"`: generate a signed temporary access pass using the local private key.
 - `npm run access:pass -- --kind permanent --label "Design partner"`: generate a signed permanent access pass using the local private key.
 - `npm run dev`: start the Vite dev server.
@@ -100,6 +102,8 @@ npm run access:manage -- status
 npm run access:manage -- issue --kind temporary --label "QA tester"
 npm run access:manage -- list
 npm run access:manage -- show --pass-id partner-001
+npm run access:manage -- delete --pass-id partner-001
+npm run access:manage -- prune --status retired
 ```
 
 The toolkit keeps a local registry at `.keys/access-pass-registry.json`. That registry is gitignored and can store the raw pass strings you generated so you can look them up later without regenerating them.
@@ -156,7 +160,7 @@ Optional flags:
 - `--private-key "/path/to/access-pass-private-key.pem"` to use a non-default key location.
 - `--note "pilot cohort"` to attach a local note when using `access:manage issue`.
 
-### Local retirement tracking
+### Local registry cleanup
 
 The operator toolkit supports:
 
@@ -167,6 +171,16 @@ npm run access:manage -- retire --pass-id partner-001 --reason "Superseded"
 That marks the pass as retired in your local registry so it no longer looks active in your operator view.
 
 It does not remotely revoke already shared passes. Because the system is offline-only, a copied pass remains valid until it expires or you rotate the signing keypair.
+
+If you want to remove registry entries completely:
+
+```bash
+npm run access:manage -- delete --pass-id partner-001
+npm run access:manage -- prune --status retired
+npm run access:manage -- prune --status expired
+```
+
+These commands remove records from `.keys/access-pass-registry.json` only. They do not delete the signing keypair and they do not remotely revoke any pass that has already been copied elsewhere.
 
 ### Temporary expiry rules
 

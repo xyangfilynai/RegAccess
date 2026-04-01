@@ -239,6 +239,37 @@ export const retireRegistryEntry = async ({ passId, reason }) => {
   return updatedEntry;
 };
 
+export const deleteRegistryEntry = async ({ passId }) => {
+  const entries = await readRegistry();
+  const entryIndex = entries.findIndex((candidate) => candidate.passId === passId);
+  if (entryIndex < 0) {
+    return null;
+  }
+
+  const [deletedEntry] = entries.splice(entryIndex, 1);
+  await writeRegistry(entries);
+  return deletedEntry;
+};
+
+export const pruneRegistryEntries = async ({ status, now = new Date() }) => {
+  const entries = await readRegistry();
+  const removedEntries = entries.filter((entry) => getEntryStatus(entry, now) === status);
+  const keptEntries = entries.filter((entry) => getEntryStatus(entry, now) !== status);
+
+  if (removedEntries.length === 0) {
+    return {
+      removedEntries: [],
+      keptEntries: entries,
+    };
+  }
+
+  await writeRegistry(keptEntries);
+  return {
+    removedEntries,
+    keptEntries,
+  };
+};
+
 export const formatShortDate = (value) => {
   if (!value) return 'Never';
   return new Date(value).toISOString().slice(0, 10);

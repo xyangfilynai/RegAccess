@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import {
   bundledPublicKeyPath,
   createRegistryEntry,
+  deleteRegistryEntry,
   defaultPrivateKeyPath,
   defaultPublicKeyPath,
   describeStatusCounts,
@@ -15,6 +16,7 @@ import {
   registryPath,
   resolvePrivateKeyPath,
   retireRegistryEntry,
+  pruneRegistryEntries,
   upsertRegistryEntry,
 } from './access-pass-lib.mjs';
 
@@ -28,6 +30,8 @@ Usage:
   npm run access:manage -- list --status active
   npm run access:manage -- show --pass-id partner-001
   npm run access:manage -- retire --pass-id partner-001 --reason "Superseded"
+  npm run access:manage -- delete --pass-id partner-001
+  npm run access:manage -- prune --status retired
 
 Commands:
   status   Show key, bundle, and registry status
@@ -35,10 +39,13 @@ Commands:
   list     List locally recorded passes
   show     Show a recorded pass and its raw pass string
   retire   Mark a recorded pass as retired in the local registry only
+  delete   Remove a specific recorded pass from the local registry
+  prune    Remove expired or retired entries from the local registry
 
 Notes:
   - The registry is stored locally at .keys/access-pass-registry.json and is gitignored.
   - Retiring a pass here does not remotely revoke copies already distributed.
+  - Delete and prune affect only the local registry, not copies already shared with users.
 `;
 
 const printUsage = () => {
@@ -185,6 +192,40 @@ const retirePass = async (options) => {
 Note: retiring a pass here does not remotely revoke copies already distributed.`);
 };
 
+const deletePass = async (options) => {
+  const passId = requireOption(options, 'pass-id', 'delete requires --pass-id <id>');
+  const deletedEntry = await deleteRegistryEntry({ passId });
+
+  if (!deletedEntry) {
+    console.error(`No recorded pass found for "${passId}".`);
+    process.exit(1);
+  }
+
+  console.log(`Deleted local registry entry
+- passId: ${deletedEntry.passId}
+- label: ${deletedEntry.label}
+- kind: ${deletedEntry.kind}
+
+Note: deleting a registry entry removes your local record only. It does not remotely revoke a pass already shared.`);
+};
+
+const prunePasses = async (options) => {
+  const status = requireOption(options, 'status', 'prune requires --status expired|retired');
+  if (status !== 'expired' && status !== 'retired') {
+    console.error('prune --status must be "expired" or "retired".');
+    process.exit(1);
+  }
+
+  const { removedEntries, keptEntries } = await pruneRegistryEntries({ status });
+
+  console.log(`Pruned local registry entries
+- status: ${status}
+- removed: ${removedEntries.length}
+- remaining: ${keptEntries.length}
+
+Note: pruning removes local registry records only. It does not remotely revoke already shared passes.`);
+};
+
 const { positional, options } = parseArgs(process.argv.slice(2));
 const command = positional[0];
 
@@ -208,6 +249,12 @@ switch (command) {
     break;
   case 'retire':
     await retirePass(options);
+    break;
+  case 'delete':
+    await deletePass(options);
+    break;
+  case 'prune':
+    await prunePasses(options);
     break;
   default:
     console.error(`Unknown command "${command}".`);
