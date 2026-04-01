@@ -4,6 +4,7 @@ import { buildAssessmentName } from '../lib/assessment-metadata';
 import { storage } from '../lib/storage';
 import type { Answers } from '../lib/assessment-engine';
 import { SAMPLE_CASES_BY_ID } from '../sample-cases';
+import { scrollToTop } from '../lib/utils';
 
 export type Screen = 'dashboard' | 'assess' | 'handoff';
 type WorkspaceSource = 'draft' | 'library' | 'sample';
@@ -13,11 +14,6 @@ interface DraftSnapshot {
   blockIndex: number;
   hasSavedDraft: boolean;
 }
-
-const scrollToTop = () => {
-  if (typeof window === 'undefined') return;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
 
 const loadDraftSnapshot = (): DraftSnapshot => ({
   answers: storage.loadAnswers(),

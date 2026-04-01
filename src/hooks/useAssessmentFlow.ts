@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, type Dispatch, type SetStateAction } from 'react';
 import { isAnsweredValue, type Answers, type AssessmentField, type Block } from '../lib/assessment-engine';
-
-const scrollToTop = () => {
-  if (typeof window === 'undefined') return;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
+import { scrollToTop } from '../lib/utils';
 
 export const getPathwayCriticalFields = (fields: AssessmentField[]): AssessmentField[] =>
   fields.filter((field) => !field.sectionDivider && !field.skip && field.pathwayCritical);

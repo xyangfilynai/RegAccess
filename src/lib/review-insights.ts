@@ -41,7 +41,7 @@ const getSourceClassLabel = (sourceClass: string): string =>
     .join(' ');
 
 const getPathwayMeta = (determination: DeterminationResult): string =>
-  determination?.pathway ? `Current pathway: ${determination.pathway}` : 'Current pathway pending';
+  determination.pathway ? `Current pathway: ${determination.pathway}` : 'Current pathway pending';
 
 const significanceQuestionDetails: Record<string, { label: string; short: string }> = {
   C3: {
@@ -173,8 +173,7 @@ const defaultReviewInsight = (id: string, message: string, sourceRefs: string[] 
 export function buildExpertReviewItems(answers: Answers, determination: DeterminationResult): ReviewInsightItem[] {
   const changeLabel = getChangeLabel(answers);
   const pathwayMeta = getPathwayMeta(determination);
-  const ruleIds: string[] =
-    determination?.decisionTrace?.consistencyRules?.map((rule: { id: string }) => rule.id) || [];
+  const ruleIds: string[] = determination.decisionTrace.consistencyRules.map((rule) => rule.id);
   const sourceByRuleId: Record<string, string[]> = {
     'nonpma-unresolved-significance-uncertainty-policy': ['FDA-SW-510K-2017 Q3-Q4'],
     'pma-unresolved-safety-effectiveness-uncertainty-policy': ['21 CFR 814.39(a)'],
@@ -360,8 +359,8 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
       default:
         return defaultReviewInsight(
           id,
-          determination?.consistencyIssues?.find((message: string) => message.includes(changeLabel)) ||
-            determination?.consistencyIssues?.[0] ||
+          determination.consistencyIssues.find((message) => message.includes(changeLabel)) ||
+            determination.consistencyIssues[0] ||
             'The current record contains a flagged issue that should be reviewed before reliance.',
           sourceByRuleId[id] || [],
         );
@@ -370,9 +369,7 @@ export function buildExpertReviewItems(answers: Answers, determination: Determin
 
   if (built.length > 0) return built;
 
-  return (determination?.consistencyIssues || []).map((message: string, index: number) =>
-    defaultReviewInsight(`consistency-${index}`, message),
-  );
+  return determination.consistencyIssues.map((message, index) => defaultReviewInsight(`consistency-${index}`, message));
 }
 
 export function buildEvidenceGapInsightItems(

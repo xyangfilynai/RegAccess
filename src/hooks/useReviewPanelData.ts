@@ -25,6 +25,7 @@ import {
   type ReportNarrativeView,
   type AssessmentRecordFact,
 } from '../lib/report-basis';
+import { pushUnique } from '../lib/utils';
 
 // Re-export types consumers may need
 export type { AssessmentRecordFact, AssessmentBasisView, ReportNarrativeView };
@@ -165,13 +166,6 @@ const normalizeTitle = (value: string): string =>
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-
-const pushUnique = (items: string[], value: string | null | undefined) => {
-  if (!value) return;
-  const normalized = value.trim();
-  if (!normalized || items.includes(normalized)) return;
-  items.push(normalized);
-};
 
 /* ------------------------------------------------------------------ */
 /*  Merge blockers                                                     */

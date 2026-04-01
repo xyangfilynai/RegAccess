@@ -69,10 +69,7 @@ export const splitReportNarrative = (narrative: string[]): ReportNarrativeView =
   };
 };
 
-export const buildAssessmentRecordFacts = (
-  answers: Answers,
-  determination: DeterminationResult,
-): AssessmentRecordFact[] => {
+const buildAssessmentRecordFacts = (answers: Answers, determination: DeterminationResult): AssessmentRecordFact[] => {
   const authorizationPathway = getTextValue(answers.A1);
   const authorizationId = getTextValue(answers.A1b);
   const baseline = getTextValue(answers.A1c);
