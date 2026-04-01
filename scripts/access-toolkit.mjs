@@ -6,12 +6,11 @@ import {
   defaultPublicKeyPath,
   describeStatusCounts,
   formatRegistryTable,
-  formatShortDate,
   getEntryStatus,
+  isBundledPublicKeyConfigured,
   issueAccessPass,
   keysDir,
   parseArgs,
-  readBundledPublicKeyFile,
   readRegistry,
   registryPath,
   resolvePrivateKeyPath,
@@ -65,10 +64,7 @@ const validateIssuedAt = (issuedAt) => {
 const showStatus = async () => {
   const entries = await readRegistry();
   const counts = describeStatusCounts(entries);
-  const bundledPublicKeyFile = await readBundledPublicKeyFile();
-  const bundledConfigured =
-    bundledPublicKeyFile.includes('BEGIN PUBLIC KEY') &&
-    !bundledPublicKeyFile.includes('REPLACE_WITH_ACCESS_PASS_PUBLIC_KEY');
+  const bundledConfigured = await isBundledPublicKeyConfigured();
 
   console.log(`Toolkit status
 - Key directory: ${keysDir}

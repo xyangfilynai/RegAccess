@@ -57,6 +57,8 @@ export const encodeBase64Url = (value) =>
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
 
+const toArrayBuffer = (value) => value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+
 const decodePem = (pem, beginLabel, endLabel) =>
   Buffer.from(pem.replace(beginLabel, '').replace(endLabel, '').replace(/\s+/g, ''), 'base64');
 
@@ -86,13 +88,13 @@ export const importPrivateSigningKey = async (privateKeyPath) => {
   const privateKeyPem = await readFile(privateKeyPath, 'utf8');
   const privateKeyBytes = decodePem(privateKeyPem, '-----BEGIN PRIVATE KEY-----', '-----END PRIVATE KEY-----');
 
-  return webcrypto.subtle.importKey('pkcs8', privateKeyBytes, 'Ed25519', false, ['sign']);
+  return webcrypto.subtle.importKey('pkcs8', toArrayBuffer(privateKeyBytes), 'Ed25519', false, ['sign']);
 };
 
 export const signPayload = async ({ payload, privateKeyPath }) => {
   const privateKey = await importPrivateSigningKey(privateKeyPath);
   const payloadBytes = Buffer.from(serializeAccessPassPayload(payload), 'utf8');
-  const signature = await webcrypto.subtle.sign('Ed25519', privateKey, payloadBytes);
+  const signature = await webcrypto.subtle.sign('Ed25519', privateKey, toArrayBuffer(payloadBytes));
 
   return `${encodeBase64Url(payloadBytes)}.${encodeBase64Url(Buffer.from(signature))}`;
 };
@@ -284,4 +286,13 @@ export const readBundledPublicKeyFile = async () => {
   } catch {
     return '';
   }
+};
+
+export const isBundledPublicKeyConfigured = async () => {
+  const source = await readBundledPublicKeyFile();
+  const match = source.match(/ACCESS_PASS_PUBLIC_KEY_PEM\s*=\s*`([\s\S]*?)`;/);
+  if (!match) return false;
+
+  const bundledPem = match[1];
+  return bundledPem.includes('BEGIN PUBLIC KEY') && !bundledPem.includes('REPLACE_WITH_ACCESS_PASS_PUBLIC_KEY');
 };
