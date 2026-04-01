@@ -7,22 +7,28 @@ ChangePath is a Vite + React + TypeScript prototype for structured regulatory pa
 - `src/App.tsx`: top-level screen composition for the dashboard, assessment flow, and handoff workflow.
 - `src/hooks/useAssessmentWorkspace.ts`: session orchestration for draft work, saved-library records, and source-controlled sample cases.
 - `src/hooks/useAssessmentFlow.ts`: block navigation, pathway-critical validation, and assessment-step progression.
+- `src/access/`: offline access-pass verification, storage, locked-screen UI, and startup gate orchestration.
 - `src/lib/assessment-engine/`: domain engine for question visibility, derived state, change taxonomy, and pathway determination.
 - `src/lib/assessment-store.ts`: normalized saved-assessment persistence with reviewer notes and version snapshots.
 - `src/lib/storage.ts`: resumable in-browser draft storage for the active assessment session.
 - `src/lib/browser-storage.ts`: low-level browser storage guards and JSON parsing helpers.
 - `src/components/`: assessment layout, dashboard, question rendering, review panel, and handoff UI.
 - `src/sample-cases/`: source-controlled scenarios used for demos and regression coverage.
+- `scripts/`: local-only admin tooling for generating access-pass keypairs and signed passes.
 - `tests/`: Vitest and Testing Library coverage for engine logic, UI workflows, persistence, and report output.
 
 ## Local Development
 
 1. Install dependencies with `npm install`.
-2. Start the app with `npm run dev`.
-3. Run the full validation suite with `npm run check-all`.
+2. Generate an access-pass keypair with `npm run access:keypair` the first time you set up the repo.
+3. Start the app with `npm run dev`.
+4. Run the full validation suite with `npm run check-all`.
 
 Available scripts:
 
+- `npm run access:keypair`: generate a local Ed25519 signing keypair, write the private key to `.keys/`, and update the bundled public key used by the app.
+- `npm run access:pass -- --kind temporary --label "QA tester"`: generate a signed temporary access pass using the local private key.
+- `npm run access:pass -- --kind permanent --label "Design partner"`: generate a signed permanent access pass using the local private key.
 - `npm run dev`: start the Vite dev server.
 - `npm run build`: create a production build in `dist/`.
 - `npm run preview`: preview the production build locally.
@@ -57,6 +63,82 @@ Only the draft workspace writes back to resumable browser storage. Opening a sam
 - `src/lib/browser-storage.ts` guards browser persistence against malformed or corrupted data before it reaches the rest of the app.
 
 Saved assessments are normalized on read so legacy or partially malformed stored records can be recovered instead of being silently discarded when possible.
+
+## Offline Access Passes
+
+ChangePath now includes a local-only access gate that runs before the assessment app mounts. The app stays locked until a signed access pass has been pasted and verified on that device.
+
+### Privacy properties
+
+- No signup.
+- No account.
+- No backend validation.
+- No assessment data, pass data, or unlock events leave the device.
+- Access verification happens locally in the browser with the bundled public key.
+
+### Setup
+
+1. Run `npm run access:keypair`.
+2. Keep the generated private key in `.keys/access-pass-private-key.pem` on the machine that issues passes. Do not commit it.
+3. Start the app with `npm run dev`.
+4. Generate a pass and paste it into the locked screen once on the target device.
+
+The keypair script also updates `src/access/public-key.ts` so the frontend can verify signed passes offline. The `.keys/` directory is gitignored and is intended for local development and controlled distribution only.
+
+### Pass format
+
+The app accepts a single pasted string in this envelope format:
+
+`base64url(payload-json) + "." + base64url(signature)`
+
+The signed payload contains:
+
+- `version`
+- `passId`
+- `label`
+- `kind` as `temporary` or `permanent`
+- `issuedAt`
+- `expiresAt`
+
+Signatures are generated with an Ed25519 private key outside the app. The SPA verifies them locally with the matching public key.
+
+### Generating passes
+
+Temporary pass:
+
+```bash
+npm run access:pass -- --kind temporary --label "QA tester"
+```
+
+Permanent pass:
+
+```bash
+npm run access:pass -- --kind permanent --label "Design partner"
+```
+
+Optional flags:
+
+- `--issued-at "2026-04-01T00:00:00.000Z"` to generate deterministic test passes.
+- `--pass-id "partner-001"` to set your own identifier.
+- `--private-key "/path/to/access-pass-private-key.pem"` to use a non-default key location.
+
+### Temporary expiry rules
+
+- Temporary passes expire exactly 14 days after `issuedAt`.
+- Expiry is based on the pass payload, not first open.
+- Once a stored temporary pass expires, the app re-locks on next startup, removes the stored pass, and clears protected local assessment persistence.
+
+### Key rotation
+
+Rerun `npm run access:keypair` whenever you need a new signing keypair. That replaces the bundled public key and means previously issued passes will no longer validate in new builds unless they are reissued with the new private key.
+
+Because this system is intentionally offline-only, there is no remote revocation list or server-side invalidation path. Rotation is the practical way to retire older passes.
+
+### Limitations
+
+- This is an offline access gate for controlled testing, not perfect anti-sharing or DRM.
+- A user with a valid pass can still unlock their local copy without contacting a server.
+- There is no remote revocation because the system does not call home.
 
 ## Quality Guardrails
 

@@ -3,6 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "access:keypair": "node scripts/generate-keypair.mjs",
+    "access:pass": "node scripts/generate-pass.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
