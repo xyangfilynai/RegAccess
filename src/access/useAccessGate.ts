@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  clearExpiredAccessState,
   readStoredAccessPass,
   removeAccessAndProtectedData,
   removeStoredAccessPass,
@@ -80,7 +79,7 @@ export const useAccessGate = ({
       }
 
       if (result.reason === 'expired') {
-        clearExpiredAccessState();
+        removeAccessAndProtectedData();
       } else if (
         result.reason === 'invalid_format' ||
         result.reason === 'invalid_payload' ||
