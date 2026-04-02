@@ -9,6 +9,23 @@ import { ACCESS_PASS_PUBLIC_KEY_PEM, hasConfiguredAccessPassPublicKey } from './
 import type { AccessPassPayload, VerifyAccessPassFailureReason, VerifyAccessPassFn } from './pass-types';
 import { verifyAccessPass } from './verify-pass';
 
+/**
+ * SECURITY NOTE — the access gate is a UX-level control, not a security boundary.
+ *
+ * The gate runs entirely in the browser. A user can bypass it via DevTools,
+ * by editing localStorage, or by modifying the bundled JS. This is by design:
+ * the application is a client-only SPA with no backend, so there is no trusted
+ * enforcement layer.
+ *
+ * Do NOT place sensitive server-side features, secrets, or capabilities behind
+ * this gate — it provides convenience gating only. The cryptographic signature
+ * check guards against casual sharing of unsigned pass strings, not against a
+ * determined local user.
+ *
+ * On every page load, the stored pass (if any) is re-verified against the
+ * bundled public key. If the key rotates, previously stored passes will fail
+ * signature verification and the gate will re-lock automatically.
+ */
 interface UseAccessGateOptions {
   publicKeyPem?: string;
   now?: Date;

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { assessmentStore } from '../src/lib/assessment-store';
+import { STORAGE_WRITE_LIMIT_CHARS, StorageQuotaError } from '../src/lib/browser-storage';
 import { PERSISTENCE_KEYS } from '../src/lib/persistence-keys';
 import { storage } from '../src/lib/storage';
 
@@ -105,5 +106,60 @@ describe('browser persistence', () => {
 
     expect(secondList).toHaveLength(1);
     expect(secondList).not.toBe(firstList);
+  });
+
+  it('generates IDs using crypto.randomUUID', () => {
+    const uuidSpy = vi.spyOn(crypto, 'randomUUID');
+
+    const saved = assessmentStore.save({
+      name: 'UUID test',
+      answers: { A1: '510(k)' },
+      blockIndex: 0,
+      lastPathway: 'Letter to File',
+    });
+
+    expect(uuidSpy).toHaveBeenCalled();
+    expect(saved.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+
+    uuidSpy.mockRestore();
+  });
+
+  it('throws StorageQuotaError when a save exceeds the size limit', () => {
+    const hugeValue = 'x'.repeat(STORAGE_WRITE_LIMIT_CHARS + 1);
+
+    expect(() =>
+      assessmentStore.save({
+        name: 'Oversized assessment',
+        answers: { A1: hugeValue },
+        blockIndex: 0,
+        lastPathway: 'Letter to File',
+      }),
+    ).toThrow(StorageQuotaError);
+  });
+
+  it('preserves existing data when a save is rejected by the size guard', () => {
+    assessmentStore.save({
+      name: 'Existing assessment',
+      answers: { A1: '510(k)' },
+      blockIndex: 0,
+      lastPathway: 'Letter to File',
+    });
+
+    const hugeValue = 'x'.repeat(STORAGE_WRITE_LIMIT_CHARS + 1);
+
+    try {
+      assessmentStore.save({
+        name: 'Oversized assessment',
+        answers: { A1: hugeValue },
+        blockIndex: 0,
+        lastPathway: 'Letter to File',
+      });
+    } catch {
+      // expected
+    }
+
+    const remaining = assessmentStore.list();
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0].name).toBe('Existing assessment');
   });
 });

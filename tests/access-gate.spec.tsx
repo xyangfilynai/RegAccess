@@ -140,6 +140,37 @@ describe('AccessGate', () => {
     confirmSpy.mockRestore();
   });
 
+  it('re-locks when a stored permanent pass was signed with a different key (key rotation)', async () => {
+    const originalKey = await createSignedAccessPass({
+      payload: {
+        kind: 'permanent',
+        expiresAt: null,
+      },
+    });
+
+    const newKey = await createSignedAccessPass({
+      payload: {
+        kind: 'permanent',
+        expiresAt: null,
+      },
+    });
+
+    // Store a pass signed with the original key
+    localStorage.setItem(PERSISTENCE_KEYS.accessPass, originalKey.rawPass);
+
+    // Boot the app with the NEW public key (simulates key rotation)
+    render(
+      <AccessGate publicKeyPem={newKey.publicKeyPem}>
+        <div>Protected app</div>
+      </AccessGate>,
+    );
+
+    // The stored pass should fail signature verification and the gate should lock
+    await screen.findByTestId('access-pass-input');
+    expect(screen.queryByText('Protected app')).not.toBeInTheDocument();
+    expect(localStorage.getItem(PERSISTENCE_KEYS.accessPass)).toBeNull();
+  });
+
   it('keeps the main app hidden until startup access validation succeeds', async () => {
     const storedPass = 'stored-pass-token';
     const payload = {

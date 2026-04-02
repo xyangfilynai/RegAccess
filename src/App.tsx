@@ -57,6 +57,8 @@ export const App: React.FC = () => {
     setValidationErrors,
     hasSavedSession,
     currentReviewerNotes,
+    storageError,
+    dismissStorageError,
     handleReset,
     handleLoadAssessment,
     handleDuplicateAssessment,
@@ -254,6 +256,15 @@ export const App: React.FC = () => {
   return (
     <LayoutContext.Provider value={layoutContextValue}>
       <Layout>
+        {storageError && (
+          <div role="alert" className="storage-error-banner">
+            <Icon name="alertCircle" size={16} color="var(--color-error, #dc2626)" />
+            <span>{storageError}</span>
+            <button type="button" onClick={dismissStorageError} className="btn-text" style={{ marginLeft: 'auto' }}>
+              Dismiss
+            </button>
+          </div>
+        )}
         {renderBlockContent()}
 
         {/* Navigation buttons */}

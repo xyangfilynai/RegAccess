@@ -42,7 +42,7 @@ interface PersistedSavedAssessment extends SavedAssessment {
 const ASSESSMENT_STORE_SCHEMA_VERSION = 1;
 
 function generateId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return crypto.randomUUID();
 }
 
 const isReviewerNote = (value: unknown): value is ReviewerNote =>
@@ -195,10 +195,18 @@ function loadAll(): SavedAssessment[] {
 }
 
 function saveAll(assessments: SavedAssessment[]): void {
-  writeStoredJson(
-    PERSISTENCE_KEYS.savedAssessments,
-    assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
-  );
+  try {
+    writeStoredJson(
+      PERSISTENCE_KEYS.savedAssessments,
+      assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
+    );
+  } catch (error) {
+    // The in-memory cache may have been mutated before this call.
+    // Invalidate it so the next loadAll() re-reads from localStorage.
+    _cache = null;
+    _indexById = null;
+    throw error;
+  }
   _cache = assessments;
   rebuildIndex(assessments);
 }

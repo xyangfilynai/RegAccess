@@ -34,14 +34,36 @@ export const readStoredJson = (key: string): unknown => {
   }
 };
 
+/**
+ * Practical size cap for a single localStorage write, in characters.
+ * Typical browser localStorage limits are 5–10 MB total. This cap leaves
+ * headroom for other keys and avoids hitting the quota on a single write.
+ */
+export const STORAGE_WRITE_LIMIT_CHARS = 4 * 1024 * 1024; // 4 MB
+
+export class StorageQuotaError extends Error {
+  constructor(key: string, sizeChars: number) {
+    super(
+      `Storage write for "${key}" blocked: payload is ${(sizeChars / 1024 / 1024).toFixed(1)} MB, ` +
+        `which exceeds the ${(STORAGE_WRITE_LIMIT_CHARS / 1024 / 1024).toFixed(0)} MB safety limit.`,
+    );
+    this.name = 'StorageQuotaError';
+  }
+}
+
 export const writeStoredJson = (key: string, value: unknown): boolean => {
   const storage = getBrowserStorage();
   if (!storage) return false;
 
   try {
-    storage.setItem(key, JSON.stringify(value));
+    const serialized = JSON.stringify(value);
+    if (serialized.length > STORAGE_WRITE_LIMIT_CHARS) {
+      throw new StorageQuotaError(key, serialized.length);
+    }
+    storage.setItem(key, serialized);
     return true;
-  } catch {
+  } catch (error) {
+    if (error instanceof StorageQuotaError) throw error;
     return false;
   }
 };

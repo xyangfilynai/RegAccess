@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { assessmentStore, type SavedAssessment } from '../lib/assessment-store';
 import { buildAssessmentName } from '../lib/assessment-metadata';
+import { StorageQuotaError } from '../lib/browser-storage';
 import { storage } from '../lib/storage';
 import type { Answers } from '../lib/assessment-engine';
 import { SAMPLE_CASES_BY_ID } from '../sample-cases';
@@ -34,6 +35,9 @@ export interface AssessmentWorkspace {
   setValidationErrors: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   hasSavedSession: boolean;
   currentReviewerNotes: SavedAssessment['reviewerNotes'];
+  /** Non-null when a localStorage write failed due to quota/size limits. */
+  storageError: string | null;
+  dismissStorageError: () => void;
   handleReset: () => void;
   handleLoadAssessment: (id: string) => void;
   handleDuplicateAssessment: (id: string) => void;
@@ -57,6 +61,9 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
   const [workspaceSource, setWorkspaceSource] = useState<WorkspaceSource>('draft');
   const [hasSavedDraft, setHasSavedDraft] = useState(initialDraftSnapshot.hasSavedDraft);
+  const [storageError, setStorageError] = useState<string | null>(null);
+
+  const dismissStorageError = useCallback(() => setStorageError(null), []);
 
   const refreshSavedAssessments = useCallback(() => {
     setSavedAssessments(assessmentStore.list());
@@ -205,17 +212,26 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     (lastPathway: string): SavedAssessment | null => {
       if (Object.keys(answers).length === 0) return null;
 
-      const saved = assessmentStore.save({
-        id: currentAssessmentId || undefined,
-        name: currentSavedAssessment?.name || buildAssessmentName(answers),
-        answers,
-        blockIndex: currentBlockIndex,
-        lastPathway,
-      });
+      try {
+        const saved = assessmentStore.save({
+          id: currentAssessmentId || undefined,
+          name: currentSavedAssessment?.name || buildAssessmentName(answers),
+          answers,
+          blockIndex: currentBlockIndex,
+          lastPathway,
+        });
 
-      setCurrentAssessmentId(saved.id);
-      refreshSavedAssessments();
-      return saved;
+        setCurrentAssessmentId(saved.id);
+        setStorageError(null);
+        refreshSavedAssessments();
+        return saved;
+      } catch (error) {
+        if (error instanceof StorageQuotaError) {
+          setStorageError(error.message);
+          return null;
+        }
+        throw error;
+      }
     },
     [answers, currentAssessmentId, currentBlockIndex, currentSavedAssessment?.name, refreshSavedAssessments],
   );
@@ -274,6 +290,8 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
     setValidationErrors,
     hasSavedSession,
     currentReviewerNotes,
+    storageError,
+    dismissStorageError,
     handleReset,
     handleLoadAssessment,
     handleDuplicateAssessment,
