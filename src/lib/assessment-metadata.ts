@@ -9,22 +9,22 @@ export interface CaseSummaryItem {
 export const buildCaseSummary = (answers: Answers): CaseSummaryItem[] => [
   {
     label: 'Authorization',
-    value: answers.A1 ? String(answers.A1) : 'Not provided',
+    value: answerAsString(answers.A1) || 'Not provided',
     tone: answers.A1 ? 'default' : 'warning',
   },
   {
     label: 'Authorization ID',
-    value: answers.A1b ? String(answers.A1b) : 'Not provided',
+    value: answerAsString(answers.A1b) || 'Not provided',
     tone: !answers.A1b ? 'warning' : 'default',
   },
   {
     label: 'Authorized baseline',
-    value: answers.A1c ? String(answers.A1c) : 'Not provided',
+    value: answerAsString(answers.A1c) || 'Not provided',
     tone: !answers.A1c ? 'warning' : 'default',
   },
   {
     label: 'Change',
-    value: answers.B2 ? String(answers.B2) : answers.B1 ? String(answers.B1) : 'Not classified',
+    value: answerAsString(answers.B2) || answerAsString(answers.B1) || 'Not classified',
     tone: answers.B2 || answers.B1 ? 'info' : 'default',
   },
   {
