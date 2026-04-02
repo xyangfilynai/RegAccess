@@ -408,8 +408,14 @@ export function useReviewPanelData(
     };
   }, [criticalGaps.length, hasCriticalGaps, isDocOnlyWithCriticalGaps, isIncomplete, mergedBlockers.length]);
 
-  const shortRecordFacts = assessmentBasisView.recordFacts.filter((f) => !f.isLongText);
-  const longRecordFacts = assessmentBasisView.recordFacts.filter((f) => f.isLongText);
+  const { shortRecordFacts, longRecordFacts } = useMemo(() => {
+    const short: typeof assessmentBasisView.recordFacts = [];
+    const long: typeof assessmentBasisView.recordFacts = [];
+    for (const f of assessmentBasisView.recordFacts) {
+      (f.isLongText ? long : short).push(f);
+    }
+    return { shortRecordFacts: short, longRecordFacts: long };
+  }, [assessmentBasisView]);
 
   const decisionTraceSteps = useMemo(
     () => caseReasoning.decisionPath.filter((step) => !step.startsWith('Result:')),

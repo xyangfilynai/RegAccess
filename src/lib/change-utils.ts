@@ -3,7 +3,7 @@
  * Used by review-insights, case-specific-reasoning, and other analysis modules.
  */
 
-import { changeTaxonomy, type Answers } from './assessment-engine';
+import { answerAsString, changeTaxonomy, type Answers } from './assessment-engine';
 
 export interface SelectedChangeContext {
   category: string | null;
@@ -20,7 +20,7 @@ export const joinWithAnd = (items: string[]): string => {
 };
 
 export const getChangeLabel = (answers: Answers, fallback = 'the reported change'): string =>
-  (answers.B2 as string) || (answers.B1 as string) || fallback;
+  answerAsString(answers.B2) || answerAsString(answers.B1) || fallback;
 
 export const getSelectedChangeContext = (answers: Answers): SelectedChangeContext | null => {
   const category = typeof answers.B1 === 'string' && answers.B1.trim() ? answers.B1.trim() : null;
