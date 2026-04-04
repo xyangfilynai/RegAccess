@@ -402,7 +402,7 @@ export const getBlockFields = (blockId: string, answers: Answers, ds: DerivedSta
           id: 'C10',
           q: "Considering all changes since last submission, has the device's overall behavior materially drifted from its cleared specification?",
           type: 'yesnouncertain',
-          skip: !answers.A8 || parseInt(answerAsString(answers.A8)) === 0,
+          skip: !answers.A8 || parseInt(answerAsString(answers.A8), 10) === 0,
           help: 'Even if each individual change was non-significant, the cumulative effect may have shifted the device from its cleared state.',
         },
         {
