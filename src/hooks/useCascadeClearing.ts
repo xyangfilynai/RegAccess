@@ -12,14 +12,13 @@
 
 import { useCallback } from 'react';
 import type { Answers, AnswerValue } from '../lib/assessment-engine';
+import { CATEGORY_INTENDED_USE } from '../lib/assessment-engine/changeTaxonomy';
 
 /** Prefixes of field IDs that are downstream of A1. */
 const DOWNSTREAM_OF_A1 = ['B', 'C', 'P', 'D', 'E', 'F'];
 
 /** Prefixes of field IDs that are downstream of B1 (excluding B2 which is handled explicitly). */
 const DOWNSTREAM_OF_B1 = ['C', 'P', 'D', 'E', 'F'];
-
-const INTENDED_USE = 'Intended Use / Indications for Use';
 
 /**
  * Pure function: applies cascade clearing rules to an answer change.
@@ -48,7 +47,7 @@ export function applyCascadeClearing(fieldId: string, value: AnswerValue, prev: 
   }
 
   // B1 change away from Intended Use → also clear B3
-  if (fieldId === 'B1' && prev.B1 === INTENDED_USE && value !== INTENDED_USE) {
+  if (fieldId === 'B1' && prev.B1 === CATEGORY_INTENDED_USE && value !== CATEGORY_INTENDED_USE) {
     next.B3 = undefined;
   }
 

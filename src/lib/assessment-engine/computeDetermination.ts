@@ -1,4 +1,5 @@
 import { Answer, AuthPathway, Pathway, Answers, answerIsOneOf } from './types';
+import { CATEGORY_POST_MARKET, CHANGE_MONITORING_THRESHOLD_PREFIX } from './changeTaxonomy';
 
 type PathwayValue = (typeof Pathway)[keyof typeof Pathway];
 
@@ -247,7 +248,9 @@ const buildDeterminationFacts = (ans: Answers): DeterminationFacts => {
   const cybersecurityExemptionUncertain = isNonPMA && ans.C1 === Answer.Uncertain;
   const restoreToSpecExemptionUncertain = isNonPMA && ans.C2 === Answer.Uncertain;
   const monitoringThresholdChange =
-    ans.B1 === 'Post-Market Surveillance' && typeof ans.B2 === 'string' && ans.B2.includes('Monitoring threshold');
+    ans.B1 === CATEGORY_POST_MARKET &&
+    typeof ans.B2 === 'string' &&
+    ans.B2.includes(CHANGE_MONITORING_THRESHOLD_PREFIX);
   const biasMitigationChanged = ans.E5 === Answer.Yes;
   const genAIHighImpactChange = hasFoundationModelChange || hasGenAIGuardrailChange;
 
@@ -649,6 +652,8 @@ const pathwayRules: DeclarativeRule<DeterminationFacts, PathwayValue>[] = [
     when: all(eq('isNonPMA', true), eq('allSignificanceNo', true)),
     outcome: Pathway.LetterToFile,
   },
+  // ⚠ FALLBACK — must remain the last rule in this array.
+  // `all()` matches unconditionally, so any rule added after this one is unreachable.
   {
     id: 'fallback-assessment-incomplete',
     description: 'Fallback pathway when no other declarative rule is satisfied.',

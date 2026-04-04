@@ -73,9 +73,13 @@ export const writeStoredValue = (key: string, value: string): boolean => {
   if (!storage) return false;
 
   try {
+    if (value.length > STORAGE_WRITE_LIMIT_CHARS) {
+      throw new StorageQuotaError(key, value.length);
+    }
     storage.setItem(key, value);
     return true;
-  } catch {
+  } catch (error) {
+    if (error instanceof StorageQuotaError) throw error;
     return false;
   }
 };

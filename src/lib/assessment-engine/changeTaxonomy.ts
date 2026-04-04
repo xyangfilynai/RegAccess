@@ -27,6 +27,12 @@ export interface ChangeCategoryDefinition {
   boundaryNote: string | null;
 }
 
+/** Well-known category keys used in determination and derived-state logic. */
+export const CATEGORY_INTENDED_USE = 'Intended Use / Indications for Use';
+export const CATEGORY_POST_MARKET = 'Post-Market Surveillance';
+/** Shared prefix for monitoring-threshold change types used in determination logic. */
+export const CHANGE_MONITORING_THRESHOLD_PREFIX = 'Monitoring threshold';
+
 export const changeTaxonomy: Record<string, ChangeCategoryDefinition> = {
   'Training Data': {
     types: [
