@@ -21,9 +21,19 @@ ChangePath is a Vite + React + TypeScript prototype for structured regulatory pa
 ## Local Development
 
 1. Install dependencies with `npm install`.
-2. Generate an access-pass keypair with `npm run access:keypair` the first time you set up the repo.
-3. Start the app with `npm run dev`.
-4. Run the full validation suite with `npm run check-all`.
+2. Start local infrastructure with `docker compose up -d postgres` if you are using the default local database.
+3. Create `apps/api/.env` from `apps/api/.env.example` if it does not already exist.
+4. Run `npm run db:migrate`.
+5. Run `npm run db:seed`.
+6. Generate an access-pass keypair with `npm run access:keypair` the first time you set up the repo.
+7. Start the app with `npm run dev`.
+8. Run the full validation suite with `npm run check-all`.
+
+Notes:
+
+- `apps/api` now loads `apps/api/.env` automatically for local `dev`, `start`, and `db:seed`.
+- The committed default local database URL expects PostgreSQL on `localhost:5432`.
+- The Vercel deployment serves the frontend from the Vite build and `/api/*` through a Node function bridge to the Fastify app.
 
 Available scripts:
 
