@@ -1,6 +1,7 @@
 import { Answer, type Answers, type DeterminationResult } from './assessment-engine';
 import type { EvidenceGap, GapSeverity } from './evidence-gaps';
 import { joinWithAnd, getChangeLabel, getSelectedChangeContext } from './change-utils';
+import { parseSources } from './utils';
 
 export interface ReviewInsightItem {
   id: string;
@@ -16,12 +17,6 @@ export interface EvidenceGapInsightItem extends ReviewInsightItem {
   category: string;
   severity: GapSeverity;
 }
-
-const splitSources = (source: string | null | undefined): string[] =>
-  (source || '')
-    .split(';')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 
 const getAnswerLabel = (value: unknown): string => {
   if (value === undefined || value === null || value === '') return 'not answered';
@@ -392,7 +387,7 @@ export function buildEvidenceGapInsightItems(
         'This item is still open, so the current record does not yet fully support reliance on the assessment result.',
       actionLabel: 'What to provide',
       actionText: gap.remediation,
-      sourceRefs: splitSources(gap.source),
+      sourceRefs: parseSources(gap.source),
     };
 
     switch (gap.id) {

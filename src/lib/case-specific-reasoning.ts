@@ -11,7 +11,7 @@ import {
 } from './assessment-engine';
 import { ruleReasoningLibrary } from './content';
 import { joinWithAnd, getChangeLabel, getSelectedChangeContext, type SelectedChangeContext } from './change-utils';
-import { pushUnique } from './utils';
+import { parseSources, pushUnique } from './utils';
 
 export interface CaseSpecificReasoning {
   ruleKey: string | null;
@@ -26,12 +26,9 @@ export interface CaseSpecificReasoning {
 }
 
 const addSources = (sources: string[], raw: string | null | undefined) => {
-  if (!raw) return;
-  raw
-    .split(';')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .forEach((part) => pushUnique(sources, part));
+  for (const part of parseSources(raw)) {
+    pushUnique(sources, part);
+  }
 };
 
 const truncate = (value: string | null | undefined, max = 340): string | null => {

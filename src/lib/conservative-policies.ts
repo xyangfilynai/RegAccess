@@ -91,15 +91,5 @@
  *     - case-specific-reasoning.ts — SE-uncertain blocker
  */
 
-// This file is documentation-only. The constants below make it importable for
-// validation or display purposes if needed in the future.
-
-export const CONSERVATIVE_POLICY_IDS = [
-  'significance-uncertainty-requires-submission',
-  'pma-uncertainty-requires-supplement',
-  'baseline-completeness-required',
-  'subgroup-performance-drop-threshold',
-  'cumulative-se-uncertainty-incomplete',
-] as const;
-
-export type ConservativePolicyId = (typeof CONSERVATIVE_POLICY_IDS)[number];
+// This file is documentation-only. The policy rationale above is the
+// authoritative reference; code comments elsewhere point here.
