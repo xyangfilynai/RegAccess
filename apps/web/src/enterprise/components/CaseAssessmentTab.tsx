@@ -82,6 +82,13 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   const blocks = useMemo(() => getBlocks(localAnswers, derivedState), [localAnswers, derivedState]);
   const provisionalDetermination = useMemo(() => computeDetermination(localAnswers), [localAnswers]);
 
+  // Keep refs in sync so flushSave can read the latest memoized values
+  // without redundantly re-running the engine.
+  const derivedStateRef = useRef(derivedState);
+  derivedStateRef.current = derivedState;
+  const determinationRef = useRef(provisionalDetermination);
+  determinationRef.current = provisionalDetermination;
+
   const currentBlock = blocks[activeBlockIndex];
   const currentFields = useMemo(() => {
     if (!currentBlock || currentBlock.id === 'review') return [];
@@ -105,8 +112,8 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
 
     const payload: SaveAssessmentPayload = {
       delta: payloadDelta as Record<string, unknown>,
-      clientDerivedStateJson: computeDerivedState(localAnswersRef.current) as Record<string, unknown>,
-      clientEngineOutputJson: computeDetermination(localAnswersRef.current) as unknown as Record<string, unknown>,
+      clientDerivedStateJson: derivedStateRef.current as Record<string, unknown>,
+      clientEngineOutputJson: determinationRef.current as unknown as Record<string, unknown>,
       expectedUpdatedAt: expectedUpdatedAtRef.current,
     };
 
@@ -239,8 +246,8 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         pendingDeltaRef.current = {};
         saveAssessment.mutate({
           delta: payloadDelta as Record<string, unknown>,
-          clientDerivedStateJson: computeDerivedState(localAnswersRef.current) as Record<string, unknown>,
-          clientEngineOutputJson: computeDetermination(localAnswersRef.current) as unknown as Record<string, unknown>,
+          clientDerivedStateJson: derivedStateRef.current as Record<string, unknown>,
+          clientEngineOutputJson: determinationRef.current as unknown as Record<string, unknown>,
           expectedUpdatedAt: expectedUpdatedAtRef.current,
         });
       }
