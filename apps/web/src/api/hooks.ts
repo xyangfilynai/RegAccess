@@ -92,13 +92,14 @@ export function useUpdateCase(id: string) {
 
 // -- Assessments --
 
-interface AssessmentResponse {
+export interface AssessmentResponse {
   id?: string;
   caseId: string;
   answersJson: Record<string, unknown>;
   derivedStateJson: Record<string, unknown> | null;
   engineOutputJson: Record<string, unknown> | null;
   completenessStatusJson: Record<string, unknown> | null;
+  updatedAt?: string;
 }
 
 export function useAssessment(caseId: string | undefined) {
@@ -109,16 +110,70 @@ export function useAssessment(caseId: string | undefined) {
   });
 }
 
+export interface SaveAssessmentPayload {
+  /** Incremental delta — only the field IDs whose values changed since last sync. */
+  delta?: Record<string, unknown>;
+  /** Full snapshot — used for the very first save or after reconciliation. */
+  answersJson?: Record<string, unknown>;
+  /** ISO timestamp from the latest assessment row the client was working from. */
+  expectedUpdatedAt?: string | null;
+}
+
+export interface AssessmentConflict {
+  code: 'ASSESSMENT_CONFLICT';
+  serverUpdatedAt: string;
+}
+
+export function isAssessmentConflict(err: unknown): err is Error & { conflict: AssessmentConflict } {
+  return (
+    err instanceof Error &&
+    'conflict' in err &&
+    typeof (err as { conflict?: AssessmentConflict }).conflict?.serverUpdatedAt === 'string'
+  );
+}
+
 export function useSaveAssessment(caseId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (answersJson: Record<string, unknown>) =>
-      api.put<AssessmentResponse>(`/api/cases/${caseId}/assessment`, { answersJson }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['assessment', caseId] });
+    mutationFn: (payload: SaveAssessmentPayload) =>
+      api.put<AssessmentResponse>(`/api/cases/${caseId}/assessment`, payload),
+    onSuccess: (data) => {
+      // Replace the cached assessment with the server-authoritative result
+      // so the reconciliation UI sees the new updatedAt + engine output
+      // without needing a separate fetch.
+      qc.setQueryData(['assessment', caseId], data);
       qc.invalidateQueries({ queryKey: ['cases', caseId] });
     },
   });
+}
+
+// -- Feature flags --
+
+export interface FeatureFlag {
+  key: string;
+  enabled: boolean;
+  config: Record<string, unknown> | null;
+}
+
+export const FEATURE_FLAGS = Object.freeze({
+  EvidenceUploads: 'evidence_uploads',
+  Comments: 'comments',
+  Reviews: 'reviews',
+  Exports: 'exports',
+  SectionLocking: 'section_locking',
+} as const);
+
+export function useFeatureFlags() {
+  return useQuery({
+    queryKey: ['feature-flags'],
+    queryFn: () => api.get<{ flags: FeatureFlag[] }>('/api/feature-flags'),
+    staleTime: 60_000,
+  });
+}
+
+export function useFeatureFlag(key: string): boolean {
+  const { data } = useFeatureFlags();
+  return data?.flags.find((f) => f.key === key)?.enabled ?? false;
 }
 
 // -- Audit --

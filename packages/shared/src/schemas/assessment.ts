@@ -13,9 +13,22 @@ export const AssessmentResponseSetSchema = z.object({
 });
 export type AssessmentResponseSet = z.infer<typeof AssessmentResponseSetSchema>;
 
-export const SaveAssessmentSchema = z.object({
-  answersJson: z.record(z.unknown()),
-});
+export const SaveAssessmentSchema = z
+  .object({
+    /** Incremental delta — only the field IDs whose values changed since last sync. */
+    delta: z.record(z.unknown()).optional(),
+    /** Full snapshot — used for initial save or after a reconciliation. */
+    answersJson: z.record(z.unknown()).optional(),
+    /**
+     * The `updated_at` of the assessment row the client based its edits on.
+     * Server rejects with 409 if this is stale (optimistic locking).
+     * Null/omitted means "this is the first save for this case".
+     */
+    expectedUpdatedAt: z.coerce.date().nullable().optional(),
+  })
+  .refine((v) => v.delta !== undefined || v.answersJson !== undefined, {
+    message: 'Either delta or answersJson must be provided',
+  });
 export type SaveAssessment = z.infer<typeof SaveAssessmentSchema>;
 
 /** Engine execution result returned after server-side engine run */

@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useCase } from '../../api/hooks';
+import { useCase, FEATURE_FLAGS } from '../../api/hooks';
 import { CaseOverviewTab } from '../components/CaseOverviewTab';
 import { CaseAssessmentTab } from '../components/CaseAssessmentTab';
 import { CaseHistoryTab } from '../components/CaseHistoryTab';
+import { CasePlaceholderTab } from '../components/CasePlaceholderTab';
 
-type TabId = 'overview' | 'assessment' | 'history';
+type TabId = 'overview' | 'assessment' | 'evidence' | 'comments' | 'reviews' | 'history' | 'export';
 
 const TABS: Array<{ id: TabId; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'assessment', label: 'Assessment' },
+  { id: 'evidence', label: 'Evidence' },
+  { id: 'comments', label: 'Comments' },
+  { id: 'reviews', label: 'Reviews' },
   { id: 'history', label: 'History' },
+  { id: 'export', label: 'Export' },
 ];
 
 export const CaseDetailPage: React.FC = () => {
@@ -74,7 +79,35 @@ export const CaseDetailPage: React.FC = () => {
       {/* Tab content */}
       {activeTab === 'overview' && <CaseOverviewTab changeCase={changeCase} />}
       {activeTab === 'assessment' && id && <CaseAssessmentTab caseId={id} />}
+      {activeTab === 'evidence' && (
+        <CasePlaceholderTab
+          title="Evidence"
+          description="Upload supporting documents, link to test reports, and reference predicate device data. Coming in Phase 3."
+          flagKey={FEATURE_FLAGS.EvidenceUploads}
+        />
+      )}
+      {activeTab === 'comments' && (
+        <CasePlaceholderTab
+          title="Comments"
+          description="Threaded discussion with @mentions and resolutions. Coming in Phase 3."
+          flagKey={FEATURE_FLAGS.Comments}
+        />
+      )}
+      {activeTab === 'reviews' && (
+        <CasePlaceholderTab
+          title="Reviews"
+          description="Reviewer assignment, signoff workflow, and dual-signature approvals. Coming in Phase 4."
+          flagKey={FEATURE_FLAGS.Reviews}
+        />
+      )}
       {activeTab === 'history' && id && <CaseHistoryTab caseId={id} />}
+      {activeTab === 'export' && (
+        <CasePlaceholderTab
+          title="Export"
+          description="Generate FDA-formatted PDF reports and audit-ready ZIP bundles. Coming in Phase 5."
+          flagKey={FEATURE_FLAGS.Exports}
+        />
+      )}
     </div>
   );
 };

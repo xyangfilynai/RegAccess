@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.js';
 import { productRoutes } from './routes/products.js';
 import { caseRoutes } from './routes/cases.js';
 import { assessmentRoutes } from './routes/assessments.js';
+import { featureFlagRoutes } from './routes/feature-flags.js';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -28,6 +29,7 @@ export async function buildApp() {
   await app.register(productRoutes);
   await app.register(caseRoutes);
   await app.register(assessmentRoutes);
+  await app.register(featureFlagRoutes);
 
   return app;
 }
