@@ -8,3 +8,5 @@ coverage/
 .keys/
 apps/api/.env
 *.local
+.vercel
+.env*.local
