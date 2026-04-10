@@ -1,0 +1,266 @@
+interface ReasoningEntry {
+  text: string;
+  verify: string;
+  counter: string;
+  source: string;
+  status?: string;
+  title?: string;
+}
+
+export const ruleReasoningLibrary: Record<string, ReasoningEntry> = {
+  'SCREEN-01-Yes': {
+    text: "This change affects what the device is for or who it's intended to serve. An intended use change overrides all downstream assessment fields. ChangePath does not treat intended-use changes as routine PCCP implementation unless explicit FDA authorization for that exact scope is already documented.",
+    verify:
+      'Pull the clearance letter and Indications for Use statement. Compare them word-by-word against the post-change device description. Look for any expansion of population, clinical context, or diagnostic scope — even subtle ones.',
+    counter:
+      'If the change feels intended-use-adjacent but you believe an authorized PCCP may cover it, verify the exact cleared or approved PCCP language and FDA authorization basis directly. If the scope remains borderline after document review, a Pre-Submission with FDA is recommended.',
+    source: '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V',
+  },
+  'SCREEN-01-Uncertain': {
+    text: 'Whether this change affects intended use could not be determined with confidence. This assessment cannot produce a reliable pathway recommendation until the intended-use response is resolved. Consider an FDA Pre-Submission (Q-Sub) or senior RA/clinical expert review before proceeding.',
+    verify:
+      'Pull the clearance letter and Indications for Use statement. Compare them word-by-word against the post-change device description. If the comparison does not clearly resolve intended use, a Pre-Submission with FDA is the appropriate next step.',
+    counter:
+      "Do not default to 'No' to avoid a submission. Unresolved intended-use uncertainty is the highest-risk gap in any change assessment — resolving it incorrectly in either direction can lead to regulatory action.",
+    source: '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V; FDA Q-Sub',
+  },
+  'SCREEN-01-No': {
+    text: "The device's fundamental purpose, target population, and clinical indications remain unchanged. It continues to do the same thing for the same people as originally cleared.",
+    verify:
+      "Double-check for implicit scope expansion — even if the stated intended use hasn't changed. For generative AI devices, broader prompting capabilities can effectively widen clinical scope without changing any labeling.",
+    counter:
+      'New output classes, broader demographics, additional input modalities, or expanded generative capabilities can all constitute an intended use change even when the label stays the same.',
+    source: '21 CFR 807.81(a)(3); FDA-PCCP-2025 §V',
+  },
+  'SCREEN-02-Yes': {
+    text: 'Based on the information provided, this change may be eligible for the cybersecurity exemption (documentation only — Letter to File). This eligibility must be confirmed through appropriate analysis demonstrating that the change is solely to strengthen cybersecurity with zero impact on device performance or clinical functionality.',
+    verify:
+      "FDA's 2017 software-change guidance describes this pathway for changes made solely to strengthen cybersecurity with no other functional impact, backed by appropriate analysis. A conservative approach is bitwise comparison of model outputs before and after the patch — though FDA's standard is appropriate analysis, not necessarily bitwise equivalence.",
+    counter:
+      'Watch for ML framework dependency updates (PyTorch, TensorFlow, ONNX) bundled with the patch — these can silently alter floating-point behavior. Significant changes to inference timing can also affect clinical workflow. Either scenario exits the exemption.',
+    source: 'FDA-SW-510K-2017 Q1; FDA-CYBER-2026',
+  },
+  'SCREEN-03-Yes': {
+    text: 'Based on the information provided, this change may qualify for the restore-to-specification exemption (documentation only — Letter to File). This requires confirmation that the fix restores the device to a known, documented, previously cleared configuration.',
+    verify:
+      'Confirm the restoration target matches the previously cleared configuration exactly: model weights, preprocessing pipeline, threshold values. For generative AI, verify prompt versions and knowledge base state match the validated configuration. Document the specific cleared version ID.',
+    counter:
+      'This exemption only applies when the cleared specification is well-documented. If the original configuration was ambiguous, incomplete, or poorly versioned, the exemption may not be defensible.',
+    source: 'FDA-SW-510K-2017 Q2',
+  },
+  'RISK-01-Yes': {
+    text: 'This change introduces or modifies a cause of harm that could lead to significant injury not adequately controlled by existing safeguards. That makes the change significant and triggers a new submission. For AI/ML changes, this includes new failure modes, shifted false-positive/false-negative patterns, or weakened guardrails — not just obvious physical hazards.',
+    verify:
+      'Walk through the risk management file hazard by hazard. For each one: does this change create a new sequence leading to that harm, modify an existing sequence, or undermine an existing control? Pay particular attention to subgroup-specific hazards and edge cases.',
+    counter:
+      "Don't evaluate this change in isolation. Cumulative risk from multiple recent changes can be significant even when each individual change looks manageable. Aggregate metrics can mask subgroup-level hazards.",
+    source: 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
+  },
+  'RISK-01-No': {
+    text: "No new sequences to harm are introduced, and existing risk controls remain effective for the modified device. The change doesn't create or worsen causes of harm.",
+    verify:
+      'Confirm this against the risk management file — not just expectation. Document the specific rationale, referencing your risk analysis.',
+    counter:
+      'A change that looks safe individually may contribute to cumulative risk when stacked on top of prior modifications. Revisit this assessment each time.',
+    source: 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
+  },
+  'RISK-02-Yes': {
+    text: "This change creates an entirely new category of hazard — a type of harm that wasn't part of the original risk analysis at all. This is different from the cause-of-harm criterion: it is not a new way to reach an existing hazard, but a fundamentally new kind of hazardous situation. A new submission is typically required.",
+    verify:
+      "The threshold issue is whether this change introduces a type of harm the original risk analysis never contemplated. For generative AI, hallucinated clinical advice is a genuinely new hazard category that doesn't exist in traditional ML devices.",
+    counter:
+      "New diagnostic outputs mean new hazard categories. Multi-modal expansion introduces cross-modal failure modes that can't be predicted from single-modality risk analysis alone.",
+    source: 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
+  },
+  'RISK-03-Yes': {
+    text: 'This change affects a risk control measure — it adds, modifies, or removes a safeguard for a hazardous situation that could cause significant harm. This includes changes to guardrails, safety filters, output constraints, or human oversight mechanisms.',
+    verify:
+      'Go through the risk control matrix item by item. For each control: is it still effective after the change? Does the change require adding a new one? Does it alter how well an existing control works?',
+    counter:
+      "For generative AI devices, changes to safety filters, content filters, output constraints, or refusal behaviors all qualify as risk control changes. Adding new guardrails counts too, though that's generally a favorable change.",
+    source: 'FDA-SW-510K-2017 Q3; ISO 14971:2019',
+  },
+  'RISK-04-Yes': {
+    text: "This change could meaningfully affect the device's clinical performance — the metrics that define how well it works for its intended purpose. This covers traditional ML metrics like sensitivity and specificity as well as generative AI considerations like factual accuracy and response appropriateness. A new submission is required.",
+    verify:
+      'Run the modified device through your acceptance criteria at the cleared operating point. Compare all metrics, not just aggregate performance — validate subgroup results independently.',
+    counter:
+      'Watch for subgroup degradation masked by stable overall numbers. A steady AUC can mask significant drops in specific demographic groups. Performance at the operating threshold matters more than summary statistics.',
+    source: 'FDA-SW-510K-2017 Q4',
+  },
+  'RISK-04-No': {
+    text: 'The change is not expected to meaningfully affect clinical performance. No significance fields were answered Yes — the change does not appear to meet the threshold for a new submission.',
+    verify:
+      'Back this up with actual validation data, not just expectation. Run a performance comparison before moving to documentation or PCCP implementation.',
+    counter:
+      '"Expected no impact" and "demonstrated no impact" are very different things. You\'ll need validation evidence before proceeding.',
+    source: 'FDA-SW-510K-2017 Q4',
+  },
+  'PMA-Supplement': {
+    text: 'This is a PMA-approved device, and the change affects safety or effectiveness. A PMA supplement is generally required unless the change fits a specific alternate PMA postapproval reporting pathway. Labeling, manufacturing, and facility changes matter because they may affect safety or effectiveness, not because they automatically trigger a supplement by category alone.',
+    verify:
+      'Determine the right reporting pathway and supplement type: Panel-Track for major changes that typically need substantial clinical evidence, 180-Day Supplement for other changes affecting safety/effectiveness, Real-Time Supplement where appropriate, Special PMA Supplement—Changes Being Effected for qualifying safety-enhancing changes under §814.39(d), 30-Day PMA Supplement only when FDA has specifically advised that alternate submission under §814.39(e), or 30-Day Notice for qualifying manufacturing procedure/method changes under §814.39(f). If an authorized PCCP covers this change, implement per protocol instead.',
+    counter:
+      'Changes that would be documentation-only under 510(k) may still require PMA reporting or a PMA supplement. Be careful with 30-Day Notices — they are limited to qualifying manufacturing procedure or method changes and do not cover device design or labeling changes.',
+    source: '21 CFR 814.39(a)–(e); 21 CFR 814.84',
+  },
+  'PMA-AnnualReport': {
+    text: "This change doesn't affect the safety or effectiveness of the PMA-approved device, so no supplement is needed. The standard documentation pathway is the PMA Annual Report. Check your PMA approval order for any device-specific reporting conditions — there may be other mechanisms available depending on the specifics.",
+    verify:
+      'Confirm the change truly has no safety or effectiveness impact. The PMA standard is any change that could affect these — document your rationale carefully. If the device has an authorized PCCP that covers this type of change, that pathway may be more appropriate.',
+    counter:
+      'Postapproval changes that are required to be identified or reported in the PMA periodic report should be captured there. Do not assume that the annual report substitutes for a PMA supplement when a supplement is otherwise required.',
+    source: '21 CFR 814.84; 21 CFR 814.39',
+  },
+  'PCCP-Verified': {
+    text: 'On the current record, this change stays within the authorized PCCP scope: the change type is explicitly described, it stays within the documented boundaries, a validation protocol exists, monitoring is active, and cumulative impact remains within bounds. ChangePath therefore supports the authorized PCCP implementation path rather than a new submission or PMA supplement.',
+    verify:
+      'Execute the PCCP validation protocol in full. Every acceptance criterion should be met before implementation. Activate the monitoring plan and update labeling if required by the PCCP, applicable regulations, or device-specific authorization conditions.',
+    counter:
+      "PCCP eligibility doesn't mean automatic implementation — the protocol must be fully executed. If any acceptance criterion fails, activate the rollback plan. PMA devices: document in the Annual Report. 510(k)/De Novo: maintain records per QMS.",
+    source: 'FDA-PCCP-2025 §V–VIII; FD&C Act §515C; 21 CFR 814.84',
+  },
+  'PCCP-Failed': {
+    text: "One or more PCCP scope gates didn't pass, so this change can't be implemented under the PCCP. If the change is significant, it will need a standard premarket submission instead.",
+    verify:
+      'Identify which specific gate(s) failed. Then determine whether it makes more sense to expand the PCCP scope (which requires a new submission to modify the PCCP) or to go straight to a standard submission for this change.',
+    counter:
+      "A failed PCCP gate doesn't mean the change is unsafe — it just means the PCCP pathway isn't available. The change may be perfectly implementable through a standard submission.",
+    source: 'FDA-PCCP-2025 §V',
+  },
+  'LTF-NonSignificant': {
+    text: "All significance fields came back No. This change doesn't meet the threshold for a new submission on the current record — document the rationale in a Letter to File or equivalent internal change record under applicable QMS controls.",
+    verify:
+      'The Letter to File should cover: what the change is, which significance fields were evaluated, why each was answered No, and the supporting evidence. Keep it inspection-ready.',
+    counter:
+      'Track this in your cumulative change log. Multiple non-significant changes can add up to a significant drift from the cleared specification over time.',
+    source: 'Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017); QMSR',
+  },
+  'DENOVO-FIT-FAILED': {
+    text: "The modified device may no longer fit within the De Novo classification's device type or special controls. This is a threshold issue — if the device has moved outside these boundaries, the significance framework can't be applied until device-type fit is resolved. An FDA Pre-Submission is often the most prudent next step to determine strategy: a 510(k) citing the De Novo device as predicate, a new De Novo request, or another pathway.",
+    verify:
+      "Pull the De Novo classification order, the associated regulation, and the specific special controls. Compare the modified device against each special control. If any can no longer be met, or if the device's risk profile has fundamentally changed, the device-type fit has failed.",
+    counter:
+      'This must be resolved before you can assess significance. Even if every significance field would be No, a device that no longer fits its De Novo device type needs a new regulatory strategy.',
+    source: 'De Novo classification order; 21 CFR Part 860 Subpart D',
+  },
+};
+
+export const fieldReasoningLibrary: Record<string, ReasoningEntry> = {
+  C0_DN1: {
+    title: 'De Novo Device-Type Fit',
+    text: "De Novo classifications establish a new regulatory category with specific special controls under 21 CFR Part 860 Subpart D. Before assessing whether a change is 'significant' under the 510(k)-based change framework, the threshold issue is whether the modified device still fits within the established device type. If the device moves outside its device type or can no longer comply with the special controls, the significance framework does not apply — a different regulatory strategy is needed.",
+    source: '21 CFR Part 860 Subpart D; De Novo classification order',
+    status: 'Regulation',
+    counter:
+      'Even if the device appears to still fit the device type, subtle changes (e.g., expanded input modalities, different clinical workflow) may affect special control compliance. Compare against each special control requirement individually.',
+    verify:
+      'Obtain the De Novo classification order and associated classification regulation. List each special control. For each, confirm the modified device can still comply. If any special control cannot be met, the device-type fit has failed.',
+  },
+  B3: {
+    title: 'Why this field matters',
+    text: 'Intended use changes are the most consequential factor in the assessment. PCCPs are bounded to the originally reviewed device scope, so ChangePath treats intended-use changes as outside routine PCCP implementation unless explicit FDA authorization for that exact scope is already documented. Changes that alter the fundamental intended use or expand the indication to a new patient population typically require a new submission or supplement.',
+    source:
+      '21 CFR 807.81(a)(3); Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §V',
+    status: 'Final Guidance',
+    counter:
+      "Even if answered 'No': adding new output classes, expanding demographics beyond clearance, or broadened capability that extends effective clinical scope may constitute an intended use change.",
+    verify:
+      'Compare the clearance letter and Indications for Use statement word-by-word against the post-change device description.',
+  },
+  C1: {
+    title: 'Cybersecurity-Only Change (Q1)',
+    text: "FDA's 2017 software-change guidance describes a documentation-only path for pure cybersecurity updates when the change is solely to strengthen cybersecurity and does not otherwise affect the software or device, supported by appropriate analysis, verification, or validation.",
+    source:
+      'Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Q1 Cybersecurity Exemption; Cybersecurity in Medical Devices (Feb 2026) §V–VII',
+    status: 'Final Guidance',
+    counter:
+      'If the cybersecurity patch updates any ML framework dependency (PyTorch, TensorFlow, ONNX), floating-point behavior may change. If patch changes inference timing significantly, clinical workflow may be affected. Either condition exits the cybersecurity-only pathway.',
+    verify:
+      "Perform appropriate analysis demonstrating zero impact on device function. Internal best-practice heuristic: bitwise comparison of model outputs before/after patch. Note: bitwise comparison is more stringent than FDA's guidance-based standard, which is appropriate analysis rather than necessarily bitwise equivalence.",
+  },
+  C2: {
+    title: 'Restore to Specification (Q2)',
+    text: 'Bug fixes that solely restore the device to its most recently cleared specification do not require a new 510(k). This includes rolling back to a previously cleared model version.',
+    source:
+      'Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Q2 Restore-to-Specification',
+    status: 'Final Guidance',
+    counter:
+      'If the original cleared specification was ambiguous, incomplete, or undocumented, this pathway may not apply. Must restore to a KNOWN, DOCUMENTED, CLEARED state.',
+    verify:
+      'Confirm restoration target is identical to previously cleared configuration: model weights, preprocessing pipeline, threshold values. For GenAI: verify prompt version and knowledge base state match validated configuration.',
+  },
+  C3: {
+    title: 'Significance: New/Modified Cause of Harm',
+    text: 'A new cause of a hazardous situation with the potential for significant unmitigated harm requires a new submission.',
+    source:
+      'Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Q3 Risk Assessment; ISO 14971:2019 §5.5',
+    status: 'Final Guidance',
+    counter:
+      'For AI/ML data changes: systematic bias invisible in aggregate metrics but significant in subgroups. For architecture changes: different families have fundamentally different failure modes. For GenAI: hallucinated medical advice is a NEW hazard category.',
+    verify:
+      'Review the risk management file. For each identified hazard: does the change create a new sequence leading to that harm? Focus on subgroup-specific hazards and edge cases.',
+  },
+  C6: {
+    title: 'Significance: Clinical Performance Impact',
+    text: 'Changes that significantly affect clinical functionality or performance specifications require a new submission.',
+    source:
+      'Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — Q4 Clinical Functionality',
+    status: 'Final Guidance',
+    counter:
+      "Performance improvements can also be 'significant.' If the device now performs materially better on some subgroups, it may indicate a shift in effective clinical scope. Aggregate metrics can mask subgroup degradation.",
+    verify:
+      'Compare against predefined acceptance criteria. If none exist, compare to the performance reported in the original clearance. Run at cleared operating point. Validate subgroup performance independently.',
+  },
+  C_PMA1: {
+    title: 'PMA Safety/Effectiveness Threshold',
+    text: "For PMA-approved devices, the threshold is any change that could affect safety or effectiveness — not just 'significant' changes as in the 510(k) framework. This is a lower bar than 510(k).",
+    source: '21 CFR 814.39(a); FDA-PMA-SUPPLEMENTS-2008',
+    status: 'Regulation',
+    counter:
+      "Changes that would be documentation-only under 510(k) may require a PMA supplement. When in doubt, err on the side of filing a supplement. Note: ChangePath's internal conservative policy treats 'Uncertain' on this field as requiring a supplement until the impact is definitively resolved — this escalation is an internal risk-based policy, not a direct regulatory mandate.",
+    verify:
+      'Run comprehensive pre/post comparison of all safety and effectiveness metrics. For PMA devices, any observable change warrants conservative treatment — the regulatory standard is lower than 510(k).',
+  },
+  C10: {
+    title: 'Cumulative Specification Drift',
+    text: 'Even if each individual change was non-significant, the cumulative effect of all changes since last submission may have shifted the device materially from its cleared specification.',
+    source:
+      'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) — Impact Assessment; Deciding When to Submit a 510(k) for a Software Change to an Existing Device (Oct 2017) — cumulative considerations',
+    status: 'Final Guidance',
+    counter:
+      'No single change may be significant, but the aggregate may be. Consider: total % of training data changed, total architecture modifications, number of threshold adjustments, combined effect on operating characteristics.',
+    verify:
+      'Review the running change log. Calculate cumulative impact: number of changes, distinct categories affected, percentage of training data modified, compounded architecture/preprocessing changes.',
+  },
+  P1: {
+    title: 'PCCP Scope — Change Type Coverage',
+    text: "The PCCP must specifically describe the type of modification being made. A general PCCP covering 'software changes' does not authorize specific model architecture changes unless explicitly described.",
+    source: 'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §VI',
+    status: 'Final Guidance',
+    counter:
+      'Manufacturers sometimes interpret PCCP scope more broadly than FDA intended. If the specific change type is not named in the PCCP, it is not covered — even if a related change type is.',
+    verify:
+      'Read your authorized PCCP document. Find the section describing covered modification types. Is this EXACT change type listed? Not a similar type — this exact type.',
+  },
+  P2: {
+    title: 'PCCP Scope — Modification Boundaries',
+    text: 'The PCCP defines quantitative boundaries for authorized modifications. A change that exceeds those boundaries cannot be implemented under the PCCP, even if the change type is covered.',
+    source: 'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §VI',
+    status: 'Final Guidance',
+    counter:
+      'Boundary conditions are often defined at PCCP authorization time and may not account for evolving model behavior. Verify current boundaries still apply.',
+    verify:
+      'Check the specific numerical bounds in your PCCP: parameter ranges, performance thresholds, data volume limits. Is this change within ALL defined boundaries?',
+  },
+  P5: {
+    title: 'PCCP Cumulative Impact Assessment',
+    text: "The PCCP Impact Assessment must evaluate risks 'individually and in combination.' Even if this change is within scope, the cumulative effect of all PCCP-implemented changes must still be within boundaries.",
+    source: 'Marketing Submission Recommendations for a PCCP for AI-Enabled Device Software Functions (Aug 2025) §VIII',
+    status: 'Final Guidance',
+    counter:
+      'Each additional PCCP-implemented change compounds. A device that has undergone 5 PCCP changes may be operating at the edge of its PCCP boundaries, even though each individual change was well within scope.',
+    verify:
+      'Review all previous PCCP-implemented changes. Calculate cumulative impact across all dimensions: total data modified, total parameter changes, combined performance shift. Compare against PCCP boundary limits.',
+  },
+};

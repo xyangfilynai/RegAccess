@@ -1,5 +1,10 @@
-export { guidanceLinks, findGuidanceLink, getSourceBadge } from './regulatory-sources';
-export { ruleReasoningLibrary, fieldReasoningLibrary } from './reasoning';
-export { docRequirements } from './doc-requirements';
-export { guidanceLinkPatterns } from './guidance-link-patterns';
-export type { RefPattern } from './guidance-link-patterns';
+export {
+  guidanceLinks,
+  findGuidanceLink,
+  getSourceBadge,
+  ruleReasoningLibrary,
+  fieldReasoningLibrary,
+  docRequirements,
+  guidanceLinkPatterns,
+} from '@changepath/engine';
+export type { RefPattern } from '@changepath/engine';

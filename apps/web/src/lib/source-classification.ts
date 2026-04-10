@@ -1,20 +1,2 @@
-export type SourceClass =
-  | 'Statute'
-  | 'Regulation'
-  | 'Final guidance'
-  | 'Draft guidance'
-  | 'Standard'
-  | 'Internal conservative policy'
-  | 'Best practice';
-
-export function classifySource(source: string): SourceClass {
-  if (/FD&C Act|FDORA|21 U\.S\.C\.|§\d{3}[A-Z]/i.test(source)) return 'Statute';
-  if (/21 CFR|QMSR|Part \d{3}/.test(source)) return 'Regulation';
-  if (/FDA-LIFECYCLE-2025|AI-Enabled Device Software Functions|Lifecycle Management|draft/i.test(source))
-    return 'Draft guidance';
-  if (/ISO|IEC|IMDRF/.test(source)) return 'Standard';
-  if (/[Oo]rganization|[Ii]nternal/.test(source)) return 'Internal conservative policy';
-  if (/Best practice/i.test(source)) return 'Best practice';
-  if (/FDA-|Guidance|guidance|MDCG/.test(source)) return 'Final guidance';
-  return 'Best practice';
-}
+export { classifySource } from '@changepath/engine';
+export type { SourceClass } from '@changepath/engine';
