@@ -28,3 +28,5 @@ export { ruleReasoningLibrary, fieldReasoningLibrary } from './content/index.js'
 export { docRequirements } from './content/index.js';
 export { guidanceLinkPatterns } from './content/index.js';
 export type { RefPattern } from './content/index.js';
+export { SAMPLE_CASES } from './demo-cases.js';
+export type { SampleCaseDefinition, AuthPathwayValue, PathwayValue } from './demo-cases.js';
