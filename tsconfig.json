@@ -1,19 +1,20 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "outDir": "dist",
-    "rootDir": ".",
     "baseUrl": ".",
-    "jsx": "react-jsx",
     "paths": {
-      "@engine/*": ["src/lib/assessment-engine/*"],
-      "@content/*": ["src/lib/content/*"]
+      "@changepath/engine": ["packages/engine/src"],
+      "@changepath/shared": ["packages/shared/src"],
+      "@changepath/ui": ["packages/ui/src"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "scripts/**/*.d.ts", "tests/**/*.ts", "tests/**/*.tsx"]
+  "references": [
+    { "path": "packages/engine" },
+    { "path": "packages/shared" },
+    { "path": "packages/ui" },
+    { "path": "apps/web" },
+    { "path": "apps/api" },
+    { "path": "apps/worker" }
+  ],
+  "include": []
 }

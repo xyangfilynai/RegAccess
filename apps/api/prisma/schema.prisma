@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @db.VarChar(255)
+  planTier              String   @default("starter") @map("plan_tier") @db.VarChar(50)
+  ssoConfigJson         Json?    @map("sso_config_json")
+  dataRetentionPolicyJson Json?  @map("data_retention_policy_json")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  users       User[]
+  products    Product[]
+  changeCases ChangeCase[]
+  auditEvents AuditEvent[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String    @id @default(uuid()) @db.Uuid
+  organizationId String    @map("organization_id") @db.Uuid
+  name           String    @db.VarChar(255)
+  email          String    @db.VarChar(255)
+  title          String?   @db.VarChar(255)
+  department     String?   @db.VarChar(255)
+  roleType       String    @default("member") @map("role_type") @db.VarChar(20)
+  status         String    @default("active") @db.VarChar(20)
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  organization         Organization @relation(fields: [organizationId], references: [id])
+  createdCases         ChangeCase[] @relation("CaseCreatedBy")
+  ownedCases           ChangeCase[] @relation("CaseOwner")
+  assessmentUpdates    AssessmentResponseSet[]
+  performedAuditEvents AuditEvent[]
+
+  @@unique([organizationId, email])
+  @@map("users")
+}
+
+model Product {
+  id                         String   @id @default(uuid()) @db.Uuid
+  organizationId             String   @map("organization_id") @db.Uuid
+  productName                String   @map("product_name") @db.VarChar(255)
+  deviceFamily               String?  @map("device_family") @db.VarChar(255)
+  deviceClass                String   @map("device_class") @db.VarChar(5)
+  regulatoryPathwayBaseline  String   @map("regulatory_pathway_baseline") @db.VarChar(20)
+  predicateDevice            String?  @map("predicate_device") @db.VarChar(255)
+  pccpStatus                 String   @default("none") @map("pccp_status") @db.VarChar(20)
+  softwareLevelOfConcern     String   @map("software_level_of_concern") @db.VarChar(20)
+  jurisdictionsJson          Json?    @map("jurisdictions_json")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  changeCases  ChangeCase[]
+
+  @@map("products")
+}
+
+model ChangeCase {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  productId       String    @map("product_id") @db.Uuid
+  caseNumber      String    @map("case_number") @db.VarChar(50)
+  title           String    @db.VarChar(500)
+  changeSummary   String?   @map("change_summary") @db.Text
+  changeType      String?   @map("change_type") @db.VarChar(255)
+  status          String    @default("draft") @db.VarChar(50)
+  priority        String    @default("medium") @db.VarChar(20)
+  createdByUserId String    @map("created_by_user_id") @db.Uuid
+  caseOwnerUserId String    @map("case_owner_user_id") @db.Uuid
+  dueDate         DateTime? @map("due_date")
+  currentDecision String?   @map("current_decision") @db.VarChar(255)
+  currentVersion  Int       @default(1) @map("current_version")
+  engineVersion   String    @map("engine_version") @db.VarChar(50)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  product      Product      @relation(fields: [productId], references: [id])
+  createdBy    User         @relation("CaseCreatedBy", fields: [createdByUserId], references: [id])
+  caseOwner    User         @relation("CaseOwner", fields: [caseOwnerUserId], references: [id])
+
+  assessmentResponseSets AssessmentResponseSet[]
+  auditEvents            AuditEvent[]
+
+  @@unique([organizationId, caseNumber])
+  @@index([organizationId, status])
+  @@index([organizationId, productId])
+  @@map("change_cases")
+}
+
+model AssessmentResponseSet {
+  id                   String   @id @default(uuid()) @db.Uuid
+  caseId               String   @map("case_id") @db.Uuid
+  schemaVersion        String   @map("schema_version") @db.VarChar(50)
+  answersJson          Json     @map("answers_json")
+  derivedStateJson     Json?    @map("derived_state_json")
+  engineOutputJson     Json?    @map("engine_output_json")
+  completenessStatusJson Json?  @map("completeness_status_json")
+  updatedByUserId      String   @map("updated_by_user_id") @db.Uuid
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  changeCase ChangeCase @relation(fields: [caseId], references: [id])
+  updatedBy  User       @relation(fields: [updatedByUserId], references: [id])
+
+  @@map("assessment_response_sets")
+}
+
+model AuditEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  organizationId    String   @map("organization_id") @db.Uuid
+  caseId            String?  @map("case_id") @db.Uuid
+  entityType        String   @map("entity_type") @db.VarChar(50)
+  entityId          String   @map("entity_id") @db.VarChar(255)
+  action            String   @db.VarChar(50)
+  beforeJson        Json?    @map("before_json")
+  afterJson         Json?    @map("after_json")
+  performedByUserId String   @map("performed_by_user_id") @db.Uuid
+  performedAt       DateTime @default(now()) @map("performed_at")
+  reason            String?  @db.Text
+  ipAddress         String?  @map("ip_address") @db.VarChar(45)
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  changeCase   ChangeCase?  @relation(fields: [caseId], references: [id])
+  performedBy  User         @relation(fields: [performedByUserId], references: [id])
+
+  @@index([organizationId, caseId])
+  @@index([entityType, entityId])
+  @@map("audit_events")
+}
+
+model EngineVersionRegistry {
+  engineVersion String   @id @map("engine_version") @db.VarChar(50)
+  schemaVersion String   @map("schema_version") @db.VarChar(50)
+  releasedAt    DateTime @default(now()) @map("released_at")
+  changelog     String   @db.Text
+  isCurrent     Boolean  @default(false) @map("is_current")
+
+  @@map("engine_version_registry")
+}

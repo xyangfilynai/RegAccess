@@ -1,0 +1,20 @@
+{
+  "name": "@changepath/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@changepath/engine": "*",
+    "@changepath/shared": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3",
+    "@types/node": "^22.0.0"
+  }
+}

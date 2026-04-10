@@ -1,0 +1,159 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLayoutContext } from '../contexts/LayoutContext';
+import { LayoutBlockHeader, LayoutHeader, LayoutMobileOverlay, LayoutSidebar } from './LayoutSections';
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const ctx = useLayoutContext();
+  const {
+    blocks,
+    currentBlockIndex,
+    requiredAnsweredCounts,
+    requiredCounts,
+    overallAnswered,
+    overallTotal,
+    overallRequiredAnswered,
+    overallRequiredTotal,
+    caseSummary,
+    onReset,
+    onHome,
+    onSaveAssessment,
+    canSaveAssessment,
+    saveLabel,
+  } = ctx;
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Scroll main content to top when block changes
+  useEffect(() => {
+    if (typeof mainRef.current?.scrollTo === 'function') {
+      mainRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentBlockIndex]);
+
+  const currentBlock = blocks[currentBlockIndex];
+  const progress = overallRequiredTotal > 0 ? Math.round((overallRequiredAnswered / overallRequiredTotal) * 100) : 0;
+  const currentRequiredAnswered = currentBlock ? requiredAnsweredCounts[currentBlock.id] || 0 : 0;
+  const currentRequiredTotal = currentBlock ? requiredCounts[currentBlock.id] || 0 : 0;
+  const currentMissingRequired = Math.max(0, currentRequiredTotal - currentRequiredAnswered);
+  const isReviewBlock = currentBlock?.id === 'review';
+  const reviewReady = overallRequiredTotal > 0 && overallRequiredAnswered === overallRequiredTotal;
+
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarOpen((open) => !open);
+  }, []);
+
+  const handleCloseSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const handleResetRequest = useCallback(() => {
+    if (!onReset) return;
+    if (
+      window.confirm(
+        'Reset all assessment answers and return to the dashboard? Saved assessments and sample cases are not affected. This cannot be undone.',
+      )
+    ) {
+      onReset();
+    }
+  }, [onReset]);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        background: 'var(--color-bg)',
+      }}
+    >
+      <LayoutHeader
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={handleToggleSidebar}
+        onSaveAssessment={onSaveAssessment}
+        canSaveAssessment={canSaveAssessment}
+        saveLabel={saveLabel}
+        onHome={onHome}
+        overallRequiredAnswered={overallRequiredAnswered}
+        overallRequiredTotal={overallRequiredTotal}
+        overallAnswered={overallAnswered}
+        overallTotal={overallTotal}
+        onReset={onReset ? handleResetRequest : undefined}
+      />
+
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <LayoutSidebar
+          progress={progress}
+          currentMissingRequired={currentMissingRequired}
+          isReviewBlock={Boolean(isReviewBlock)}
+          reviewReady={reviewReady}
+          sidebarOpen={sidebarOpen}
+          onCloseSidebar={handleCloseSidebar}
+        />
+
+        <main
+          ref={mainRef}
+          style={{
+            flex: 1,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {currentBlock && (
+            <LayoutBlockHeader
+              currentBlock={currentBlock}
+              isReviewBlock={Boolean(isReviewBlock)}
+              caseSummary={caseSummary}
+              overallAnswered={overallAnswered}
+              overallTotal={overallTotal}
+              overallRequiredAnswered={overallRequiredAnswered}
+              overallRequiredTotal={overallRequiredTotal}
+              reviewReady={reviewReady}
+            />
+          )}
+
+          <div
+            style={{
+              flex: 1,
+              padding: 'var(--space-xl)',
+              maxWidth: 800,
+              width: '100%',
+              margin: '0 auto',
+            }}
+          >
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {sidebarOpen && <LayoutMobileOverlay onClose={handleCloseSidebar} />}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-menu-btn {
+            display: flex !important;
+          }
+          .sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px;
+            bottom: 0;
+            z-index: 50;
+            transform: translateX(-100%);
+          }
+          .sidebar-open {
+            transform: translateX(0) !important;
+          }
+          .hide-mobile {
+            display: none !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+};
