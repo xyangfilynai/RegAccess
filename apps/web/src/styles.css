@@ -610,3 +610,249 @@ a:hover {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
+/* Layout shell */
+.layout-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-bg);
+}
+
+.layout-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.layout-main {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-content {
+  flex: 1;
+  padding: var(--space-xl);
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Layout mobile responsive (moved from inline <style> in Layout.tsx) */
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 64px;
+    bottom: 0;
+    z-index: 50;
+    transform: translateX(-100%);
+  }
+  .sidebar-open {
+    transform: translateX(0) !important;
+  }
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+/* Dashboard page */
+.dashboard-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.dashboard-main {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 64px 40px 80px;
+}
+
+/* Dashboard responsive (moved from inline <style> in DashboardPage.tsx) */
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding: 48px 24px 60px;
+  }
+  .dashboard-page header {
+    padding: 0 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-main {
+    padding: 40px 16px 60px;
+  }
+  .dashboard-page header {
+    padding: 0 16px;
+  }
+  .dashboard-page h1 {
+    font-size: 24px;
+  }
+}
+
+/* Case detail page */
+.case-detail-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.case-detail-back-link {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.case-detail-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+
+.case-detail-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.case-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 24px;
+}
+
+.case-tab {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #6b7280;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.case-tab--active {
+  font-weight: 600;
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+}
+
+/* Assessment tab — decision bar */
+.decision-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #bbf7d0;
+}
+
+.decision-bar--mismatch {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.decision-bar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.decision-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.pathway-value--provisional { font-weight: 600; color: #059669; }
+.pathway-value--authoritative { font-weight: 600; color: #1d4ed8; }
+
+.pathway-separator { margin: 0 12px; color: #d1d5db; }
+
+.recalculating-hint { margin-left: 12px; font-size: 12px; color: #92400e; }
+
+.sync-label { font-size: 12px; }
+.sync-label--editing { color: #d97706; }
+.sync-label--saving { color: #6b7280; }
+.sync-label--conflict { color: #dc2626; }
+
+/* Assessment tab — alerts */
+.alert-banner {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.alert-banner--error { background: #fee2e2; color: #991b1b; }
+.alert-banner--warning { background: #fef3c7; color: #92400e; }
+
+/* Assessment tab — completeness */
+.completeness-summary {
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.completeness-block { margin-right: 12px; }
+
+/* Assessment tab — block navigation */
+.block-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.block-nav-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  cursor: pointer;
+}
+
+.block-nav-btn--active {
+  font-weight: 600;
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Assessment tab — section title */
+.section-title-sm {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* Assessment tab — bottom nav */
+.assessment-nav-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+/* Compact save button override */
+.btn-outline--compact {
+  font-size: 13px;
+  padding: 4px 14px;
+}
+
+/* Shared loading state */
+.loading-text {
+  padding: 32px 24px;
+  color: #6b7280;
+}

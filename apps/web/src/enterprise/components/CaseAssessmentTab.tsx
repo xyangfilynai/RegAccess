@@ -200,14 +200,20 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
         // Record every field that changed in the pending delta. Cascade
         // clearing may zero out many downstream fields — they all need to
         // be in the delta so the server clears them too.
-        for (const k of Object.keys(next)) {
-          if (next[k] !== prev[k]) {
-            pendingDeltaRef.current[k] = next[k];
+        // Single pass: scan prev keys for changes and removals, then check
+        // for any keys that are new in next (not in prev).
+        for (const k of Object.keys(prev)) {
+          if (k in next) {
+            if (next[k] !== prev[k]) {
+              pendingDeltaRef.current[k] = next[k];
+            }
+          } else if (prev[k] !== undefined) {
+            pendingDeltaRef.current[k] = undefined;
           }
         }
-        for (const k of Object.keys(prev)) {
-          if (!(k in next) && prev[k] !== undefined) {
-            pendingDeltaRef.current[k] = undefined;
+        for (const k of Object.keys(next)) {
+          if (!(k in prev)) {
+            pendingDeltaRef.current[k] = next[k];
           }
         }
 
@@ -259,7 +265,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   const serverDecision = serverAssessment?.engineOutputJson as Record<string, unknown> | null;
 
   if (isLoading) {
-    return <div style={{ padding: 32, color: '#6b7280' }}>Loading assessment...</div>;
+    return <div className="loading-text">Loading assessment...</div>;
   }
 
   const assessmentBlocks = blocks.filter((b) => b.id !== 'review');
@@ -276,78 +282,38 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   return (
     <div>
       {/* Decision summary bar */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-          background: pathwayMismatch ? '#fef3c7' : '#f0fdf4',
-          borderRadius: 8,
-          marginBottom: 20,
-          border: pathwayMismatch ? '1px solid #fcd34d' : '1px solid #bbf7d0',
-        }}
-      >
+      <div className={`decision-bar${pathwayMismatch ? ' decision-bar--mismatch' : ''}`}>
         <div>
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>
-            {showProvisionalLabel ? 'PROVISIONAL: ' : 'AUTHORITATIVE: '}
-          </span>
-          <span style={{ fontWeight: 600, color: showProvisionalLabel ? '#059669' : '#1d4ed8' }}>
+          <span className="decision-label">{showProvisionalLabel ? 'PROVISIONAL: ' : 'AUTHORITATIVE: '}</span>
+          <span className={showProvisionalLabel ? 'pathway-value--provisional' : 'pathway-value--authoritative'}>
             {showProvisionalLabel ? provisionalPathway : serverPathway}
           </span>
           {serverPathway && showProvisionalLabel && (
             <>
-              <span style={{ margin: '0 12px', color: '#d1d5db' }}>|</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>SERVER: </span>
-              <span style={{ fontWeight: 600, color: '#1d4ed8' }}>{serverPathway}</span>
+              <span className="pathway-separator">|</span>
+              <span className="decision-label">SERVER: </span>
+              <span className="pathway-value--authoritative">{serverPathway}</span>
             </>
           )}
-          {pathwayMismatch && <span style={{ marginLeft: 12, fontSize: 12, color: '#92400e' }}>recalculating...</span>}
+          {pathwayMismatch && <span className="recalculating-hint">recalculating...</span>}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {syncStatus === 'editing' && <span style={{ fontSize: 12, color: '#d97706' }}>Unsaved changes</span>}
-          {syncStatus === 'saving' && <span style={{ fontSize: 12, color: '#6b7280' }}>Saving...</span>}
-          {syncStatus === 'conflict' && <span style={{ fontSize: 12, color: '#dc2626' }}>Reconciling...</span>}
+        <div className="decision-bar-actions">
+          {syncStatus === 'editing' && <span className="sync-label sync-label--editing">Unsaved changes</span>}
+          {syncStatus === 'saving' && <span className="sync-label sync-label--saving">Saving...</span>}
+          {syncStatus === 'conflict' && <span className="sync-label sync-label--conflict">Reconciling...</span>}
           <button
             onClick={handleExplicitSave}
             disabled={saveAssessment.isPending || !dirty}
-            className="btn-outline"
-            style={{ fontSize: 13, padding: '4px 14px' }}
+            className="btn-outline btn-outline--compact"
           >
             Save
           </button>
         </div>
       </div>
 
-      {conflictMessage && (
-        <div
-          style={{
-            padding: '8px 12px',
-            background: '#fee2e2',
-            color: '#991b1b',
-            borderRadius: 6,
-            marginBottom: 16,
-            fontSize: 13,
-          }}
-        >
-          {conflictMessage}
-        </div>
-      )}
+      {conflictMessage && <div className="alert-banner alert-banner--error">{conflictMessage}</div>}
 
-      {reconciliationMessage && (
-        <div
-          style={{
-            padding: '8px 12px',
-            background: '#fef3c7',
-            color: '#92400e',
-            borderRadius: 6,
-            marginBottom: 16,
-            fontSize: 13,
-          }}
-        >
-          {reconciliationMessage}
-        </div>
-      )}
+      {reconciliationMessage && <div className="alert-banner alert-banner--warning">{reconciliationMessage}</div>}
 
       {/* Completeness summary */}
       {serverAssessment?.completenessStatusJson && (
@@ -355,21 +321,12 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
       )}
 
       {/* Block navigation */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div className="block-nav">
         {assessmentBlocks.map((block, idx) => (
           <button
             key={block.id}
             onClick={() => setActiveBlockIndex(idx)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 6,
-              fontSize: 13,
-              fontWeight: activeBlockIndex === idx ? 600 : 400,
-              background: activeBlockIndex === idx ? '#2563eb' : '#f3f4f6',
-              color: activeBlockIndex === idx ? '#fff' : '#374151',
-              border: 'none',
-              cursor: 'pointer',
-            }}
+            className={`block-nav-btn${activeBlockIndex === idx ? ' block-nav-btn--active' : ''}`}
           >
             {block.shortLabel}
           </button>
@@ -379,7 +336,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
       {/* Questions */}
       {currentBlock && currentBlock.id !== 'review' && (
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{currentBlock.label}</h3>
+          <h3 className="section-title-sm">{currentBlock.label}</h3>
           {currentFields.map((field: AssessmentField, index: number) => (
             <QuestionCard
               key={field.id}
@@ -394,7 +351,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
       )}
 
       {/* Navigation */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24 }}>
+      <div className="assessment-nav-footer">
         <button
           onClick={() => setActiveBlockIndex(Math.max(0, activeBlockIndex - 1))}
           disabled={activeBlockIndex === 0}
@@ -426,18 +383,10 @@ interface CompletenessData {
 }
 
 const CompleteSummary: React.FC<{ status: CompletenessData }> = ({ status }) => (
-  <div
-    style={{
-      marginBottom: 16,
-      padding: '8px 12px',
-      background: '#f9fafb',
-      borderRadius: 6,
-      fontSize: 13,
-    }}
-  >
+  <div className="completeness-summary">
     <strong>Completeness:</strong>{' '}
     {status.blocks.map((b) => (
-      <span key={b.id} style={{ marginRight: 12 }}>
+      <span key={b.id} className="completeness-block">
         {b.label}: {b.answeredRequired}/{b.totalRequired} {b.complete ? '\u2713' : ''}
       </span>
     ))}

@@ -36,22 +36,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const hasSavedWork = hasSavedSession || savedAssessments.length > 0;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--color-bg)',
-      }}
-    >
+    <div className="dashboard-page">
       <DashboardShellHeader />
 
-      {/* Main Content */}
-      <main
-        style={{
-          maxWidth: 840,
-          margin: '0 auto',
-          padding: '64px 40px 80px',
-        }}
-      >
+      <main className="dashboard-main">
         <DashboardHeroSection />
         <DashboardActionsSection
           hasSavedSession={hasSavedSession}
@@ -68,29 +56,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         />
         <PrototypeUseSection />
       </main>
-
-      {/* Responsive styles */}
-      <style>{`
-        @media (max-width: 768px) {
-          main {
-            padding: 48px 24px 60px !important;
-          }
-          header {
-            padding: 0 24px !important;
-          }
-        }
-        @media (max-width: 480px) {
-          main {
-            padding: 40px 16px 60px !important;
-          }
-          header {
-            padding: 0 16px !important;
-          }
-          h1 {
-            font-size: 24px !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };

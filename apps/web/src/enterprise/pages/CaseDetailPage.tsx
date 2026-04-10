@@ -26,14 +26,12 @@ export const CaseDetailPage: React.FC = () => {
   const activeTab: TabId = TABS.some((tab) => tab.id === tabParam) ? (tabParam as TabId) : 'overview';
 
   if (isLoading) {
-    return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px', color: '#6b7280' }}>Loading case...</div>
-    );
+    return <div className="case-detail-page loading-text">Loading case...</div>;
   }
 
   if (error || !changeCase) {
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+      <div className="case-detail-page">
         <p style={{ color: '#dc2626' }}>Case not found.</p>
         <Link to="/">Back to dashboard</Link>
       </div>
@@ -41,37 +39,25 @@ export const CaseDetailPage: React.FC = () => {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+    <div className="case-detail-page">
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <Link to="/" style={{ fontSize: 13, color: '#6b7280' }}>
+        <Link to="/" className="case-detail-back-link">
           &larr; All Cases
         </Link>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: '8px 0 4px' }}>{changeCase.title}</h1>
-        <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
+        <h1 className="case-detail-title">{changeCase.title}</h1>
+        <p className="case-detail-subtitle">
           {changeCase.caseNumber} &middot; {changeCase.product.productName}
         </p>
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #e5e7eb', marginBottom: 24 }}>
+      <div className="case-tab-bar">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSearchParams({ tab: tab.id })}
-            style={{
-              padding: '10px 20px',
-              fontSize: 14,
-              fontWeight: activeTab === tab.id ? 600 : 400,
-              color: activeTab === tab.id ? '#2563eb' : '#6b7280',
-              borderBottom: activeTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
-              background: 'none',
-              border: 'none',
-              borderBottomWidth: 2,
-              borderBottomStyle: 'solid',
-              borderBottomColor: activeTab === tab.id ? '#2563eb' : 'transparent',
-              cursor: 'pointer',
-            }}
+            className={`case-tab${activeTab === tab.id ? ' case-tab--active' : ''}`}
           >
             {tab.label}
           </button>

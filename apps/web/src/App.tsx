@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useCallback, useMemo, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { DashboardPage } from './components/DashboardPage';
 import { QuestionCard } from './components/QuestionCard';
@@ -123,6 +123,18 @@ export const App: React.FC = () => {
 
   const caseSummary = useMemo(() => buildCaseSummary(answers), [answers]);
 
+  // Stabilize values that would otherwise put `answers` or fast-changing
+  // derived data into the context dependency array, causing every consumer
+  // to re-render on every keystroke.
+  const canSaveAssessment = Object.keys(answers).length > 0;
+  const pathwayRef = useRef(determination.pathway);
+  pathwayRef.current = determination.pathway;
+  const saveLabel = currentAssessmentId ? 'Update library record' : 'Save to library';
+
+  const handleSaveFromContext = useCallback(() => {
+    handleSaveAssessment(pathwayRef.current);
+  }, [handleSaveAssessment]);
+
   const layoutContextValue: LayoutContextValue = useMemo(
     () => ({
       blocks,
@@ -140,11 +152,9 @@ export const App: React.FC = () => {
       caseSummary,
       onReset: handleReset,
       onHome: handleHome,
-      onSaveAssessment: () => {
-        handleSaveAssessment(determination.pathway);
-      },
-      canSaveAssessment: Object.keys(answers).length > 0,
-      saveLabel: currentAssessmentId ? 'Update library record' : 'Save to library',
+      onSaveAssessment: handleSaveFromContext,
+      canSaveAssessment,
+      saveLabel,
     }),
     [
       blocks,
@@ -162,10 +172,9 @@ export const App: React.FC = () => {
       caseSummary,
       handleReset,
       handleHome,
-      handleSaveAssessment,
-      determination.pathway,
-      answers,
-      currentAssessmentId,
+      handleSaveFromContext,
+      canSaveAssessment,
+      saveLabel,
     ],
   );
 

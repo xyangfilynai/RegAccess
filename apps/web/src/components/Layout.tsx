@@ -63,14 +63,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [onReset]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100vh',
-        background: 'var(--color-bg)',
-      }}
-    >
+    <div className="layout-root">
       <LayoutHeader
         sidebarOpen={sidebarOpen}
         onToggleSidebar={handleToggleSidebar}
@@ -85,7 +78,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onReset={onReset ? handleResetRequest : undefined}
       />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div className="layout-body">
         <LayoutSidebar
           progress={progress}
           currentMissingRequired={currentMissingRequired}
@@ -95,15 +88,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           onCloseSidebar={handleCloseSidebar}
         />
 
-        <main
-          ref={mainRef}
-          style={{
-            flex: 1,
-            overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
-        >
+        <main ref={mainRef} className="layout-main">
           {currentBlock && (
             <LayoutBlockHeader
               currentBlock={currentBlock}
@@ -117,43 +102,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             />
           )}
 
-          <div
-            style={{
-              flex: 1,
-              padding: 'var(--space-xl)',
-              maxWidth: 800,
-              width: '100%',
-              margin: '0 auto',
-            }}
-          >
-            {children}
-          </div>
+          <div className="layout-content">{children}</div>
         </main>
       </div>
 
       {sidebarOpen && <LayoutMobileOverlay onClose={handleCloseSidebar} />}
-
-      <style>{`
-        @media (max-width: 768px) {
-          .mobile-menu-btn {
-            display: flex !important;
-          }
-          .sidebar {
-            position: fixed;
-            left: 0;
-            top: 64px;
-            bottom: 0;
-            z-index: 50;
-            transform: translateX(-100%);
-          }
-          .sidebar-open {
-            transform: translateX(0) !important;
-          }
-          .hide-mobile {
-            display: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };
