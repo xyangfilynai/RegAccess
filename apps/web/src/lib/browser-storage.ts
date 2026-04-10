@@ -41,11 +41,25 @@ export const readStoredJson = (key: string): unknown => {
  */
 export const STORAGE_WRITE_LIMIT_CHARS = 4 * 1024 * 1024; // 4 MB
 
-export class StorageQuotaError extends Error {
+export class StorageWriteError extends Error {
+  constructor(key: string, message: string) {
+    super(`Storage write for "${key}" failed: ${message}`);
+    this.name = 'StorageWriteError';
+  }
+}
+
+export class StorageUnavailableError extends StorageWriteError {
+  constructor(key: string) {
+    super(key, 'browser storage is unavailable on this device or in this browser context.');
+    this.name = 'StorageUnavailableError';
+  }
+}
+
+export class StorageQuotaError extends StorageWriteError {
   constructor(key: string, sizeChars: number) {
     super(
-      `Storage write for "${key}" blocked: payload is ${(sizeChars / 1024 / 1024).toFixed(1)} MB, ` +
-        `which exceeds the ${(STORAGE_WRITE_LIMIT_CHARS / 1024 / 1024).toFixed(0)} MB safety limit.`,
+      key,
+      `payload is ${(sizeChars / 1024 / 1024).toFixed(1)} MB, which exceeds the ${(STORAGE_WRITE_LIMIT_CHARS / 1024 / 1024).toFixed(0)} MB safety limit.`,
     );
     this.name = 'StorageQuotaError';
   }
@@ -53,7 +67,9 @@ export class StorageQuotaError extends Error {
 
 export const writeStoredJson = (key: string, value: unknown): boolean => {
   const storage = getBrowserStorage();
-  if (!storage) return false;
+  if (!storage) {
+    throw new StorageUnavailableError(key);
+  }
 
   try {
     const serialized = JSON.stringify(value);
@@ -63,14 +79,16 @@ export const writeStoredJson = (key: string, value: unknown): boolean => {
     storage.setItem(key, serialized);
     return true;
   } catch (error) {
-    if (error instanceof StorageQuotaError) throw error;
-    return false;
+    if (error instanceof StorageWriteError) throw error;
+    throw new StorageWriteError(key, error instanceof Error ? error.message : 'unknown browser storage error.');
   }
 };
 
 export const writeStoredValue = (key: string, value: string): boolean => {
   const storage = getBrowserStorage();
-  if (!storage) return false;
+  if (!storage) {
+    throw new StorageUnavailableError(key);
+  }
 
   try {
     if (value.length > STORAGE_WRITE_LIMIT_CHARS) {
@@ -79,8 +97,8 @@ export const writeStoredValue = (key: string, value: string): boolean => {
     storage.setItem(key, value);
     return true;
   } catch (error) {
-    if (error instanceof StorageQuotaError) throw error;
-    return false;
+    if (error instanceof StorageWriteError) throw error;
+    throw new StorageWriteError(key, error instanceof Error ? error.message : 'unknown browser storage error.');
   }
 };
 

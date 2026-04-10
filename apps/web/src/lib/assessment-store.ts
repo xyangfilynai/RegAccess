@@ -4,7 +4,7 @@
  */
 
 import type { Answers } from './assessment-engine';
-import { isPlainObject, readStoredJson, writeStoredJson } from './browser-storage';
+import { isPlainObject, isStringArray, readStoredJson, removeStoredKeys, writeStoredJson } from './browser-storage';
 import { PERSISTENCE_KEYS } from './persistence-keys';
 import { isAnswersRecord } from './storage';
 
@@ -153,6 +153,8 @@ const toPersistedSavedAssessment = (assessment: SavedAssessment): PersistedSaved
   schemaVersion: ASSESSMENT_STORE_SCHEMA_VERSION,
 });
 
+const getAssessmentRecordKey = (id: string): string => `${PERSISTENCE_KEYS.savedAssessmentRecordPrefix}${id}`;
+
 const serializeAnswers = (answers: Answers): string =>
   JSON.stringify(
     Object.entries(answers)
@@ -179,27 +181,93 @@ function rebuildIndex(assessments: SavedAssessment[]): void {
   _indexById = new Map(assessments.map((a) => [a.id, a]));
 }
 
-function loadAll(): SavedAssessment[] {
-  if (_cache) return _cache;
+function readStoredAssessmentIds(): string[] | null {
+  const rawIndex = readStoredJson(PERSISTENCE_KEYS.savedAssessmentIndex);
+  if (!isStringArray(rawIndex)) return null;
+
+  const deduped = new Set<string>();
+  rawIndex.forEach((id) => {
+    if (id.trim()) {
+      deduped.add(id);
+    }
+  });
+
+  return [...deduped];
+}
+
+function loadLegacyAssessments(): SavedAssessment[] {
   const raw = readStoredJson(PERSISTENCE_KEYS.savedAssessments);
-  if (!Array.isArray(raw)) {
-    _cache = [];
-    rebuildIndex(_cache);
-    return _cache;
-  }
-  _cache = raw
+  if (!Array.isArray(raw)) return [];
+
+  return raw
     .map((entry) => normalizeSavedAssessment(entry))
     .filter((entry): entry is SavedAssessment => entry !== null);
+}
+
+function loadAssessmentRecord(id: string): SavedAssessment | null {
+  return normalizeSavedAssessment(readStoredJson(getAssessmentRecordKey(id)));
+}
+
+function persistAssessments(assessments: SavedAssessment[], previousIds: string[]): void {
+  assessments.forEach((assessment) => {
+    writeStoredJson(getAssessmentRecordKey(assessment.id), toPersistedSavedAssessment(assessment));
+  });
+
+  writeStoredJson(
+    PERSISTENCE_KEYS.savedAssessmentIndex,
+    assessments.map((assessment) => assessment.id),
+  );
+
+  removeStoredKeys(PERSISTENCE_KEYS.savedAssessments);
+
+  const nextIds = new Set(assessments.map((assessment) => assessment.id));
+  const staleRecordKeys = previousIds.filter((id) => !nextIds.has(id)).map((id) => getAssessmentRecordKey(id));
+  if (staleRecordKeys.length > 0) {
+    removeStoredKeys(...staleRecordKeys);
+  }
+}
+
+function loadAll(): SavedAssessment[] {
+  if (_cache) return _cache;
+
+  const storedIds = readStoredAssessmentIds();
+  if (storedIds) {
+    _cache = storedIds
+      .map((id) => loadAssessmentRecord(id))
+      .filter((entry): entry is SavedAssessment => entry !== null);
+    rebuildIndex(_cache);
+
+    if (_cache.length !== storedIds.length) {
+      try {
+        persistAssessments(_cache, storedIds);
+      } catch {
+        // Keep serving the valid subset even if index repair fails.
+      }
+    }
+
+    return _cache;
+  }
+
+  _cache = loadLegacyAssessments();
   rebuildIndex(_cache);
+
+  if (_cache.length > 0) {
+    const previousLegacyIds = _cache.map((assessment) => assessment.id);
+    try {
+      persistAssessments(_cache, previousLegacyIds);
+    } catch {
+      // Continue serving legacy-loaded data even if migration cannot complete yet.
+    }
+  }
+
   return _cache;
 }
 
 function saveAll(assessments: SavedAssessment[]): void {
+  const previousIds = readStoredAssessmentIds() ?? loadLegacyAssessments().map((assessment) => assessment.id);
+
   try {
-    writeStoredJson(
-      PERSISTENCE_KEYS.savedAssessments,
-      assessments.map((assessment) => toPersistedSavedAssessment(assessment)),
-    );
+    persistAssessments(assessments, previousIds);
   } catch (error) {
     // The in-memory cache may have been mutated before this call.
     // Invalidate it so the next loadAll() re-reads from localStorage.
@@ -221,6 +289,13 @@ function saveAll(assessments: SavedAssessment[]): void {
 export function _invalidateCache(): void {
   _cache = null;
   _indexById = null;
+}
+
+export function clearAssessmentStoreStorage(): void {
+  const recordIds = readStoredAssessmentIds() ?? loadLegacyAssessments().map((assessment) => assessment.id);
+  const recordKeys = recordIds.map((id) => getAssessmentRecordKey(id));
+  removeStoredKeys(PERSISTENCE_KEYS.savedAssessments, PERSISTENCE_KEYS.savedAssessmentIndex, ...recordKeys);
+  _invalidateCache();
 }
 
 export const assessmentStore = {

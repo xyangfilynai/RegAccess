@@ -72,6 +72,12 @@ Only the draft workspace writes back to resumable browser storage. Opening a sam
 
 Saved assessments are normalized on read so legacy or partially malformed stored records can be recovered instead of being silently discarded when possible.
 
+### Scaling roadmap
+
+- Immediate hardening: keep CI scoped to this app's tests, fail loudly on browser-storage write errors, and store saved assessments as individual records instead of one growing localStorage blob.
+- Next product step: move authentication, saved-record persistence, reviewer collaboration, and audit history behind a backend boundary.
+- Long-term scale target: replace browser-only version history with IndexedDB or server storage and add shared access control, review workflows, and remote revocation/audit capabilities.
+
 ## Offline Access Passes
 
 ChangePath now includes a local-only access gate that runs before the assessment app mounts. The app stays locked until a signed access pass has been pasted and verified on that device.

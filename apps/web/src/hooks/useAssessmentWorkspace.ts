@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { assessmentStore, type SavedAssessment } from '../lib/assessment-store';
 import { buildAssessmentName } from '../lib/assessment-metadata';
-import { StorageQuotaError } from '../lib/browser-storage';
+import { StorageQuotaError, StorageWriteError } from '../lib/browser-storage';
 import { storage } from '../lib/storage';
 import type { Answers } from '../lib/assessment-engine';
 import { SAMPLE_CASES_BY_ID } from '../sample-cases';
@@ -74,9 +74,18 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
 
   const flushPendingDraftSave = useCallback(() => {
     if (!pendingSaveRef.current) return;
-    storage.saveAnswers(pendingSaveRef.current.answers);
-    storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
-    pendingSaveRef.current = null;
+    try {
+      storage.saveAnswers(pendingSaveRef.current.answers);
+      storage.saveBlockIndex(pendingSaveRef.current.blockIndex);
+      pendingSaveRef.current = null;
+      setStorageError(null);
+    } catch (error) {
+      if (error instanceof StorageQuotaError || error instanceof StorageWriteError) {
+        setStorageError(error.message);
+        return;
+      }
+      throw error;
+    }
   }, []);
 
   useEffect(() => {
@@ -226,7 +235,7 @@ export function useAssessmentWorkspace(): AssessmentWorkspace {
         refreshSavedAssessments();
         return saved;
       } catch (error) {
-        if (error instanceof StorageQuotaError) {
+        if (error instanceof StorageQuotaError || error instanceof StorageWriteError) {
           setStorageError(error.message);
           return null;
         }

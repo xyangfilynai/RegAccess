@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { assessmentStore } from '../src/lib/assessment-store';
-import { STORAGE_WRITE_LIMIT_CHARS, StorageQuotaError } from '../src/lib/browser-storage';
+import {
+  STORAGE_WRITE_LIMIT_CHARS,
+  StorageQuotaError,
+  StorageWriteError,
+  writeStoredJson,
+} from '../src/lib/browser-storage';
 import { PERSISTENCE_KEYS } from '../src/lib/persistence-keys';
 import { storage } from '../src/lib/storage';
 
@@ -52,6 +57,8 @@ describe('browser persistence', () => {
     const normalized = assessmentStore.list();
 
     expect(normalized).toHaveLength(2);
+    expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessments)).toBeNull();
+    expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessmentIndex)).not.toBeNull();
     expect(normalized.find((assessment) => assessment.id === 'legacy-assessment')).toMatchObject({
       id: 'legacy-assessment',
       name: 'Legacy assessment',
@@ -106,6 +113,8 @@ describe('browser persistence', () => {
 
     expect(secondList).toHaveLength(1);
     expect(secondList).not.toBe(firstList);
+    expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessments)).toBeNull();
+    expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessmentIndex)).not.toBeNull();
   });
 
   it('generates IDs using crypto.randomUUID', () => {
@@ -161,5 +170,15 @@ describe('browser persistence', () => {
     const remaining = assessmentStore.list();
     expect(remaining).toHaveLength(1);
     expect(remaining[0].name).toBe('Existing assessment');
+  });
+
+  it('throws StorageWriteError when browser storage rejects a write', () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('blocked by browser');
+    });
+
+    expect(() => writeStoredJson('write-failure-test', { ok: true })).toThrow(StorageWriteError);
+
+    setItemSpy.mockRestore();
   });
 });

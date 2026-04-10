@@ -104,6 +104,7 @@ describe('AccessGate', () => {
     expect(localStorage.getItem(PERSISTENCE_KEYS.draftAnswers)).toBeNull();
     expect(localStorage.getItem(PERSISTENCE_KEYS.draftBlockIndex)).toBeNull();
     expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessments)).toBeNull();
+    expect(localStorage.getItem(PERSISTENCE_KEYS.savedAssessmentIndex)).toBeNull();
     expect(assessmentStore.list()).toEqual([]);
   });
 
