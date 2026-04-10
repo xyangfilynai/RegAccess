@@ -20,9 +20,7 @@ export const CaseDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px', color: '#6b7280' }}>
-        Loading case...
-      </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px', color: '#6b7280' }}>Loading case...</div>
     );
   }
 
@@ -39,7 +37,9 @@ export const CaseDetailPage: React.FC = () => {
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <Link to="/" style={{ fontSize: 13, color: '#6b7280' }}>&larr; All Cases</Link>
+        <Link to="/" style={{ fontSize: 13, color: '#6b7280' }}>
+          &larr; All Cases
+        </Link>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: '8px 0 4px' }}>{changeCase.title}</h1>
         <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>
           {changeCase.caseNumber} &middot; {changeCase.product.productName}

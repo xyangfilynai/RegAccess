@@ -33,7 +33,16 @@ const STATUS_LABELS: Record<string, string> = {
 
 const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <div style={{ marginBottom: 16 }}>
-    <div style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+    <div
+      style={{
+        fontSize: 12,
+        fontWeight: 600,
+        color: '#6b7280',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        marginBottom: 4,
+      }}
+    >
       {label}
     </div>
     <div style={{ fontSize: 14 }}>{children}</div>
@@ -54,12 +63,8 @@ export const CaseOverviewTab: React.FC<{ changeCase: CaseData }> = ({ changeCase
             {changeCase.currentDecision ?? 'Not yet determined'}
           </span>
         </Field>
-        <Field label="Change Summary">
-          {changeCase.changeSummary ?? '—'}
-        </Field>
-        <Field label="Change Type">
-          {changeCase.changeType ?? '—'}
-        </Field>
+        <Field label="Change Summary">{changeCase.changeSummary ?? '—'}</Field>
+        <Field label="Change Type">{changeCase.changeType ?? '—'}</Field>
         <Field label="Priority">
           <span style={{ fontWeight: 500 }}>{changeCase.priority}</span>
         </Field>
@@ -70,12 +75,8 @@ export const CaseOverviewTab: React.FC<{ changeCase: CaseData }> = ({ changeCase
         <Field label="Created By">{changeCase.createdBy?.name ?? '—'}</Field>
         <Field label="Engine Version">{changeCase.engineVersion}</Field>
         <Field label="Version">{changeCase.currentVersion}</Field>
-        <Field label="Due Date">
-          {changeCase.dueDate ? new Date(changeCase.dueDate).toLocaleDateString() : '—'}
-        </Field>
-        <Field label="Created">
-          {new Date(changeCase.createdAt).toLocaleDateString()}
-        </Field>
+        <Field label="Due Date">{changeCase.dueDate ? new Date(changeCase.dueDate).toLocaleDateString() : '—'}</Field>
+        <Field label="Created">{new Date(changeCase.createdAt).toLocaleDateString()}</Field>
       </div>
     </div>
   );

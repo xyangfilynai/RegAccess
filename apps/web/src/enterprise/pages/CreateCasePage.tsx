@@ -40,9 +40,7 @@ export const CreateCasePage: React.FC = () => {
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-              Title *
-            </label>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Title *</label>
             <input
               type="text"
               value={title}
@@ -54,9 +52,7 @@ export const CreateCasePage: React.FC = () => {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-              Product *
-            </label>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Product *</label>
             {productsLoading ? (
               <p style={{ color: '#6b7280' }}>Loading products...</p>
             ) : (
@@ -64,33 +60,44 @@ export const CreateCasePage: React.FC = () => {
                 value={productId}
                 onChange={(e) => setProductId(e.target.value)}
                 required
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 14,
+                }}
               >
                 <option value="">Select a product...</option>
                 {products?.map((p) => (
-                  <option key={p.id} value={p.id}>{p.productName}</option>
+                  <option key={p.id} value={p.id}>
+                    {p.productName}
+                  </option>
                 ))}
               </select>
             )}
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-              Change Summary
-            </label>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Change Summary</label>
             <textarea
               value={changeSummary}
               onChange={(e) => setChangeSummary(e.target.value)}
               rows={3}
               placeholder="Brief description of what is changing and why..."
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14, resize: 'vertical' }}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '1px solid #d1d5db',
+                fontSize: 14,
+                resize: 'vertical',
+              }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-              Change Type
-            </label>
+            <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Change Type</label>
             <input
               type="text"
               value={changeType}
@@ -102,13 +109,17 @@ export const CreateCasePage: React.FC = () => {
 
           <div style={{ display: 'flex', gap: 16 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-                Priority
-              </label>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as typeof priority)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 14,
+                }}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -117,14 +128,18 @@ export const CreateCasePage: React.FC = () => {
               </select>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>
-                Due Date
-              </label>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: 14 }}>Due Date</label>
               <input
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 6, border: '1px solid #d1d5db', fontSize: 14 }}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #d1d5db',
+                  fontSize: 14,
+                }}
               />
             </div>
           </div>
@@ -134,24 +149,18 @@ export const CreateCasePage: React.FC = () => {
           </div>
 
           {createCase.error && (
-            <div style={{ color: '#dc2626', fontSize: 14, padding: '8px 12px', background: '#fef2f2', borderRadius: 6 }}>
+            <div
+              style={{ color: '#dc2626', fontSize: 14, padding: '8px 12px', background: '#fef2f2', borderRadius: 6 }}
+            >
               {createCase.error.message}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="btn-outline"
-            >
+            <button type="button" onClick={() => navigate('/')} className="btn-outline">
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={createCase.isPending}
-              className="btn-continue"
-            >
+            <button type="submit" disabled={createCase.isPending} className="btn-continue">
               {createCase.isPending ? 'Creating...' : 'Create Case'}
             </button>
           </div>

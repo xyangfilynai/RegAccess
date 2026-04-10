@@ -72,21 +72,21 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
   return (
     <div>
       {/* Decision summary bar */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '12px 16px',
-        background: '#f0fdf4',
-        borderRadius: 8,
-        marginBottom: 20,
-        border: '1px solid #bbf7d0',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 16px',
+          background: '#f0fdf4',
+          borderRadius: 8,
+          marginBottom: 20,
+          border: '1px solid #bbf7d0',
+        }}
+      >
         <div>
           <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>PROVISIONAL: </span>
-          <span style={{ fontWeight: 600, color: '#059669' }}>
-            {provisionalDetermination.pathway}
-          </span>
+          <span style={{ fontWeight: 600, color: '#059669' }}>{provisionalDetermination.pathway}</span>
           {serverDecision && (
             <>
               <span style={{ margin: '0 12px', color: '#d1d5db' }}>|</span>
@@ -141,9 +141,7 @@ export const CaseAssessmentTab: React.FC<{ caseId: string }> = ({ caseId }) => {
       {/* Questions */}
       {currentBlock && currentBlock.id !== 'review' && (
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-            {currentBlock.label}
-          </h3>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{currentBlock.label}</h3>
           {currentFields.map((field: AssessmentField, index: number) => (
             <QuestionCard
               key={field.id}
@@ -188,8 +186,7 @@ const CompleteSummary: React.FC<{ status: CompletenessData }> = ({ status }) => 
     <strong>Completeness:</strong>{' '}
     {status.blocks.map((b) => (
       <span key={b.id} style={{ marginRight: 12 }}>
-        {b.label}: {b.answeredRequired}/{b.totalRequired}{' '}
-        {b.complete ? '\u2713' : ''}
+        {b.label}: {b.answeredRequired}/{b.totalRequired} {b.complete ? '\u2713' : ''}
       </span>
     ))}
   </div>

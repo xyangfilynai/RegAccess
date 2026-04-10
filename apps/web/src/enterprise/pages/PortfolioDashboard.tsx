@@ -56,7 +56,9 @@ export const PortfolioDashboard: React.FC = () => {
         >
           <option value="">All statuses</option>
           {Object.entries(STATUS_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
+            <option key={value} value={value}>
+              {label}
+            </option>
           ))}
         </select>
         <select
@@ -66,7 +68,9 @@ export const PortfolioDashboard: React.FC = () => {
         >
           <option value="">All products</option>
           {products?.map((p) => (
-            <option key={p.id} value={p.id}>{p.productName}</option>
+            <option key={p.id} value={p.id}>
+              {p.productName}
+            </option>
           ))}
         </select>
       </div>
@@ -96,7 +100,9 @@ export const PortfolioDashboard: React.FC = () => {
               {cases.map((c) => (
                 <tr key={c.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                   <td style={{ padding: '10px 16px' }}>
-                    <Link to={`/cases/${c.id}`} style={{ fontWeight: 500 }}>{c.caseNumber}</Link>
+                    <Link to={`/cases/${c.id}`} style={{ fontWeight: 500 }}>
+                      {c.caseNumber}
+                    </Link>
                   </td>
                   <td style={{ padding: '10px 16px' }}>
                     <Link to={`/cases/${c.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
@@ -105,27 +111,25 @@ export const PortfolioDashboard: React.FC = () => {
                   </td>
                   <td style={{ padding: '10px 16px', color: '#6b7280' }}>{c.product.productName}</td>
                   <td style={{ padding: '10px 16px' }}>
-                    <span style={{
-                      padding: '2px 8px',
-                      borderRadius: 12,
-                      fontSize: 12,
-                      fontWeight: 500,
-                      background: '#f3f4f6',
-                    }}>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        background: '#f3f4f6',
+                      }}
+                    >
                       {STATUS_LABELS[c.status] ?? c.status}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 13 }}>
-                    {c.currentDecision ?? '—'}
-                  </td>
+                  <td style={{ padding: '10px 16px', color: '#6b7280', fontSize: 13 }}>{c.currentDecision ?? '—'}</td>
                   <td style={{ padding: '10px 16px' }}>
                     <span style={{ color: PRIORITY_COLORS[c.priority] ?? '#6b7280', fontWeight: 500, fontSize: 13 }}>
                       {c.priority}
                     </span>
                   </td>
-                  <td style={{ padding: '10px 16px', color: '#6b7280' }}>
-                    {c.caseOwner?.name ?? '—'}
-                  </td>
+                  <td style={{ padding: '10px 16px', color: '#6b7280' }}>{c.caseOwner?.name ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
