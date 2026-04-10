@@ -15,10 +15,11 @@ model Organization {
   dataRetentionPolicyJson Json?  @map("data_retention_policy_json")
   createdAt             DateTime @default(now()) @map("created_at")
 
-  users       User[]
-  products    Product[]
-  changeCases ChangeCase[]
-  auditEvents AuditEvent[]
+  users          User[]
+  products       Product[]
+  changeCases    ChangeCase[]
+  auditEvents    AuditEvent[]
+  featureFlags   OrganizationFeatureFlag[]
 
   @@map("organizations")
 }
@@ -91,11 +92,38 @@ model ChangeCase {
 
   assessmentResponseSets AssessmentResponseSet[]
   auditEvents            AuditEvent[]
+  sectionAssignments     SectionAssignment[]
 
   @@unique([organizationId, caseNumber])
   @@index([organizationId, status])
   @@index([organizationId, productId])
   @@map("change_cases")
+}
+
+/**
+ * Per-section authoring assignment for a case.
+ *
+ * Created in Phase 1 (rather than Phase 2b when concurrent editing lands)
+ * to avoid a schema migration during the performance-sensitive Phase 2 work.
+ * The Phase 2b implementation will populate `assignedToUserId` and use
+ * `lockedAt` / `lockExpiresAt` to enforce single-writer-per-section.
+ */
+model SectionAssignment {
+  id                String    @id @default(uuid()) @db.Uuid
+  caseId            String    @map("case_id") @db.Uuid
+  /** Block ID from the engine (e.g. "A", "B", "C", "P", "D", "E", "F"). */
+  sectionId         String    @map("section_id") @db.VarChar(50)
+  assignedToUserId  String?   @map("assigned_to_user_id") @db.Uuid
+  lockedAt          DateTime? @map("locked_at")
+  lockExpiresAt     DateTime? @map("lock_expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  changeCase ChangeCase @relation(fields: [caseId], references: [id])
+
+  @@unique([caseId, sectionId])
+  @@index([assignedToUserId])
+  @@map("section_assignments")
 }
 
 model AssessmentResponseSet {
@@ -146,4 +174,26 @@ model EngineVersionRegistry {
   isCurrent     Boolean  @default(false) @map("is_current")
 
   @@map("engine_version_registry")
+}
+
+/**
+ * Per-org feature flag store. Used by Phase 3+ work (evidence, comments,
+ * reviews, exports) to roll features out to specific orgs without redeploys.
+ *
+ * The flag value is JSON to allow per-flag config (boolean, percent rollout,
+ * variant string, etc). Reads are cached in process for the request lifetime.
+ */
+model OrganizationFeatureFlag {
+  id             String   @id @default(uuid()) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  flagKey        String   @map("flag_key") @db.VarChar(100)
+  enabled        Boolean  @default(false)
+  configJson     Json?    @map("config_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, flagKey])
+  @@map("organization_feature_flags")
 }

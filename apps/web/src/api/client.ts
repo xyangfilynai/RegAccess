@@ -17,7 +17,15 @@ function getHeaders(): Record<string, string> {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(body.error ?? `HTTP ${response.status}`);
+    const err = new Error(body.error ?? `HTTP ${response.status}`) as Error & {
+      status?: number;
+      conflict?: { code: string; serverUpdatedAt: string };
+    };
+    err.status = response.status;
+    if (response.status === 409 && body.code === 'ASSESSMENT_CONFLICT') {
+      err.conflict = { code: body.code, serverUpdatedAt: body.serverUpdatedAt };
+    }
+    throw err;
   }
   return response.json() as Promise<T>;
 }
